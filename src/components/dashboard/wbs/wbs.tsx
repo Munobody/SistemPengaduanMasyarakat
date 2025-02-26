@@ -37,7 +37,15 @@ const WBSReportForm = () => {
   const [isStatementChecked, setIsStatementChecked] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalType, setModalType] = useState('');
-  
+  const [formData, setFormData] = useState({
+    judul: '',
+    deskripsi: '',
+    lokasi: '',
+    pihakTerlibat: '',
+    kategoriId: '',
+    tanggalKejadian: dayjs().format('YYYY-MM-DD'),
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -67,36 +75,90 @@ const WBSReportForm = () => {
     setOpenModal(true);
   };
 
-const handleConfirm = () => {
-  if (modalType === 'anonymous') {
-    setIsAnonymous(true);
-  } else if (modalType === 'statement') {
-    setIsStatementChecked(true);
-  }
-  setOpenModal(false);
-};
+  const handleConfirm = () => {
+    if (modalType === 'anonymous') {
+      setIsAnonymous(true);
+    } else if (modalType === 'statement') {
+      setIsStatementChecked(true);
+    }
+    setOpenModal(false);
+  };
 
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setFile(event.target.files[0]);
+    }
+  };
 
-  const isFormValid =
-    unit &&
-    category &&
-    date &&
-    isAnonymous &&
-    isStatementChecked;
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>) => {
+    const { name, value } = event.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name as string]: value,
+    }));
+  };
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>): void {
-    throw new Error('Function not implemented.');
-  }
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const token = localStorage.getItem("custom-auth-token");
+    console.log("Token yang digunakan:", token);
+
+    if (!token) {
+      toast.error("Anda harus login terlebih dahulu.");
+      return;
+    }
+
+    const data = {
+      ...formData,
+      kategoriId: category,
+      tanggalKejadian: date ? date.format('YYYY-MM-DD') : '',
+    };
+
+    try {
+      const response = await axios.post(`${API_URL}PelaporanWbs`, data, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 200) {
+        toast.success('Laporan berhasil dikirim!');
+      } else {
+        toast.error('Gagal mengirim laporan.');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error('Terjadi kesalahan saat mengirim laporan.');
+    }
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
         <Typography variant="h5" fontWeight="bold" gutterBottom>
           SAMPAIKAN PENGADUAN WBS ANDA
         </Typography>
-        <form style={{ width: '60%', display: 'grid', gap: '16px' }}>
-          <TextField label="Judul Laporan" fullWidth required />
-          <TextField label="Isi Laporan" fullWidth multiline rows={4} required />
+        <form onSubmit={handleSubmit} style={{ width: '60%', display: 'grid', gap: '16px' }}>
+          <TextField
+            label="Judul Laporan"
+            fullWidth
+            required
+            name="judul"
+            value={formData.judul}
+            onChange={handleChange}
+          />
+          <TextField
+            label="Isi Laporan"
+            fullWidth
+            multiline
+            rows={4}
+            required
+            name="deskripsi"
+            value={formData.deskripsi}
+            onChange={handleChange}
+          />
           <FormControl fullWidth required>
             <InputLabel>Unit Yang Dilapor</InputLabel>
             <Select value={unit} onChange={(e) => setUnit(e.target.value)}>
@@ -121,8 +183,24 @@ const handleConfirm = () => {
             </Select>
           </FormControl>
 
-          <TextField label="Lokasi Kejadian" fullWidth required InputLabelProps={{ shrink: true }} />
-          <TextField label="Nama Yang Dilaporkan" fullWidth required InputLabelProps={{ shrink: true }} />
+          <TextField
+            label="Lokasi Kejadian"
+            fullWidth
+            required
+            name="lokasi"
+            value={formData.lokasi}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="Nama Yang Dilaporkan"
+            fullWidth
+            required
+            name="pihakTerlibat"
+            value={formData.pihakTerlibat}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+          />
           
           <DatePicker
             label="Tanggal Kejadian"
@@ -139,19 +217,19 @@ const handleConfirm = () => {
 
           {/* RADIO BUTTON DENGAN KONFIRMASI */}
           <FormControl component="fieldset">
-  <RadioGroup>
-    <FormControlLabel
-      value="anonymous"
-      control={<Radio checked={isAnonymous} onChange={() => handleRadioChange('anonymous')} />}
-      label="Rahasia Identitas"
-    />
-    <FormControlLabel
-      value="statement"
-      control={<Radio checked={isStatementChecked} onChange={() => handleRadioChange('statement')} />}
-      label="Saya menyatakan bahwa laporan saya sah dan dapat dipertanggungjawabkan"
-    />
-  </RadioGroup>
-</FormControl>
+            <RadioGroup>
+              <FormControlLabel
+                value="anonymous"
+                control={<Radio checked={isAnonymous} onChange={() => handleRadioChange('anonymous')} />}
+                label="Rahasia Identitas"
+              />
+              <FormControlLabel
+                value="statement"
+                control={<Radio checked={isStatementChecked} onChange={() => handleRadioChange('statement')} />}
+                label="Saya menyatakan bahwa laporan saya sah dan dapat dipertanggungjawabkan"
+              />
+            </RadioGroup>
+          </FormControl>
 
           <Button type="submit" variant="contained" color="warning" fullWidth>
             LAPOR
@@ -162,18 +240,18 @@ const handleConfirm = () => {
 
         {/* MODAL KONFIRMASI */}
         <Dialog open={openModal} onClose={() => setOpenModal(false)}>
-        <DialogTitle>Konfirmasi</DialogTitle>
-        <DialogContent>
-          <Typography>
-            {modalType === 'anonymous' ? 'Apakah Anda yakin ingin merahasiakan identitas Anda?' :
-              'Apakah Anda yakin bahwa laporan ini sah dan dapat dipertanggungjawabkan?'}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenModal(false)} color="error">Tidak</Button>
-          <Button onClick={handleConfirm} color="primary">Iya</Button>
-        </DialogActions>
-      </Dialog>
+          <DialogTitle>Konfirmasi</DialogTitle>
+          <DialogContent>
+            <Typography>
+              {modalType === 'anonymous' ? 'Apakah Anda yakin ingin merahasiakan identitas Anda?' :
+                'Apakah Anda yakin bahwa laporan ini sah dan dapat dipertanggungjawabkan?'}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenModal(false)} color="error">Tidak</Button>
+            <Button onClick={handleConfirm} color="primary">Iya</Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </LocalizationProvider>
   );
