@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   Container,
@@ -25,6 +25,7 @@ export default function PengaduanPage() {
   const [units, setUnits] = useState<string[]>([]);
   const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,14 +66,41 @@ export default function PengaduanPage() {
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
+    let fileUrl = "";
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      try {
+        const uploadResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        if (uploadResponse.status === 200) {
+          fileUrl = uploadResponse.data.content.secure_url;
+        } else {
+          throw new Error("Gagal mengunggah file.");
+        }
+      } catch (error: any) {
+        console.error("Error uploading file:", error.response?.data || error.message);
+        toast.error("Gagal mengunggah file.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    const formData = new FormData(formRef.current!);
     const values = {
       judul: formData.get("title") as string,
       deskripsi: formData.get("description") as string,
-      harapan_pelapor: formData.get("expectation") as string,
-      kategoriId: selectedCategory,
+      status: "PENDING",
       nameUnit: selectedUnit,
-      filePendukung: selectedFile ? await convertFileToBase64(selectedFile) : null,
+      response: "",
+      kategoriId: selectedCategory,
+      filePendukung: fileUrl,
+      filePetugas: "",
     };
 
     console.log("Data yang dikirim:", values);
@@ -89,25 +117,18 @@ export default function PengaduanPage() {
 
       if (response.status === 201) {
         toast.success("Laporan berhasil dikirim!");
-        event.currentTarget.reset();
+        console.log("Laporan berhasil dikirim:", values);
+        formRef.current!.reset();
         setSelectedFile(null);
       } else {
         toast.error("Gagal mengirim laporan.");
       }
     } catch (error: any) {
       console.error("Error submitting form:", error.response?.data || error.message);
+      toast.error("Terjadi kesalahan saat mengirim laporan.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const convertFileToBase64 = (file: File): Promise<string | null> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
   };
 
   return (
@@ -117,7 +138,7 @@ export default function PengaduanPage() {
           <Typography sx={{ pb: 4 }} variant="h5" gutterBottom textAlign="center">
             Form Pengaduan
           </Typography>
-          <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+          <form ref={formRef} onSubmit={handleSubmit} style={{ width: "100%" }}>
             <Grid container spacing={2} direction="column">
               <Grid item xs={12}>
                 <TextField fullWidth label="Judul Laporan" name="title" margin="normal" required />
