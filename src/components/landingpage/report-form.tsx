@@ -61,15 +61,38 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/pengaduan`;
-    
+
       try {
-        const response = await axios.post(apiUrl, values, {
+        let fileUrl = '';
+        if (values.filePendukung) {
+          const formData = new FormData();
+          formData.append('file', values.filePendukung);
+
+          const uploadResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+
+          if (uploadResponse.status === 200) {
+            fileUrl = uploadResponse.data.content.secure_url;
+          } else {
+            throw new Error('Gagal mengunggah file.');
+          }
+        }
+
+        const dataToSend = {
+          ...values,
+          filePendukung: fileUrl,
+        };
+
+        const response = await axios.post(apiUrl, dataToSend, {
           headers: { 'Content-Type': 'application/json' },
         });
       
         if (response.status === 200) {
           toast.success('Laporan berhasil dikirim!');
+          console.log('Laporan berhasil dikirim:', dataToSend);
           resetForm();
+          setFileName('');
         } else {
           toast.error('Gagal mengirim laporan.');
         }
@@ -97,7 +120,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 
         <form onSubmit={formik.handleSubmit}>
           <TextField
-          id='nama'
+            id='nama'
             fullWidth
             label="Nama"
             name="nama"
@@ -111,7 +134,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           />
 
           <TextField
-          id='judul'
+            id='judul'
             fullWidth
             label="Judul Laporan"
             name="judul"
@@ -125,7 +148,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           />
 
           <TextField
-          id='deskripsi'
+            id='deskripsi'
             fullWidth
             label="Isi Laporan"
             name="deskripsi"
@@ -141,7 +164,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           />
 
           <TextField
-          id='no_telphone'
+            id='no_telphone'
             fullWidth
             label="Nomor Whatsapp"
             name="no_telphone"
@@ -173,7 +196,6 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               </MenuItem>
             ))}
           </TextField>
-
 
           <TextField
             id="nameUnit"
