@@ -264,7 +264,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             </Button>
           </Box>
           <Box className="flex justify-end">
-            <Button type="submit" variant="contained" disabled={loading} sx={{ backgroundColor: '#16404D', color: 'white', fontWeight: 'bold', px: 4, py: 1, textTransform: 'none', '&:hover': { backgroundColor: '#A6CDC6' }, fontSize: '1.2rem' }}>
+            <Button type="submit" variant="contained" disabled={loading} sx={{ backgroundColor: '#087163', color: 'white', fontWeight: 'bold', px: 4, py: 1, textTransform: 'none', '&:hover': { backgroundColor: '#A6CDC6' }, fontSize: '1.2rem' }}>
               {loading ? <CircularProgress size={24} color="inherit" /> : 'LAPOR!'}
             </Button>
           </Box>
