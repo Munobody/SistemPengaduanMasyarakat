@@ -8,7 +8,7 @@ interface CardProps {
 
 const InfoCard: React.FC<CardProps> = ({ title, subtitle }) => {
   return (
-    <Card sx={{ width: 280, textAlign: 'center', border: '2px solid #FFC107', boxShadow: 3, borderRadius: 2 }}>
+    <Card sx={{ width: 280, textAlign: 'center', border: '2px solid #4A628A', boxShadow: 3, borderRadius: 2, backgroundColor: '#E0F7FA' }}>
       <CardContent>
         <Typography variant="h5" color="primary" fontWeight="bold">
           {title}
@@ -24,7 +24,7 @@ const InfoCard: React.FC<CardProps> = ({ title, subtitle }) => {
 const ReportSummary: React.FC = () => {
   return (
     <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="100vh" p={4}>
-      <Card sx={{ textAlign: 'center', border: '2px solid #FFC107', boxShadow: 3, borderRadius: 2, p: 4, mb: 6, width: 400 }}>
+      <Card sx={{ textAlign: 'center', border: '2px solid #4A628A', boxShadow: 3, borderRadius: 2, p: 4, mb: 6, width: 400, backgroundColor: '#E0F7FA' }}>
         <CardContent>
           <Typography variant="h6" fontWeight="600" color="black">
             JUMLAH LAPORAN SEKARANG

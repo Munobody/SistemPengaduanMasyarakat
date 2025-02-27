@@ -7,6 +7,7 @@ export const paths = {
     customers: '/dashboard/pengaduan',
     wbs: '/dashboard/wbs',
     settings: '/dashboard/settings',
+    petugas: '/petugas/dashboard',
   },
   errors: { notFound: '/errors/not-found' },
 } as const;

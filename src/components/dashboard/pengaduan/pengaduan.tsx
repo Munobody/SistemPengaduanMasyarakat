@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
@@ -194,7 +192,7 @@ export default function PengaduanPage() {
               </Grid>
             </Grid>
             <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-              <Button type="submit" variant="contained" color="primary" sx={{ width: "30%", py: 1.5 }} disabled={loading}>
+              <Button type="submit" variant="contained" sx={{ width: "30%", py: 1.5, bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }} disabled={loading}>
                 {loading ? "Mengirim..." : "Kirim Laporan"}
               </Button>
             </Box>

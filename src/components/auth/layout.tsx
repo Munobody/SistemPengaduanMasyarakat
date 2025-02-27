@@ -19,7 +19,7 @@ export function Layout({ children }: LayoutProps): React.JSX.Element {
         flexDirection: 'column',
         gridTemplateColumns: '1fr 1fr',
         minHeight: '100vh',
-        backgroundImage: 'url(/assets/bg.png)',
+        backgroundImage: 'url(/assets/bg.svg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

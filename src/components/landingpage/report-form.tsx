@@ -113,7 +113,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         SAMPAIKAN PENGADUAN LAYANAN ANDA
       </Typography>
 
-      <Paper elevation={3} className="p-6 rounded-lg w-full max-w-lg bg-white">
+      <Paper elevation={3} className="p-6 rounded-lg w-full max-w-lg">
         <Typography variant="h5" className="font-bold text-center pb-4 text-black">
           LAPORKAN!
         </Typography>
@@ -240,7 +240,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               }}
               sx={{ mb: 2 }}
             />
-            <Button variant="contained" component="label" sx={{ backgroundColor: '#FBBF24', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#F59E0B' }, px: 4, py: 1, textTransform: 'none' }}>
+            <Button variant="contained" component="label" sx={{ backgroundColor: '#578FCA', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#F59E0B' }, px: 4, py: 1, textTransform: 'none' }}>
               Pilih File
               <input type="file" hidden onChange={(event) => {
                 if (event.target.files && event.target.files[0]) {
@@ -251,7 +251,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             </Button>
           </Box>
           <Box className="flex justify-end">
-            <Button type="submit" variant="contained" disabled={loading} sx={{ backgroundColor: '#FBBF24', color: 'white', fontWeight: 'bold', px: 4, py: 1, textTransform: 'none', '&:hover': { backgroundColor: '#F59E0B' } }}>
+            <Button type="submit" variant="contained" disabled={loading} sx={{ backgroundColor: '#4A628A', color: 'white', fontWeight: 'bold', px: 4, py: 1, textTransform: 'none', '&:hover': { backgroundColor: '#F59E0B' } }}>
               {loading ? <CircularProgress size={24} color="inherit" /> : 'LAPOR!'}
             </Button>
           </Box>

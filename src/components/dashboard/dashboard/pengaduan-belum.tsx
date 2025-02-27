@@ -5,7 +5,7 @@ import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
 import type { SxProps } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import { Receipt as ReceiptIcon } from '@phosphor-icons/react/dist/ssr/Receipt';
+import CampaignIcon from '@mui/icons-material/Campaign';
 
 export interface TotalProfitProps {
   sx?: SxProps;
@@ -24,7 +24,7 @@ export function TotalProfit({ value, sx }: TotalProfitProps): React.JSX.Element 
             <Typography variant="h4">{value}</Typography>
           </Stack>
           <Avatar sx={{ backgroundColor: 'var(--mui-palette-primary-main)', height: '56px', width: '56px' }}>
-            <ReceiptIcon fontSize="var(--icon-fontSize-lg)" />
+            <CampaignIcon fontSize="large" />
           </Avatar>
         </Stack>
       </CardContent>

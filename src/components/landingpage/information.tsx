@@ -10,7 +10,7 @@ const InformasiSection = () => {
       </Typography>
 
       {/* Survey Section */}
-      <Card sx={{ mb: 3, backgroundColor: "#FFEFC8" }}>
+      <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
         <CardContent>
           <Typography variant="h6" sx={{ color: "#1976d2" }}>
             Login
@@ -27,7 +27,7 @@ const InformasiSection = () => {
       </Card>
 
       {/* Layanan UPT TIK */}
-      <Card sx={{ mb: 3, backgroundColor: "#FFEFC8" }}>
+      <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
         <CardContent>
           <Typography variant="h6" sx={{ color: "#1976d2" }}>
             Layanan UPT TIK
@@ -51,7 +51,7 @@ const InformasiSection = () => {
       </Card>
 
       {/* UP3AI Section */}
-      <Card sx={{ mb: 3, backgroundColor: "#FFEFC8" }}>
+      <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
         <CardContent>
           <Typography variant="h6" sx={{ color: "#1976d2" }}>
             UP3AI (Unit Pengembangan Program Pendamping Mata Kuliah Agama Islam)

@@ -10,10 +10,11 @@ export default function LandingPage(): React.JSX.Element {
   return (
     <Box
       sx={{
-        // backgroundImage: 'url(/assets/bg.png)',
-        backgroundSize: 'cover',
+        backgroundImage: 'url(/assets/bg.svg)',
+        backgroundColor: '#E0F7FA', // Tambahkan warna latar belakang di bawah gambar
+        backgroundSize: '100%',
         backgroundPosition: 'center',
-        minHeight: '100vh',
+        height: '100vh',
       }}
     >
       <Box>

@@ -11,7 +11,7 @@ export function Navbar() {
     <nav className="flex items-center justify-between px-6 py-4 bg-transparent">
         <Link href="/" className="flex items-center ml-20">
             <Image 
-                src="/assets/logo-usk.png"  // Update with your actual logo path
+                src="/assets/logo-usk-putih.png"  // Update with your actual logo path
                 alt="Company Logo" 
                 width={160}  // Adjust width as needed
                 height={52}  // Adjust height as needed
@@ -25,7 +25,7 @@ export function Navbar() {
           <Link
             key={item}
             href={`/${item.toLowerCase()}`}
-            className="text-gray-700 hover:text-yellow-400 font-medium transition-colors"
+            className="text-white hover:text-[#79D7BE] font-medium transition-colors"
           >
             {item}
           </Link>
@@ -33,7 +33,7 @@ export function Navbar() {
       </div>
       <div>
         <a href="/dashboard">
-          <button className="px-8 py-4 bg-yellow-400 text-black rounded-xl text-sm font-medium hover:bg-yellow-800 transition-colors shadow-2xl mr-20">
+          <button className="px-8 py-4 bg-[#79D7BE] text-white rounded-xl text-sm font-medium hover:bg-[#3A4F6A] transition-colors shadow-2xl mr-20">
             Sign in
           </button>
         </a>

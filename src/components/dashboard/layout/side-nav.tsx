@@ -40,7 +40,7 @@ export function SideNav(): React.JSX.Element {
         '--SideNav-color': isDayTime ? 'var(--mui-palette-common-black)' : 'var(--mui-palette-white)',
         '--NavItem-color': isDayTime ? 'var(--mui-palette-black)' : 'var(--mui-palette-white)',
         '--NavItem-hover-background': isDayTime ? 'rgba(202, 190, 14, 0.04)' : 'rgba(255, 255, 255, 0.04)',
-        '--NavItem-active-background': isDayTime ? 'var(--mui-palette-primary-main)' : 'var(--mui-palette-primary-dark)',
+        '--NavItem-active-background': '#116A7B', // Ubah warna saat menu dipilih
         '--NavItem-active-color': isDayTime ? 'var(--mui-palette-primary-contrastText)' : 'var(--mui-palette-primary-contrastText)',
         '--NavItem-disabled-color': isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-neutral-400)',
         '--NavItem-icon-color': isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-neutral-600)',

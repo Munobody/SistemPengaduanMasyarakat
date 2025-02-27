@@ -20,7 +20,6 @@ import { authClient } from '@/lib/auth/client';
 import { useUsers } from '@/hooks/use-user';
 import Link from 'next/link';
 
-
 type Values = {
   no_identitas: string;
   password: string;
@@ -103,7 +102,7 @@ export function SignInForm(): React.JSX.Element {
             }}
             render={({ field: { onChange, value, ...field } }) => (
               <FormControl error={Boolean(errors.no_identitas)}>
-                <InputLabel>NPM/NIP</InputLabel>
+                <InputLabel sx={{ color: 'black', '&.Mui-focused': { color: 'black' } }}>NPM/NIP</InputLabel>
                 <OutlinedInput
                   {...field}
                   value={value === undefined ? '' : value} // Keep it as string
@@ -113,6 +112,12 @@ export function SignInForm(): React.JSX.Element {
                   }}
                   label="NPM/NIP"
                   type="text" // Change to text
+                  sx={{
+                    backgroundColor: 'white', // Set background color to white
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#DFF2EB', // Set border color when focused
+                    },
+                  }}
                 />
                 {errors.no_identitas && <FormHelperText>{errors.no_identitas.message}</FormHelperText>}
               </FormControl>
@@ -124,7 +129,7 @@ export function SignInForm(): React.JSX.Element {
             rules={{ required: 'Password wajib diisi' }}
             render={({ field }) => (
               <FormControl error={Boolean(errors.password)}>
-                <InputLabel>Password</InputLabel>
+                <InputLabel sx={{ color: 'black', '&.Mui-focused': { color: 'black' } }}>Password</InputLabel>
                 <OutlinedInput
                   {...field}
                   endAdornment={
@@ -148,6 +153,12 @@ export function SignInForm(): React.JSX.Element {
                   }
                   label="Password"
                   type={showPassword ? 'text' : 'password'}
+                  sx={{
+                    backgroundColor: 'white', // Set background color to white
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#DFF2EB', // Set border color when focused
+                    },
+                  }}
                 />
                 {errors.password && <FormHelperText>{errors.password.message}</FormHelperText>}
               </FormControl>
@@ -159,16 +170,16 @@ export function SignInForm(): React.JSX.Element {
             type="submit"
             variant="contained"
             sx={{
-              bgcolor: '#FFCC28',
+              bgcolor: '#79D7BE',
               color: '#000',
-              '&:hover': { bgcolor: '#FFE082'}
+              '&:hover': { bgcolor: '#B9E5E8'}
             }}
           >
             {isPending ? 'Sedang Masuk...' : 'Masuk'}
           </Button>
         </Stack>
       </form>
-      <Alert color="warning">
+      <Alert sx={{ backgroundColor: '#D1F8EF' }}>
         Gunakan NIP untuk{' '}
         <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
           Dosen dan Staff
