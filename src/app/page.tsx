@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import { ColourfulTextDemo } from '@/components/landingpage/colourfulltext';
 import { Navbar } from '@/components/landingpage/navbar';
 import ReportSummary from '@/components/landingpage/info-card';
@@ -8,61 +8,63 @@ import InformasiSection from '@/components/landingpage/information';
 
 export default function LandingPage(): React.JSX.Element {
   return (
-    <Box
-      sx={{
-        backgroundImage: 'url(/assets/bg.svg)',
-        backgroundColor: '#E0F7FA', // Tambahkan warna latar belakang di bawah gambar
-        backgroundSize: '100%',
-        backgroundPosition: 'center',
-        height: '100vh',
-      }}
-    >
-      <Box>
-        <Navbar />
-      </Box>
+    <Box>
       <Box
         sx={{
-          display: 'flex',
+          display: { xs: 'flex' },
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          mt: 30,
-          textShadow: '2px 2px 5px rgb(255, 255, 255)',
+          gridTemplateColumns: '1fr 1fr',
+          minHeight: { xs: "50vh", md: "100vh" },
+          backgroundImage: 'url(/assets/bg-1.svg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
-        <ColourfulTextDemo />
-        <Box sx={{ mt: 20 }}></Box>
+        <Navbar />
+        <Container maxWidth="lg" sx={{ textAlign: 'center', mt: { xs: 10, md: 30 }, flexGrow: 1 }}>
+          <ColourfulTextDemo />
+        </Container>
       </Box>
-      <Box>
-        <ReportSummary />
+      <Box 
+        // sx={{
+        //   display: { xs: 'flex' },
+        //   flexDirection: 'column',
+        //   gridTemplateColumns: '1fr 1fr',
+        //   // background: 'linear-gradient(to bottom, #08554B 0%, #098475 50%, rgba(255, 255, 255, 0.9) 90%, white 100%)',
+        //   backgroundSize: 'cover',
+        //   backgroundPosition: 'center',
+        // }}
+        >
+          <ReportSummary />
       </Box>
-      <Box>
         <ReportForm />
-      </Box>
-      <Box>
+      
+      <Container maxWidth="lg" sx={{ mt: { xs: 5, md: 10 }, px: { xs: 2, md: 0 }, flexGrow: 1 }}>
         <InformasiSection />
-      </Box>
+      </Container>
       
       {/* Footer */}
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
           alignItems: 'center',
           mt: 10,
           pb: 5,
-          borderTop: '1px solid black', // Changed to solid black border
+          borderTop: '1px solid black',
           pt: 2,
           px: 5,
+          textAlign: 'center',
+          flexShrink: 0,
         }}
       >
         <Box
           sx={{
-            color: '#00000',
-            fontSize: '1 rem',
+            color: '#000',
+            fontSize: '1rem',
             fontWeight: 'bold',
-            textAlign: 'center',
+            mb: { xs: 2, md: 0 },
           }}
         >
           © 2025 Sistem Pelaporan & Pengaduan Masyarakat

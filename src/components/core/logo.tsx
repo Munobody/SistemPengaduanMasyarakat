@@ -16,12 +16,15 @@ export interface LogoProps {
   emblem?: boolean;
   height?: number;
   width?: number;
+  src?: string; // Add src prop
 }
 
-export function Logo({ color = 'dark', emblem, height = HEIGHT, width = WIDTH }: LogoProps): React.JSX.Element {
+export function Logo({ color = 'dark', emblem, height = HEIGHT, width = WIDTH, src }: LogoProps): React.JSX.Element {
   let url: string;
 
-  if (emblem) {
+  if (src) {
+    url = src;
+  } else if (emblem) {
     url = color === 'light' ? '/assets/logo-emblem.svg' : '/assets/logo-emblem--dark.svg';
   } else {
     url = color === 'light' ? '/assets/logo-usk.png' : '/assets/logo--dark.svg';

@@ -113,7 +113,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         SAMPAIKAN PENGADUAN LAYANAN ANDA
       </Typography>
 
-      <Paper elevation={3} className="p-6 rounded-lg w-full max-w-lg">
+      <Paper elevation={3} className="p-6 rounded-lg w-full" sx={{ maxWidth: { xs: '100%', md: '800px' }, p: { xs: 4, md: 6 } }}>
         <Typography variant="h5" className="font-bold text-center pb-4 text-black">
           LAPORKAN!
         </Typography>
@@ -125,7 +125,9 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             label="Nama"
             name="nama"
             variant="outlined"
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, fontSize: '1.2rem', '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' }, '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' } }}
+            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
+            InputProps={{ style: { fontSize: '1.2rem' } }}
             value={formik.values.nama}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -139,7 +141,9 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             label="Judul Laporan"
             name="judul"
             variant="outlined"
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, fontSize: '1.2rem', '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' }, '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' } }}
+            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
+            InputProps={{ style: { fontSize: '1.2rem' } }}
             value={formik.values.judul}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -155,7 +159,9 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             variant="outlined"
             multiline
             rows={4}
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, fontSize: '1.2rem', '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' }, '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' } }}
+            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
+            InputProps={{ style: { fontSize: '1.2rem' } }}
             value={formik.values.deskripsi}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -169,7 +175,9 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             label="Nomor Whatsapp"
             name="no_telphone"
             variant="outlined"
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, fontSize: '1.2rem', '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' }, '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' } }}
+            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
+            InputProps={{ style: { fontSize: '1.2rem' } }}
             value={formik.values.no_telphone}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -188,7 +196,9 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             onBlur={formik.handleBlur}
             error={formik.touched.kategoriId && Boolean(formik.errors.kategoriId)}
             helperText={formik.touched.kategoriId && formik.errors.kategoriId}
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, fontSize: '1.2rem', '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' }, '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' } }}
+            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
+            InputProps={{ style: { fontSize: '1.2rem' } }}
           >
             {categories.map((category) => (
               <MenuItem key={category.id} value={category.id}>
@@ -208,7 +218,9 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             onBlur={formik.handleBlur}
             error={formik.touched.nameUnit && Boolean(formik.errors.nameUnit)}
             helperText={formik.touched.nameUnit && formik.errors.nameUnit}
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, fontSize: '1.2rem', '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' }, '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' } }}
+            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
+            InputProps={{ style: { fontSize: '1.2rem' } }}
           >
             {units.map((unit) => (
               <MenuItem key={unit} value={unit}>
@@ -238,9 +250,10 @@ const ReportForm: React.FC = (): React.JSX.Element => {
                   </IconButton>
                 ),
               }}
-              sx={{ mb: 2 }}
+              sx={{ mb: 2, fontSize: '1.2rem', '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' }, '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' } }}
+              InputLabelProps={{ style: { fontSize: '1.2rem' } }}
             />
-            <Button variant="contained" component="label" sx={{ backgroundColor: '#578FCA', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#F59E0B' }, px: 4, py: 1, textTransform: 'none' }}>
+            <Button variant="contained" component="label" sx={{ backgroundColor: '#578FCA', color: 'white', fontWeight: 'bold', '&:hover': { backgroundColor: '#7AB2D3' }, px: 4, py: 1, textTransform: 'none', fontSize: '1.2rem' }}>
               Pilih File
               <input type="file" hidden onChange={(event) => {
                 if (event.target.files && event.target.files[0]) {
@@ -251,7 +264,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             </Button>
           </Box>
           <Box className="flex justify-end">
-            <Button type="submit" variant="contained" disabled={loading} sx={{ backgroundColor: '#4A628A', color: 'white', fontWeight: 'bold', px: 4, py: 1, textTransform: 'none', '&:hover': { backgroundColor: '#F59E0B' } }}>
+            <Button type="submit" variant="contained" disabled={loading} sx={{ backgroundColor: '#16404D', color: 'white', fontWeight: 'bold', px: 4, py: 1, textTransform: 'none', '&:hover': { backgroundColor: '#A6CDC6' }, fontSize: '1.2rem' }}>
               {loading ? <CircularProgress size={24} color="inherit" /> : 'LAPOR!'}
             </Button>
           </Box>

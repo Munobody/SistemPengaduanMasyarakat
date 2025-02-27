@@ -21,30 +21,27 @@ import { useUsers } from '@/hooks/use-user';
 export function SideNav(): React.JSX.Element {
   const pathname = usePathname();
   const { user } = useUsers();
-
-  const filteredNavItems = navItems.filter((item) => user?.role && item.roles?.includes(user.role));
-
-  // State untuk menentukan apakah saat ini siang atau malam
   const [isDayTime, setIsDayTime] = React.useState(true);
 
-  // Gunakan useEffect untuk mengatur state berdasarkan waktu saat ini
   React.useEffect(() => {
     const hour = new Date().getHours();
-    setIsDayTime(hour >= 6 && hour < 18); // Siang antara jam 6 pagi dan 6 sore
+    setIsDayTime(hour >= 6 && hour < 18);
   }, []);
+
+  const filteredNavItems = navItems.filter((item) => user?.role && item.roles?.includes(user.role));
 
   return (
     <Box
       sx={{
-        '--SideNav-background': isDayTime ? 'var(--mui-palette-white)' : 'var(--mui-palette-common-black)',
+        '--SideNav-background': isDayTime ? 'var(--mui-palette-white)' : '#27445D',
         '--SideNav-color': isDayTime ? 'var(--mui-palette-common-black)' : 'var(--mui-palette-white)',
         '--NavItem-color': isDayTime ? 'var(--mui-palette-black)' : 'var(--mui-palette-white)',
         '--NavItem-hover-background': isDayTime ? 'rgba(202, 190, 14, 0.04)' : 'rgba(255, 255, 255, 0.04)',
-        '--NavItem-active-background': '#116A7B', // Ubah warna saat menu dipilih
-        '--NavItem-active-color': isDayTime ? 'var(--mui-palette-primary-contrastText)' : 'var(--mui-palette-primary-contrastText)',
+        '--NavItem-active-background': '#116A7B',
+        '--NavItem-active-color': 'var(--mui-palette-primary-contrastText)',
         '--NavItem-disabled-color': isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-neutral-400)',
-        '--NavItem-icon-color': isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-neutral-600)',
-        '--NavItem-icon-active-color': isDayTime ? 'var(--mui-palette-primary-contrastText)' : 'var(--mui-palette-primary-contrastText)',
+        '--NavItem-icon-color': isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-white)',
+        '--NavItem-icon-active-color': 'var(--mui-palette-primary-contrastText)',
         '--NavItem-icon-disabled-color': isDayTime ? 'var(--mui-palette-neutral-600)' : 'var(--mui-palette-neutral-500)',
         bgcolor: 'var(--SideNav-background)',
         color: 'var(--SideNav-color)',
@@ -63,22 +60,26 @@ export function SideNav(): React.JSX.Element {
     >
       <Stack spacing={2} sx={{ p: 3, alignItems: 'center' }}>
         <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
-          <Logo color="light" height={56} width={122} />
+          <Logo 
+            src={isDayTime ? "/assets/logo-usk.png" : "/assets/logo-usk-putih.png"}
+            height={70} 
+            width={122} 
+          />
         </Box>
       </Stack>
       <Divider sx={{ borderColor: 'var(--mui-palette-yellow-700)' }} />
       <Box component="nav" sx={{ flex: '1 1 auto', p: '12px' }}>
-        {renderNavItems({ pathname, items: filteredNavItems })}
+        {renderNavItems({ pathname, items: filteredNavItems, isDayTime })}
       </Box>
     </Box>
   );
 }
 
-function renderNavItems({ items = [], pathname }: { items?: NavItemConfig[]; pathname: string }): React.JSX.Element {
+function renderNavItems({ items = [], pathname, isDayTime }: { items?: NavItemConfig[]; pathname: string; isDayTime: boolean }): React.JSX.Element {
   const children = items.reduce((acc: React.ReactNode[], curr: NavItemConfig): React.ReactNode[] => {
     const { key, ...item } = curr;
 
-    acc.push(<NavItem key={key} pathname={pathname} {...item} />);
+    acc.push(<NavItem key={key} pathname={pathname} isDayTime={isDayTime} {...item} />);
 
     return acc;
   }, []);
@@ -92,9 +93,10 @@ function renderNavItems({ items = [], pathname }: { items?: NavItemConfig[]; pat
 
 interface NavItemProps extends Omit<NavItemConfig, 'items'> {
   pathname: string;
+  isDayTime: boolean;
 }
 
-function NavItem({ disabled, external, href, icon, matcher, pathname, title }: NavItemProps): React.JSX.Element {
+function NavItem({ disabled, external, href, icon, matcher, pathname, title, isDayTime }: NavItemProps): React.JSX.Element {
   const active = isNavItemActive({ disabled, external, href, matcher, pathname });
   const Icon = icon ? navIcons[icon] : null;
 
@@ -132,7 +134,7 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title }: N
         <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>
           {Icon ? (
             <Icon
-              fill={active ? 'var(--NavItem-icon-active-color)' : 'var(--NavItem-icon-color)'}
+              fill={active ? 'var(--NavItem-icon-active-color)' : isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-white)'}
               fontSize="var(--icon-fontSize-md)"
               weight={active ? 'fill' : undefined}
             />
