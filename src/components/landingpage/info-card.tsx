@@ -119,7 +119,7 @@ const ReportSummary: React.FC = () => {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center" p={4}>
-      <Typography variant="h2" fontWeight="bold" color="white" sx={{ textAlign: 'center' }} mb={4}>
+      <Typography variant="h4" fontWeight="bold" color="black" sx={{ textAlign: 'center' }} mb={4}>
         JUMLAH LAPORAN PENGADUAN
       </Typography>
       <Card sx={{ textAlign: 'center', border: '2px solid #4A628A', boxShadow: 3, borderRadius: 2, p: 4, mb: 6, width: '100%', maxWidth: 400, backgroundColor: '#E0F7FA' }}>

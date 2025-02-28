@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Box, Container } from '@mui/material';
-import { ColourfulTextDemo } from '@/components/landingpage/colourfulltext';
+import { Box, Container, Typography } from '@mui/material';
+
 import { Navbar } from '@/components/landingpage/navbar';
 import ReportSummary from '@/components/landingpage/info-card';
 import ReportForm from '@/components/landingpage/report-form';
@@ -11,9 +11,8 @@ export default function LandingPage(): React.JSX.Element {
     <Box>
       <Box
         sx={{
-          display: { xs: 'flex' },
+          display: 'flex',
           flexDirection: 'column',
-          gridTemplateColumns: '1fr 1fr',
           minHeight: { xs: "50vh", md: "100vh" },
           backgroundImage: 'url(/assets/bg-1.svg)',
           backgroundSize: 'cover',
@@ -21,29 +20,37 @@ export default function LandingPage(): React.JSX.Element {
         }}
       >
         <Navbar />
-        <Container maxWidth="lg" sx={{ textAlign: 'center', mt: { xs: 10, md: 30 }, flexGrow: 1 }}>
-          <ColourfulTextDemo />
-        </Container>
-      </Box>
-      <Box 
-        // sx={{
-        //   display: { xs: 'flex' },
-        //   flexDirection: 'column',
-        //   gridTemplateColumns: '1fr 1fr',
-        //   // background: 'linear-gradient(to bottom, #08554B 0%, #098475 50%, rgba(255, 255, 255, 0.9) 90%, white 100%)',
-        //   backgroundSize: 'cover',
-        //   backgroundPosition: 'center',
-        // }}
+        <Box sx={{ textAlign: 'center', mt: { xs: 2, md: 4 }, pt: { xs: 10, md: 20 } }}>
+        <Typography 
+          variant="h4" 
+          fontWeight="700" 
+          color="white" 
+          sx={{ 
+            pt: { xs: 5, md: 0 },
+            fontSize: { xs: '1.5rem', md: '2.5rem' } 
+          }}
         >
-          <ReportSummary />
+          SISTEM PENGADUAN & PELAPORAN MASYARAKAT
+        </Typography>
+        <Typography 
+          variant="h5" 
+          fontWeight="600" 
+          color="white"
+          sx={{ 
+            fontSize: { xs: '1.25rem', md: '2.25rem' } 
+          }}
+        >
+          UNIVERSITAS SYIAH KUALA
+        </Typography>
+        </Box>
       </Box>
-        <ReportForm />
-      
+      <Box>
+        <ReportSummary />
+      </Box>
+      <ReportForm />
       <Container maxWidth="lg" sx={{ mt: { xs: 5, md: 10 }, px: { xs: 2, md: 0 }, flexGrow: 1 }}>
         <InformasiSection />
       </Container>
-      
-      {/* Footer */}
       <Box
         sx={{
           display: 'flex',

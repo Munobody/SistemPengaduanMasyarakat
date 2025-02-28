@@ -86,8 +86,8 @@ export function SignInForm(): React.JSX.Element {
         </Link>
       </Box>
       <Stack spacing={1}>
-        <Typography className='text-center text-black' variant="h2">Welcome</Typography>
-        <Typography className='text-center text-black' variant="h5">Sistem Pengaduan & Layanan USK</Typography>
+        <Typography className='text-center text-white pt-2' variant="h2">Welcome</Typography>
+        <Typography className='text-center text-white pt-2' variant="h5">Sistem Pengaduan & Layanan USK</Typography>
       </Stack>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
