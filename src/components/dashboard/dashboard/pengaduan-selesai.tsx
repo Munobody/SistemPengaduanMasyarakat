@@ -8,12 +8,12 @@ import type { SxProps } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 
-export interface TasksProgressProps {
+export interface PengaduanSelesaiProps {
   sx?: SxProps;
   value: number;
 }
 
-export function ReportPending({ value, sx }: TasksProgressProps): React.JSX.Element {
+export function PengaduanSelesa({ value, sx }: PengaduanSelesaiProps): React.JSX.Element {
   return (
     <Card sx={sx}>
       <CardContent>

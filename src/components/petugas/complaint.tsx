@@ -32,10 +32,8 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import axios from "axios";
 import dayjs from "dayjs";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-export interface Complaint {
+export interface Tabel {
   id: string;
   title: string;
   content: string;
@@ -46,98 +44,62 @@ export interface Complaint {
   status: string;
 }
 
-export function LatestComplaints() {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
+export function TabelPetugas() {
+  const [complaints, setComplaints] = useState<Tabel[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedRow, setSelectedRow] = useState<Complaint | null>(null);
+  const [selectedRow, setSelectedRow] = useState<Tabel | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
-  const [editedComplaint, setEditedComplaint] = useState<Complaint | null>(null);
-  const [units, setUnits] = useState<string[]>([]);
-  const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
+  const [editedComplaint, setEditedComplaint] = useState<Tabel | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalData, setTotalData] = useState(0);
 
-  // Fetch units and categories
+  // Fetch data from API
   useEffect(() => {
-    const fetchUnitsAndCategories = async () => {
+    const fetchComplaints = async () => {
       try {
+        console.log("Fetching complaints...");
         const token = localStorage.getItem("custom-auth-token");
         if (!token) {
-          toast.error("Anda harus login terlebih dahulu.");
+          console.error("No token found in localStorage");
           return;
         }
 
-        const [unitResponse, categoryResponse] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/units`, {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/pelaporan?page=${page}&rows=${pageSize}`,
+          {
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
-          }),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/kategori`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-        ]);
+          }
+        );
 
-        const unitList = unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || [];
-        const categoryList = categoryResponse.data?.content?.entries.map((category: { id: string; nama: string }) => ({ id: category.id, nama: category.nama })) || [];
+        const data = response.data;
+        console.log("API Response:", data);
 
-        setUnits(unitList);
-        setCategories(categoryList);
-      } catch (error: any) {
-        console.error("Error fetching units and categories:", error);
-        toast.error(error.response?.data?.message || "Gagal memuat data unit dan kategori.");
+        if (data?.content?.entries) {
+          setComplaints(
+            data.content.entries.map((entry: any) => ({
+              id: entry.id,
+              title: entry.judul || "Tidak Ada Judul",
+              content: entry.deskripsi || "Tidak Ada Deskripsi",
+              date: dayjs(entry.createdAt).format("MMM D, YYYY"),
+              category: entry.kategori?.nama || "Tidak Ada",
+              targetUnit: entry.unit?.nama_unit || "Tidak Ada",
+              complaintType: "Belum Ditentukan",
+              status: entry.status || "UNKNOWN",
+            }))
+          );
+          setTotalData(data.content.totalData || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching complaints:", error);
       }
     };
 
-    fetchUnitsAndCategories();
-  }, []);
-
-  // Fetch complaints
-  const fetchComplaints = async () => {
-    try {
-      const token = localStorage.getItem("custom-auth-token");
-      if (!token) {
-        toast.error("Anda harus login terlebih dahulu.");
-        return;
-      }
-
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/pelaporan?page=${page}&rows=${pageSize}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = response.data;
-      if (data?.content?.entries) {
-        setComplaints(
-          data.content.entries.map((entry: any) => ({
-            id: entry.id,
-            title: entry.judul || "Tidak Ada Judul",
-            content: entry.deskripsi || "Tidak Ada Deskripsi",
-            date: dayjs(entry.createdAt).format("MMM D, YYYY"),
-            category: entry.kategori?.nama || "Tidak Ada",
-            targetUnit: entry.unit?.nama_unit || "Tidak Ada",
-            complaintType: "Belum Ditentukan",
-            status: entry.status || "PENDING",
-          }))
-        );
-        setTotalData(data.content.totalData || 0);
-      }
-    } catch (error: any) {
-      console.error("Error fetching complaints:", error);
-      toast.error(error.response?.data?.message || "Gagal memuat data pengaduan.");
-    }
-  };
-
-  useEffect(() => {
     fetchComplaints();
   }, [page, pageSize]);
 
@@ -158,6 +120,7 @@ export function LatestComplaints() {
     },
     { field: "category", headerName: "Kategori", flex: 1, headerAlign: "center", align: "center" },
     { field: "targetUnit", headerName: "Unit Tertuju", flex: 1, headerAlign: "center", align: "center" },
+    { field: "complaintType", headerName: "Jenis Pengaduan", flex: 1, headerAlign: "center", align: "center" },
     {
       field: "status",
       headerName: "Status",
@@ -168,10 +131,7 @@ export function LatestComplaints() {
         <Chip
           label={params.value}
           sx={{
-            backgroundColor: 
-              params.value === "PENDING" ? "#F59E0B" : 
-              params.value === "PROSES" ? "#3B82F6" :
-              params.value === "SELESAI" ? "#10B981" : "#EF4444",
+            backgroundColor: params.value === "PENDING" ? "#F59E0B" : "#14B8A6",
             color: "white",
           }}
         />
@@ -212,7 +172,7 @@ export function LatestComplaints() {
     },
   ];
 
-  const handleViewOpen = (row: Complaint) => {
+  const handleViewOpen = (row: Tabel) => {
     setSelectedRow(row);
     setViewOpen(true);
   };
@@ -222,39 +182,9 @@ export function LatestComplaints() {
     setSelectedRow(null);
   };
 
-  const handleEditOpen = async (row: Complaint) => {
-    try {
-      const token = localStorage.getItem("custom-auth-token");
-      if (!token) {
-        toast.error("Anda harus login terlebih dahulu.");
-        return;
-      }
-
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = response.data.content;
-      setEditedComplaint({
-        id: data.id,
-        title: data.judul || "Tidak Ada Judul",
-        content: data.deskripsi || "Tidak Ada Deskripsi",
-        date: dayjs(data.createdAt).format("MMM D, YYYY"),
-        category: data.kategori?.id || "",
-        targetUnit: data.unit?.nama_unit || "",
-        complaintType: "Belum Ditentukan",
-        status: data.status || "PENDING",
-      });
-      setEditOpen(true);
-    } catch (error: any) {
-      console.error("Error fetching complaint details:", error);
-      toast.error(error.response?.data?.message || "Gagal memuat detail pengaduan.");
-    }
+  const handleEditOpen = (row: Tabel) => {
+    setEditedComplaint(row);
+    setEditOpen(true);
   };
 
   const handleEditClose = () => {
@@ -262,48 +192,10 @@ export function LatestComplaints() {
     setEditedComplaint(null);
   };
 
-  const handleSaveChanges = async () => {
-    if (!editedComplaint) return;
-
-    try {
-      const token = localStorage.getItem("custom-auth-token");
-      if (!token) {
-        toast.error("Anda harus login terlebih dahulu.");
-        return;
-      }
-
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${editedComplaint.id}`,
-        {
-          judul: editedComplaint.title,
-          deskripsi: editedComplaint.content,
-          kategoriId: editedComplaint.category,
-          nameUnit: editedComplaint.targetUnit,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        toast.success("Pengaduan berhasil diperbarui!");
-        setEditOpen(false);
-        setEditedComplaint(null);
-        fetchComplaints(); // Refresh the complaints list
-      }
-    } catch (error: any) {
-      console.error("Error updating complaint:", error);
-      toast.error(error.response?.data?.message || "Gagal memperbarui pengaduan.");
-    }
-  };
-
   const handleExportCSV = () => {
     const csvContent = [
-      ["Judul Laporan", "Isi Laporan", "Tanggal", "Kategori", "Unit Tertuju", "Status"],
-      ...complaints.map((c) => [c.title, c.content, c.date, c.category, c.targetUnit, c.status]),
+      ["Judul Laporan", "Isi Laporan", "Tanggal", "Kategori", "Unit Tertuju", "Jenis Pengaduan", "Status"],
+      ...complaints.map((c) => [c.title, c.content, c.date, c.category, c.targetUnit, c.complaintType, c.status]),
     ]
       .map((e) => e.join(","))
       .join("\n");
@@ -317,7 +209,7 @@ export function LatestComplaints() {
 
   return (
     <Card>
-      <CardHeader title="Tabel Pengaduan Saya" sx={{ textAlign: "center" }} />
+      <CardHeader title="Tabel Pengaduan Masuk" sx={{ textAlign: "center" }} />
       <Divider />
       <Box sx={{ p: 2, display: "flex", justifyContent: "space-between" }}>
         <TextField
@@ -377,6 +269,10 @@ export function LatestComplaints() {
                     <TableCell>{selectedRow.targetUnit}</TableCell>
                   </TableRow>
                   <TableRow>
+                    <TableCell><strong>Jenis Pengaduan</strong></TableCell>
+                    <TableCell>{selectedRow.complaintType}</TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell><strong>Status</strong></TableCell>
                     <TableCell>{selectedRow.status}</TableCell>
                   </TableRow>
@@ -415,8 +311,6 @@ export function LatestComplaints() {
                       <TextField
                         fullWidth
                         margin="dense"
-                        multiline
-                        rows={4}
                         value={editedComplaint.content}
                         onChange={(e) => setEditedComplaint({ ...editedComplaint, content: e.target.value })}
                       />
@@ -427,17 +321,10 @@ export function LatestComplaints() {
                     <TableCell>
                       <TextField
                         fullWidth
-                        select
                         margin="dense"
                         value={editedComplaint.category}
                         onChange={(e) => setEditedComplaint({ ...editedComplaint, category: e.target.value })}
-                      >
-                        {categories.map((option) => (
-                          <MenuItem key={option.id} value={option.id}>
-                            {option.nama}
-                          </MenuItem>
-                        ))}
-                      </TextField>
+                      />
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -445,17 +332,21 @@ export function LatestComplaints() {
                     <TableCell>
                       <TextField
                         fullWidth
-                        select
                         margin="dense"
                         value={editedComplaint.targetUnit}
                         onChange={(e) => setEditedComplaint({ ...editedComplaint, targetUnit: e.target.value })}
-                      >
-                        {units.map((option) => (
-                          <MenuItem key={option} value={option}>
-                            {option}
-                          </MenuItem>
-                        ))}
-                      </TextField>
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell><strong>Jenis Pengaduan</strong></TableCell>
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        margin="dense"
+                        value={editedComplaint.complaintType}
+                        onChange={(e) => setEditedComplaint({ ...editedComplaint, complaintType: e.target.value })}
+                      />
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -465,10 +356,7 @@ export function LatestComplaints() {
                         fullWidth
                         margin="dense"
                         value={editedComplaint.status}
-                        disabled
-                        InputProps={{
-                          readOnly: true,
-                        }}
+                        onChange={(e) => setEditedComplaint({ ...editedComplaint, status: e.target.value })}
                       />
                     </TableCell>
                   </TableRow>
@@ -479,12 +367,9 @@ export function LatestComplaints() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditClose}>Batal</Button>
-          <Button onClick={handleSaveChanges} variant="contained" color="primary">
-            Simpan
-          </Button>
+          <Button onClick={() => { /* Tambahkan logika untuk menyimpan perubahan */ }}>Simpan</Button>
         </DialogActions>
       </Dialog>
-      <ToastContainer position="top-right" autoClose={3000} />
     </Card>
   );
 }

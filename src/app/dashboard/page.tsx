@@ -5,10 +5,10 @@ import dayjs from 'dayjs';
 
 import { config } from '@/config';
 import { ReportUniv } from '@/components/dashboard/dashboard/report-univ';
-import { ReportPending } from '@/components/dashboard/dashboard/pengaduan-selesai';
-import { TotalProfit } from '@/components/dashboard/dashboard/pengaduan-belum';
 import { LatestComplaints } from '@/components/dashboard/dashboard/complaint';
 import { PengaduanSaya } from '@/components/dashboard/dashboard/pengaduan';
+import { PengaduanSelesa } from '@/components/dashboard/dashboard/pengaduan-selesai';
+import { PengaduanBelumSelesai } from '@/components/dashboard/dashboard/pengaduan-belum';
 
 export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
 
@@ -23,10 +23,10 @@ export default function Page(): React.JSX.Element {
         <PengaduanSaya sx={{ height: '100%' }} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <ReportPending sx={{ height: '100%' }} value={7} />
+        <PengaduanSelesa sx={{ height: '100%' }} value={7} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <TotalProfit sx={{ height: '100%' }} value="20" />
+        <PengaduanBelumSelesai sx={{ height: '100%' }} value="20" />
       </Grid>
       <Grid lg={12} md={12} xs={12}>
         <LatestComplaints

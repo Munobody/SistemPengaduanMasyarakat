@@ -4,7 +4,7 @@ export interface User {
   name?: string;
   program_studi?: string;
   email?: string;
-  role?: string;
+  role?: string ;
   unit_id?: string;
 
   [key: string]: unknown;

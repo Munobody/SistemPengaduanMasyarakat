@@ -8,6 +8,8 @@ export const paths = {
     wbs: '/dashboard/wbs',
     settings: '/dashboard/settings',
     petugas: '/petugas/dashboard',
+    kelola: '/petugas/kelola',
+    admin: '/admin/dashboard',
   },
   errors: { notFound: '/errors/not-found' },
 } as const;

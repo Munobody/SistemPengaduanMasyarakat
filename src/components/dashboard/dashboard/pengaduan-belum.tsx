@@ -7,12 +7,12 @@ import type { SxProps } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import CampaignIcon from '@mui/icons-material/Campaign';
 
-export interface TotalProfitProps {
+export interface PengaduanBelumSelesaiProps {
   sx?: SxProps;
   value: string;
 }
 
-export function TotalProfit({ value, sx }: TotalProfitProps): React.JSX.Element {
+export function PengaduanBelumSelesai({ value, sx }: PengaduanBelumSelesaiProps): React.JSX.Element {
   return (
     <Card sx={sx}>
       <CardContent>
