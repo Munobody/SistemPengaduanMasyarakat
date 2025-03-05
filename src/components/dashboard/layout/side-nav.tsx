@@ -39,10 +39,10 @@ export function SideNav(): React.JSX.Element {
         '--NavItem-hover-background': isDayTime ? 'rgba(202, 190, 14, 0.04)' : 'rgba(255, 255, 255, 0.04)',
         '--NavItem-active-background': '#116A7B',
         '--NavItem-active-color': 'var(--mui-palette-primary-contrastText)',
-        '--NavItem-disabled-color': isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-neutral-400)',
+        '--NavItem-disabled-color': isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-white)',
         '--NavItem-icon-color': isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-white)',
         '--NavItem-icon-active-color': 'var(--mui-palette-primary-contrastText)',
-        '--NavItem-icon-disabled-color': isDayTime ? 'var(--mui-palette-neutral-600)' : 'var(--mui-palette-neutral-500)',
+        '--NavItem-icon-disabled-color': isDayTime ? 'var(--mui-palette-neutral-600)' : 'var(--mui-palette-white)',
         bgcolor: 'var(--SideNav-background)',
         color: 'var(--SideNav-color)',
         display: { xs: 'none', lg: 'flex' },
@@ -102,53 +102,68 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title, isD
 
   return (
     <li>
-      <Box
-        {...(href
-          ? {
-              component: external ? 'a' : RouterLink,
-              href,
-              target: external ? '_blank' : undefined,
-              rel: external ? 'noreferrer' : undefined,
-            }
-          : { role: 'button' })}
-        sx={{
-          alignItems: 'center',
-          borderRadius: 1,
-          color: 'var(--NavItem-color)',
-          cursor: 'pointer',
-          display: 'flex',
-          flex: '0 0 auto',
-          gap: 1,
-          p: '6px 16px',
-          position: 'relative',
-          textDecoration: 'none',
-          whiteSpace: 'nowrap',
-          ...(disabled && {
-            bgcolor: 'var(--NavItem-disabled-background)',
-            color: 'var(--NavItem-disabled-color)',
-            cursor: 'not-allowed',
-          }),
-          ...(active && { bgcolor: 'var(--NavItem-active-background)', color: 'var(--NavItem-active-color)' }),
-        }}
-      >
-        <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>
-          {Icon ? (
-            <Icon
-              fill={active ? 'var(--NavItem-icon-active-color)' : isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-white)'}
-              fontSize="var(--icon-fontSize-md)"
-              weight={active ? 'fill' : undefined}
-            />
-          ) : null}
-        </Box>
-        <Box sx={{ flex: '1 1 auto' }}>
-          <Typography
-            component="span"
-            sx={{ color: 'inherit', fontSize: '0.875rem', fontWeight: 500, lineHeight: '28px' }}
-          >
-            {title}
-          </Typography>
-        </Box>
-      </Box>
+<Box
+  {...(href
+    ? {
+        component: external ? 'a' : RouterLink,
+        href,
+        target: external ? '_blank' : undefined,
+        rel: external ? 'noreferrer' : undefined,
+      }
+    : { role: 'button' })}
+  sx={{
+    alignItems: 'center',
+    borderRadius: 1,
+    color: isDayTime ? 'var(--NavItem-color)' : 'var(--mui-palette-common-white)', // Updated color
+    cursor: 'pointer',
+    display: 'flex',
+    flex: '0 0 auto',
+    gap: 1,
+    p: '6px 16px',
+    position: 'relative',
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+    '&:hover': {
+      bgcolor: 'var(--NavItem-hover-background)',
+    },
+    ...(disabled && {
+      bgcolor: 'var(--NavItem-disabled-background)',
+      color: 'var(--NavItem-disabled-color)',
+      cursor: 'not-allowed',
+    }),
+    ...(active && { 
+      bgcolor: 'var(--NavItem-active-background)', 
+      color: 'var(--NavItem-active-color)' 
+    }),
+  }}
+>
+  <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>
+    {Icon ? (
+      <Icon
+        fill={active 
+          ? 'var(--NavItem-icon-active-color)' 
+          : isDayTime 
+            ? 'var(--mui-palette-neutral-400)' 
+            : 'var(--mui-palette-common-white)'}
+        fontSize="var(--icon-fontSize-md)"
+        weight={active ? 'fill' : undefined}
+      />
+    ) : null}
+  </Box>
+  <Box sx={{ flex: '1 1 auto' }}>
+    <Typography
+      component="span"
+      sx={{ 
+        color: 'inherit',
+        fontSize: '0.875rem', 
+        fontWeight: 500, 
+        lineHeight: '28px'
+      }}
+    >
+      {title}
+    </Typography>
+  </Box>
+</Box>
     </li>
   );
 }
