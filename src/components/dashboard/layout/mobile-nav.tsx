@@ -9,6 +9,8 @@ import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import { ArrowSquareUpRight as ArrowSquareUpRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowSquareUpRight';
 import { CaretUpDown as CaretUpDownIcon } from '@phosphor-icons/react/dist/ssr/CaretUpDown';
 
@@ -30,24 +32,29 @@ export interface MobileNavProps {
 export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element {
   const pathname = usePathname();
   const { user } = useUsers();
+  const [isDayTime, setIsDayTime] = React.useState(true);
+
+  React.useEffect(() => {
+    const hour = new Date().getHours();
+    setIsDayTime(hour >= 6 && hour < 18);
+  }, []);
 
   const filteredNavItems = navItems.filter((item) => user?.role && item.roles?.includes(user.role));
-  
 
   return (
     <Drawer
       PaperProps={{
         sx: {
-          '--MobileNav-background': 'var(--mui-palette-neutral-950)',
-          '--MobileNav-color': 'var(--mui-palette-common-white)',
-          '--NavItem-color': 'var(--mui-palette-neutral-300)',
-          '--NavItem-hover-background': 'rgba(255, 255, 255, 0.04)',
-          '--NavItem-active-background': 'var(--mui-palette-primary-main)',
+          '--MobileNav-background': isDayTime ? 'var(--mui-palette-white)' : '#27445D',
+          '--MobileNav-color': isDayTime ? 'var(--mui-palette-common-black)' : 'var(--mui-palette-common-white)',
+          '--NavItem-color': isDayTime ? 'var(--mui-palette-black)' : 'var(--mui-palette-common-white)',
+          '--NavItem-hover-background': isDayTime ? 'rgba(202, 190, 14, 0.04)' : 'rgba(255, 255, 255, 0.04)',
+          '--NavItem-active-background': '#116A7B',
           '--NavItem-active-color': 'var(--mui-palette-primary-contrastText)',
-          '--NavItem-disabled-color': 'var(--mui-palette-neutral-500)',
-          '--NavItem-icon-color': 'var(--mui-palette-neutral-400)',
+          '--NavItem-disabled-color': isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-white)',
+          '--NavItem-icon-color': isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-common-white)',
           '--NavItem-icon-active-color': 'var(--mui-palette-primary-contrastText)',
-          '--NavItem-icon-disabled-color': 'var(--mui-palette-neutral-600)',
+          '--NavItem-icon-disabled-color': isDayTime ? 'var(--mui-palette-neutral-600)' : 'var(--mui-palette-white)',
           bgcolor: 'var(--MobileNav-background)',
           color: 'var(--MobileNav-color)',
           display: 'flex',
@@ -62,38 +69,46 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
       onClose={onClose}
       open={open}
     >
-      <Stack spacing={2} sx={{ p: 3 }}>
-        <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
-          <Logo color="light" height={32} width={122} />
-        </Box>
-        <Box
+      <Box sx={{ position: 'relative' }}>
+        <IconButton
+          onClick={onClose}
           sx={{
-            alignItems: 'center',
-            backgroundColor: 'var(--mui-palette-neutral-950)',
-            border: '1px solid var(--mui-palette-neutral-700)',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            display: 'flex',
-            p: '4px 12px',
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-common-white)',
+            '&:hover': {
+              backgroundColor: isDayTime ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.08)',
+            },
           }}
         >
-        </Box>
-      </Stack>
-      <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
-      <Box component="nav" sx={{ flex: '1 1 auto', p: '12px' }}>
-      {renderNavItems({ pathname, items: filteredNavItems })}
+          <CloseIcon />
+        </IconButton>
+        <Stack spacing={2} sx={{ p: 3, alignItems: 'left' }}>
+          <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
+            <Logo 
+              src={isDayTime ? "/assets/logo-usk.png" : "/assets/logo-usk-putih.png"}
+              height={80} 
+              width={127} 
+            />
+          </Box>
+        </Stack>
       </Box>
-      <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
+      <Divider sx={{ 
+        borderColor: isDayTime ? 'var(--mui-palette-yellow-700)' : 'var(--mui-palette-common-white)',
+        borderBottomWidth: 2 
+      }} />
+      <Box component="nav" sx={{ flex: '1 1 auto', p: '12px' }}>
+        {renderNavItems({ pathname, items: filteredNavItems, isDayTime })}
+      </Box>
     </Drawer>
   );
 }
 
-function renderNavItems({ items = [], pathname }: { items?: NavItemConfig[]; pathname: string }): React.JSX.Element {
+function renderNavItems({ items = [], pathname, isDayTime }: { items?: NavItemConfig[]; pathname: string; isDayTime?: boolean }): React.JSX.Element {
   const children = items.reduce((acc: React.ReactNode[], curr: NavItemConfig): React.ReactNode[] => {
     const { key, ...item } = curr;
-
-    acc.push(<NavItem key={key} pathname={pathname} {...item} />);
-
+    acc.push(<NavItem key={key} pathname={pathname} isDayTime={isDayTime} {...item} />);
     return acc;
   }, []);
 
@@ -106,9 +121,10 @@ function renderNavItems({ items = [], pathname }: { items?: NavItemConfig[]; pat
 
 interface NavItemProps extends Omit<NavItemConfig, 'items'> {
   pathname: string;
+  isDayTime?: boolean;
 }
 
-function NavItem({ disabled, external, href, icon, matcher, pathname, title }: NavItemProps): React.JSX.Element {
+function NavItem({ disabled, external, href, icon, matcher, pathname, title, isDayTime }: NavItemProps): React.JSX.Element {
   const active = isNavItemActive({ disabled, external, href, matcher, pathname });
   const Icon = icon ? navIcons[icon] : null;
 
@@ -135,12 +151,18 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title }: N
           position: 'relative',
           textDecoration: 'none',
           whiteSpace: 'nowrap',
+          '&:hover': {
+            bgcolor: 'var(--NavItem-hover-background)',
+          },
           ...(disabled && {
             bgcolor: 'var(--NavItem-disabled-background)',
             color: 'var(--NavItem-disabled-color)',
             cursor: 'not-allowed',
           }),
-          ...(active && { bgcolor: 'var(--NavItem-active-background)', color: 'var(--NavItem-active-color)' }),
+          ...(active && { 
+            bgcolor: 'var(--NavItem-active-background)', 
+            color: 'var(--NavItem-active-color)' 
+          }),
         }}
       >
         <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>
@@ -155,7 +177,12 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title }: N
         <Box sx={{ flex: '1 1 auto' }}>
           <Typography
             component="span"
-            sx={{ color: 'inherit', fontSize: '0.875rem', fontWeight: 500, lineHeight: '28px' }}
+            sx={{ 
+              color: 'inherit',
+              fontSize: '0.875rem', 
+              fontWeight: 500, 
+              lineHeight: '28px'
+            }}
           >
             {title}
           </Typography>
