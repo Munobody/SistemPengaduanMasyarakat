@@ -7,12 +7,11 @@ import { config } from '@/config';
 import { ReportUniv } from '@/components/dashboard/dashboard/report-univ';
 import { PengaduanSelesa } from '@/components/dashboard/dashboard/pengaduan-selesai';
 import { PengaduanBelumSelesai } from '@/components/dashboard/dashboard/pengaduan-belum';
-import { TabelPetugas } from '@/components/petugas/complaint';
+import { Register } from '@/components/admin/kelola/register'; // Add this import
 
 export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
 
 export default function PetugasPage(): React.JSX.Element {
-
   return (
     <Grid container spacing={3}>
       <Grid lg={3} sm={6} xs={12}>
@@ -23,6 +22,11 @@ export default function PetugasPage(): React.JSX.Element {
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
         <PengaduanBelumSelesai sx={{ height: '100%' }} value="20" />
+      </Grid>
+      
+      {/* Add Register table */}
+      <Grid xs={12}>
+        <Register />
       </Grid>
     </Grid>
   );
