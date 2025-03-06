@@ -21,7 +21,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       try {
         const [unitResponse, categoryResponse] = await Promise.all([
           axios.get(`${process.env.NEXT_PUBLIC_API_URL}/units`),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/kategori`),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/kategori?page=1&rows=50`),
         ]);
 
         setUnits(unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || []);
