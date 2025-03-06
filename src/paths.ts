@@ -10,6 +10,7 @@ export const paths = {
     petugas: '/petugas/dashboard',
     kelola: '/petugas/kelola',
     admin: '/admin/dashboard',
+    adminkelola: '/admin/kelola',
   },
   errors: { notFound: '/errors/not-found' },
 } as const;

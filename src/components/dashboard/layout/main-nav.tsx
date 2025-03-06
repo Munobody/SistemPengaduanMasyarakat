@@ -54,7 +54,7 @@ export function MainNav(): React.JSX.Element {
             <Avatar
               onClick={userPopover.handleOpen}
               ref={userPopover.anchorRef}
-              src={isDayTime ? '/assets/logo-usk.png' : '/assets/logo-usk-putih.png'} // Ubah logo berdasarkan tema
+              src={isDayTime ? '/assets/logo-usk.png' : '/assets/logo-usk-putih.png'} 
               sx={{ cursor: 'pointer' }}
             />
           </Stack>

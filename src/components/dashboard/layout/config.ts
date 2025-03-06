@@ -9,4 +9,6 @@ export const navItems = [
   { key: 'account', title: 'Account', href: paths.dashboard.account, icon: 'user' ,roles: [ 'MAHASISWA','DOSEN']},
   { key: 'dashboardpetugas', title: 'Dashboard', href: paths.dashboard.petugas, icon: 'chart-pie', roles: ['PETUGAS', '',''] },
   { key: 'kelolapage', title: 'Kelola', href: paths.dashboard.kelola, icon: 'users', roles: ['PETUGAS', '',''] },
+  { key: 'dashboardadmin', title: 'Dashboard', href: paths.dashboard.admin, icon: 'chart-pie', roles: ['ADMIN', '',''] },
+  { key: 'kelola', title: 'Kelola', href: paths.dashboard.adminkelola, icon: 'users', roles: ['ADMIN', '',''] },
 ] satisfies NavItemConfig[];

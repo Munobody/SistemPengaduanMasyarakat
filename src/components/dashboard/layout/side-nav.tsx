@@ -36,10 +36,10 @@ export function SideNav(): React.JSX.Element {
         '--SideNav-background': isDayTime ? 'var(--mui-palette-white)' : '#27445D',
         '--SideNav-color': isDayTime ? 'var(--mui-palette-common-black)' : 'var(--mui-palette-white)',
         '--NavItem-color': isDayTime ? 'var(--mui-palette-black)' : 'var(--mui-palette-white)',
-        '--NavItem-hover-background': isDayTime ? 'rgba(202, 190, 14, 0.04)' : 'rgba(255, 255, 255, 0.04)',
+        '--NavItem-hover-background': isDayTime ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.04)',
         '--NavItem-active-background': '#116A7B',
         '--NavItem-active-color': 'var(--mui-palette-primary-contrastText)',
-        '--NavItem-disabled-color': isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-white)',
+        '--NavItem-disabled-color': isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-neutral-400)',
         '--NavItem-icon-color': isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-white)',
         '--NavItem-icon-active-color': 'var(--mui-palette-primary-contrastText)',
         '--NavItem-icon-disabled-color': isDayTime ? 'var(--mui-palette-neutral-600)' : 'var(--mui-palette-white)',
@@ -58,12 +58,12 @@ export function SideNav(): React.JSX.Element {
         '&::-webkit-scrollbar': { display: 'none' },
       }}
     >
-      <Stack spacing={2} sx={{ p: 3, alignItems: 'center' }}>
+      <Stack spacing={2} sx={{ p: 3, alignItems: 'left' }}>
         <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
           <Logo 
             src={isDayTime ? "/assets/logo-usk.png" : "/assets/logo-usk-putih.png"}
             height={70} 
-            width={122} 
+            width={150} 
           />
         </Box>
       </Stack>
