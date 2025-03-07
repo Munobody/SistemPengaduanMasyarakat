@@ -11,6 +11,7 @@ export const paths = {
     kelola: '/petugas/kelola',
     admin: '/admin/dashboard',
     adminkelola: '/admin/kelola',
+    tambah: '/petugas/add',
   },
   errors: { notFound: '/errors/not-found' },
 } as const;

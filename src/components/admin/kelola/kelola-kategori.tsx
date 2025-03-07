@@ -54,9 +54,10 @@ export function KelolaKategori() {
   const [editMode, setEditMode] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalData, setTotalData] = useState(0);
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation>({
     open: false,
     categoryId: '',
@@ -73,7 +74,7 @@ export function KelolaKategori() {
     try {
       const token = localStorage.getItem('custom-auth-token');
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/kategori?page=1&rows=100`, // Changed to use rows parameter
+        `${process.env.NEXT_PUBLIC_API_URL}/kategori?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -84,8 +85,10 @@ export function KelolaKategori() {
         const sortedCategories = response.data.content.entries.sort((a: Category, b: Category) =>
           a.nama.localeCompare(b.nama)
         );
+
         setCategories(sortedCategories);
         console.log('📋 Daftar kategori:', sortedCategories);
+        setTotalData(response.data.content.totalData);
       } else {
         setCategories([]);
         console.log('❕ Tidak ada kategori');
@@ -103,7 +106,7 @@ export function KelolaKategori() {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [page, rowsPerPage]);
 
   const handleSubmit = async () => {
     if (!categoryName.trim()) {
@@ -277,7 +280,7 @@ export function KelolaKategori() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {categories.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((category) => (
+              {categories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell>{category.nama}</TableCell>
                   <TableCell align="right">
@@ -297,9 +300,9 @@ export function KelolaKategori() {
             </TableBody>
           </Table>
           <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
+            rowsPerPageOptions={[10, 25]}
             component="div"
-            count={categories.length}
+            count={totalData}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
