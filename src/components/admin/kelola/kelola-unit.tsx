@@ -21,6 +21,7 @@ import {
   TextField,
   IconButton,
   Collapse,
+  TablePagination,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -67,6 +68,9 @@ export function KelolaUnit() {
   const [kepalaUnitId, setKepalaUnitId] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalData, setTotalData] = useState(0);
   const [feedbackModal, setFeedbackModal] = useState<FeedbackModal>({
     open: false,
     title: '',
@@ -83,11 +87,23 @@ export function KelolaUnit() {
   const fetchUnits = async () => {
     try {
       const token = localStorage.getItem('custom-auth-token');
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/units`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUnits(response.data.content.entries);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      if (response.data.content?.entries) {
+        setUnits(response.data.content.entries);
+        setTotalData(response.data.content.totalData);
+        console.log('📋 Daftar unit:', response.data.content.entries);
+      } else {
+        setUnits([]);
+        console.log('❕ Tidak ada unit');
+      }
     } catch (error: any) {
+      console.error('❌ Gagal memuat unit:', error.response?.data);
       setFeedbackModal({
         open: true,
         title: 'Gagal!',
@@ -96,10 +112,18 @@ export function KelolaUnit() {
       });
     }
   };
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   useEffect(() => {
     fetchUnits();
-  }, []);
+  }, [page, rowsPerPage]);
 
   const handleSubmit = async () => {
     if (!unitName.trim() || !kepalaUnitId.trim()) {
@@ -339,7 +363,7 @@ export function KelolaUnit() {
                     {unit.kepalaUnit?.name || unit.kepalaUnit?.no_identitas || '-'}
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton 
+                  <IconButton 
                       onClick={() => {
                         setCurrentUnit(unit);
                         setUnitName(unit.nama_unit);
@@ -372,8 +396,28 @@ export function KelolaUnit() {
                   </TableCell>
                 </TableRow>
               ))}
+              {units.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} align="center">
+                    Tidak ada unit
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={totalData}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Baris per halaman"
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}-${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`
+            }
+          />
         </TableContainer>
       </Collapse>
 
