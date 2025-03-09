@@ -7,7 +7,8 @@ import { config } from '@/config';
 import { ReportUniv } from '@/components/dashboard/dashboard/report-univ';
 import { PengaduanSelesa } from '@/components/dashboard/dashboard/pengaduan-selesai';
 import { PengaduanBelumSelesai } from '@/components/dashboard/dashboard/pengaduan-belum';
-import { TabelPetugas } from '@/components/petugas/complaint';
+import { TabelPetugas } from '@/components/petugas/tabel-pengaduan-internal';
+import { TabelPetugasMasyarakat } from '@/components/petugas/tabel-pengaduan-masyarakat';
 
 export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
 
@@ -26,6 +27,10 @@ export default function PetugasPage(): React.JSX.Element {
       </Grid>
       <Grid lg={12} md={12} xs={12}>
         <TabelPetugas
+        />
+      </Grid>
+      <Grid lg={12} md={12} xs={12}>
+        <TabelPetugasMasyarakat
         />
       </Grid>
     </Grid>

@@ -1,36 +1,56 @@
-import { useState, useEffect, useRef } from "react";
-import axios from "axios";
-import {
-  Container,
-  TextField,
-  MenuItem,
-  Button,
-  Typography,
-  Paper,
-  Box,
-  Grid,
-} from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { useEffect, useRef, useState } from 'react';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { Box, Button, CircularProgress, Container, Grid, MenuItem, Paper, TextField, Typography } from '@mui/material';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+
+import 'react-toastify/dist/ReactToastify.css';
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/pelaporan`;
 
-export default function KelolaPengaduanPage() {
+// Update the Pengaduan interface
+interface Pengaduan {
+  id: string;
+  judul: string;
+  deskripsi: string;
+  kategoriId: string;
+  nameUnit: string;
+  pelaporId: string;
+  status: string;
+  approvedBy: string | null;
+  harapan_pelapor: string | null;
+  filePendukung: string;
+  response: string;
+  filePetugas: string;
+  kategori?: {
+    id: string;
+    nama: string;
+  };
+}
+
+// Update the component props to accept id
+interface KelolaPengaduanPageProps {
+  id?: string;
+}
+
+export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
+  // Add new state for complaint data
+  const [complaint, setComplaint] = useState<Pengaduan | null>(null);
+
   const [loading, setLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string>('');
   const [units, setUnits] = useState<string[]>([]);
   const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [responseText, setResponseText] = useState<string>("");
+  const [responseText, setResponseText] = useState<string>('');
   const [petugasFile, setPetugasFile] = useState<File | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string>("PENDING");
+  const [selectedStatus, setSelectedStatus] = useState<string>('PENDING');
   const formRef = useRef<HTMLFormElement>(null);
   const responseFormRef = useRef<HTMLFormElement>(null);
 
-  const statusOptions = ["PENDING", "PROSES", "SELESAI"];
+  const statusOptions = ['PENDING', 'PROSES', 'SELESAI'];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,7 +61,11 @@ export default function KelolaPengaduanPage() {
         ]);
 
         const unitList = unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || [];
-        const categoryList = categoryResponse.data?.content?.entries.map((category: { id: string; nama: string }) => ({ id: category.id, nama: category.nama })) || [];
+        const categoryList =
+          categoryResponse.data?.content?.entries.map((category: { id: string; nama: string }) => ({
+            id: category.id,
+            nama: category.nama,
+          })) || [];
 
         setUnits(unitList);
         setCategories(categoryList);
@@ -49,45 +73,101 @@ export default function KelolaPengaduanPage() {
         if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
         if (unitList.length > 0) setSelectedUnit(unitList[0]);
       } catch (error: any) {
-        console.error("Error fetching data:", error.response?.data || error.message);
-        toast.error("Gagal memuat data.");
+        console.error('Error fetching data:', error.response?.data || error.message);
+        toast.error('Gagal memuat data.');
       }
     };
 
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchComplaint = async () => {
+      if (!id) return;
+  
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('custom-auth-token');
+        const response = await axios.get(`${API_URL}/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        if (response.data.content) {
+          const complaintData = response.data.content;
+          console.log('📋 Raw complaint data:', complaintData); // Debug log
+  
+          // Ensure kategori data exists
+          if (!complaintData.kategori) {
+            // If kategori is missing, fetch it separately
+            try {
+              const kategoriResponse = await axios.get(
+                `${process.env.NEXT_PUBLIC_API_URL}/kategori/${complaintData.kategoriId}`,
+                {
+                  headers: { Authorization: `Bearer ${token}` },
+                }
+              );
+              
+              if (kategoriResponse.data.content) {
+                complaintData.kategori = {
+                  id: kategoriResponse.data.content.id,
+                  nama: kategoriResponse.data.content.nama,
+                };
+              }
+            } catch (error) {
+              console.error('❌ Gagal memuat data kategori:', error);
+            }
+          }
+  
+          setComplaint(complaintData);
+          setSelectedCategory(complaintData.kategoriId);
+          setSelectedUnit(complaintData.nameUnit);
+          setSelectedStatus(complaintData.status);
+          setResponseText(complaintData.response || '');
+  
+          console.log('✅ Detail pengaduan dengan kategori:', complaintData);
+        }
+      } catch (error: any) {
+        console.error('❌ Gagal memuat detail pengaduan:', error.response?.data);
+        toast.error('Gagal memuat detail pengaduan');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchComplaint();
+  }, [id]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
 
-    const token = localStorage.getItem("custom-auth-token");
+    const token = localStorage.getItem('custom-auth-token');
     if (!token) {
-      toast.error("Anda harus login terlebih dahulu.");
+      toast.error('Anda harus login terlebih dahulu.');
       setLoading(false);
       return;
     }
 
-    let fileUrl = "";
+    let fileUrl = '';
     if (selectedFile) {
       const formData = new FormData();
-      formData.append("file", selectedFile);
+      formData.append('file', selectedFile);
 
       try {
         const uploadResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
           headers: {
-            "Content-Type": "multipart/form-data",
+            'Content-Type': 'multipart/form-data',
           },
         });
 
         if (uploadResponse.status === 200) {
           fileUrl = uploadResponse.data.content.secure_url;
         } else {
-          throw new Error("Gagal mengunggah file.");
+          throw new Error('Gagal mengunggah file.');
         }
       } catch (error: any) {
-        console.error("Error uploading file:", error.response?.data || error.message);
-        toast.error("Gagal mengunggah file.");
+        console.error('Error uploading file:', error.response?.data || error.message);
+        toast.error('Gagal mengunggah file.');
         setLoading(false);
         return;
       }
@@ -95,169 +175,197 @@ export default function KelolaPengaduanPage() {
 
     const formData = new FormData(formRef.current!);
     const values = {
-      judul: formData.get("title") as string,
-      deskripsi: formData.get("description") as string,
-      status: "PENDING",
+      judul: formData.get('title') as string,
+      deskripsi: formData.get('description') as string,
+      status: 'PENDING',
       nameUnit: selectedUnit,
-      response: "",
+      response: '',
       kategoriId: selectedCategory,
       filePendukung: fileUrl,
-      filePetugas: "",
+      filePetugas: '',
     };
 
     try {
       const response = await axios.post(API_URL, values, {
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (response.status === 201) {
-        toast.success("Laporan berhasil dikirim!");
+        toast.success('Laporan berhasil dikirim!');
         formRef.current!.reset();
         setSelectedFile(null);
       } else {
-        toast.error("Gagal mengirim laporan.");
+        toast.error('Gagal mengirim laporan.');
       }
     } catch (error: any) {
-      console.error("Error submitting form:", error.response?.data || error.message);
-      toast.error("Terjadi kesalahan saat mengirim laporan.");
+      console.error('Error submitting form:', error.response?.data || error.message);
+      toast.error('Terjadi kesalahan saat mengirim laporan.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Update handleResponseSubmit to use complaint ID
   const handleResponseSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!complaint?.id) {
+      toast.error('ID pengaduan tidak ditemukan');
+      return;
+    }
+
     setLoading(true);
 
-    const token = localStorage.getItem("custom-auth-token");
+    const token = localStorage.getItem('custom-auth-token');
     if (!token) {
-      toast.error("Anda harus login terlebih dahulu.");
+      toast.error('Anda harus login terlebih dahulu.');
       setLoading(false);
       return;
     }
 
-    let petugasFileUrl = "";
-    if (petugasFile) {
-      const formData = new FormData();
-      formData.append("file", petugasFile);
-
-      try {
-        const uploadResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/upload`,
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-
-        if (uploadResponse.status === 200) {
-          petugasFileUrl = uploadResponse.data.content.secure_url;
-        }
-      } catch (error: any) {
-        toast.error("Gagal mengunggah file petugas.");
-        setLoading(false);
-        return;
-      }
-    }
-
     try {
       const response = await axios.put(
-        `${API_URL}/update-status`,
+        `${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${complaint.id}`,
         {
-          response: responseText,
           status: selectedStatus,
-          filePetugas: petugasFileUrl,
+          response: responseText,
         },
         {
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
       if (response.status === 200) {
-        toast.success("Tanggapan berhasil dikirim!");
+        console.log('✅ Tanggapan berhasil diperbarui:', response.data);
+        toast.success('Tanggapan berhasil diperbarui!');
+
+        // Update local state
+        setComplaint((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: selectedStatus,
+                response: responseText,
+              }
+            : null
+        );
+
+        // Reset form if needed
         responseFormRef.current?.reset();
-        setPetugasFile(null);
-        setResponseText("");
+        setResponseText('');
       }
     } catch (error: any) {
-      toast.error("Gagal mengirim tanggapan.");
+      console.error('❌ Gagal memperbarui tanggapan:', error.response?.data);
+      toast.error(error.response?.data?.message || 'Gagal memperbarui tanggapan');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box sx={{ flexGrow: 1, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <Box sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Container maxWidth="xl" sx={{ flexGrow: 1, py: 4 }}>
         <Grid container spacing={4}>
-          {/* Form Pengaduan */}
+          {/* Detail Pengaduan */}
           <Grid item xs={12} md={6}>
             <Paper elevation={3} sx={{ p: 6, borderRadius: 2 }}>
               <Typography variant="h5" gutterBottom textAlign="center" sx={{ pb: 4 }}>
-                Form Pengaduan
+                Detail Pengaduan
               </Typography>
-              <form ref={formRef} onSubmit={handleSubmit} style={{ width: "100%" }}>
-                <Grid container spacing={2} direction="column">
+
+              {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                  <CircularProgress />
+                </Box>
+              ) : complaint ? (
+                <Grid container spacing={3}>
                   <Grid item xs={12}>
-                    <TextField fullWidth label="Judul Laporan" name="title" margin="normal" required />
+                    <Typography variant="subtitle2" color="text.secondary">
+                      ID Pelapor
+                    </Typography>
+                    <Typography variant="body1">{complaint.pelaporId}</Typography>
                   </Grid>
+
                   <Grid item xs={12}>
-                    <TextField fullWidth label="Isi Laporan" name="description" margin="normal" multiline rows={4} required />
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Judul Laporan
+                    </Typography>
+                    <Typography variant="body1">{complaint.judul}</Typography>
                   </Grid>
+
                   <Grid item xs={12}>
-                    <TextField 
-                      fullWidth 
-                      select 
-                      label="Kategori" 
-                      name="category" 
-                      margin="normal" 
-                      required
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Deskripsi
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        wordWrap: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'break-word',
+                      }}
                     >
-                      {categories.map((option) => (
-                        <MenuItem key={option.id} value={option.id}>
-                          {option.nama}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      {complaint.deskripsi}
+                    </Typography>
                   </Grid>
+
                   <Grid item xs={12}>
-                    <TextField 
-                      fullWidth 
-                      select 
-                      label="Unit" 
-                      name="unit" 
-                      margin="normal" 
-                      required
-                      value={selectedUnit}
-                      onChange={(e) => setSelectedUnit(e.target.value)}
-                    >
-                      {units.map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Kategori
+                    </Typography>
+                    <Typography variant="body1">{complaint.kategori?.nama || 'Tidak ada kategori'}</Typography>
                   </Grid>
+
                   <Grid item xs={12}>
-                    <TextField fullWidth label="Harapan Pelapor" name="expectation" margin="normal" multiline rows={2} required />
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Unit
+                    </Typography>
+                    <Typography variant="body1">{complaint.nameUnit}</Typography>
                   </Grid>
+
                   <Grid item xs={12}>
-                    <Button variant="contained" component="label" startIcon={<CloudUploadIcon />}>
-                      Upload File
-                      <input type="file" hidden onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
-                    </Button>
-                    {selectedFile && <Typography sx={{ mt: 2 }}>{selectedFile.name}</Typography>}
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Status
+                    </Typography>
+                    <Typography variant="body1">{complaint.status}</Typography>
                   </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Harapan Pelapor
+                    </Typography>
+                    <Typography variant="body1">{complaint.harapan_pelapor || '-'}</Typography>
+                  </Grid>
+
+                  {complaint.filePendukung && (
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        File Pendukung
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        href={complaint.filePendukung}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        startIcon={<AttachFileIcon />}
+                        sx={{ mt: 1 }}
+                      >
+                        Lihat File
+                      </Button>
+                    </Grid>
+                  )}
                 </Grid>
-              </form>
+              ) : (
+                <Typography color="text.secondary" align="center">
+                  Data pengaduan tidak ditemukan
+                </Typography>
+              )}
             </Paper>
           </Grid>
 
@@ -286,7 +394,7 @@ export default function KelolaPengaduanPage() {
                       ))}
                     </TextField>
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
@@ -308,33 +416,25 @@ export default function KelolaPengaduanPage() {
                       sx={{ bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }}
                     >
                       Upload File Hasil
-                      <input
-                        type="file"
-                        hidden
-                        onChange={(e) => setPetugasFile(e.target.files?.[0] || null)}
-                      />
+                      <input type="file" hidden onChange={(e) => setPetugasFile(e.target.files?.[0] || null)} />
                     </Button>
-                    {petugasFile && (
-                      <Typography sx={{ mt: 2 }}>
-                        File terpilih: {petugasFile.name}
-                      </Typography>
-                    )}
+                    {petugasFile && <Typography sx={{ mt: 2 }}>File terpilih: {petugasFile.name}</Typography>}
                   </Grid>
 
                   <Grid item xs={12}>
-                    <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                       <Button
                         type="submit"
                         variant="contained"
                         sx={{
-                          width: "30%",
+                          width: '30%',
                           py: 1.5,
                           bgcolor: '#4A628A',
-                          '&:hover': { bgcolor: '#3A4F6A' }
+                          '&:hover': { bgcolor: '#3A4F6A' },
                         }}
                         disabled={loading}
                       >
-                        {loading ? "Mengirim..." : "Kirim Tanggapan"}
+                        {loading ? 'Mengirim...' : 'Kirim Tanggapan'}
                       </Button>
                     </Box>
                   </Grid>

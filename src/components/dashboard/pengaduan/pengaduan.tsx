@@ -54,35 +54,40 @@ export default function PengaduanPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-
+  
     const token = localStorage.getItem("custom-auth-token");
-    console.log("Token yang digunakan:", token);
-
+    console.log("📝 Token yang digunakan:", token);
+  
     if (!token) {
       toast.error("Anda harus login terlebih dahulu.");
       setLoading(false);
       return;
     }
-
+  
     let fileUrl = "";
     if (selectedFile) {
       const formData = new FormData();
       formData.append("file", selectedFile);
-
+  
       try {
-        const uploadResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-
+        const uploadResponse = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/upload`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+  
         if (uploadResponse.status === 200) {
           fileUrl = uploadResponse.data.content.secure_url;
+          console.log("✅ File berhasil diunggah:", fileUrl);
         } else {
           throw new Error("Gagal mengunggah file.");
         }
       } catch (error: any) {
-        console.error("Error uploading file:", error.response?.data || error.message);
+        console.error("❌ Error uploading file:", error.response?.data || error.message);
         toast.error("Gagal mengunggah file.");
         setLoading(false);
         return;
@@ -95,40 +100,44 @@ export default function PengaduanPage() {
       deskripsi: formData.get("description") as string,
       status: "PENDING",
       nameUnit: selectedUnit,
-      response: "",
       kategoriId: selectedCategory,
+      harapan_pelapor: formData.get("expectation") as string,
       filePendukung: fileUrl,
+      response: "",
       filePetugas: "",
     };
-
-    console.log("Data yang dikirim:", values);
-
+  
+    console.log("📝 Data yang akan dikirim:", values);
+  
     try {
-      const response = await axios.post(API_URL, values, {
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-
-      console.log("Response dari server:", response);
-
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/pelaporan`,
+        values,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+  
       if (response.status === 201) {
+        console.log("✅ Laporan berhasil dikirim:", response.data);
         toast.success("Laporan berhasil dikirim!");
-        console.log("Laporan berhasil dikirim:", values);
+        
+        // Reset form
         formRef.current!.reset();
         setSelectedFile(null);
-      } else {
-        toast.error("Gagal mengirim laporan.");
+        setSelectedCategory(categories[0]?.id || "");
+        setSelectedUnit(units[0] || "");
       }
     } catch (error: any) {
-      console.error("Error submitting form:", error.response?.data || error.message);
-      toast.error("Terjadi kesalahan saat mengirim laporan.");
+      console.error("❌ Error submitting form:", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || "Terjadi kesalahan saat mengirim laporan.");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <Box sx={{ flexGrow: 1, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Container maxWidth="xl" sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center", py: 4 }}>
