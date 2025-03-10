@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EditIcon from '@mui/icons-material/Edit';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
@@ -37,7 +37,6 @@ interface Pengaduan {
   deskripsi: string;
   kategoriId: string;
   nameUnit: string;
-  status: string;
   nama: string;
   no_telphone: string;
   approvedBy: string | null;
@@ -142,19 +141,6 @@ export function TabelPetugasMasyarakat() {
     setPage(0);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-      case 'PENDING':
-        return 'warning';
-      case 'PROSES':
-        return 'info';
-      case 'SELESAI':
-        return 'success';
-      default:
-        return 'default';
-    }
-  };
-
   const handleViewComplaint = (complaint: Pengaduan, event: React.MouseEvent) => {
     event.stopPropagation();
     setViewDialog({
@@ -211,7 +197,6 @@ export function TabelPetugasMasyarakat() {
                     <TableCell>No. Telepon</TableCell>
                     <TableCell>Unit</TableCell>
                     <TableCell>Kategori</TableCell>
-                    <TableCell>Status</TableCell>
                     <TableCell align="right">Aksi</TableCell>
                   </TableRow>
                 </TableHead>
@@ -243,13 +228,6 @@ export function TabelPetugasMasyarakat() {
                         </TableCell>
                         <TableCell>{complaint.nameUnit || '-'}</TableCell>
                         <TableCell>{complaint.kategori?.nama || 'Tidak ada kategori'}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={complaint.status || 'PENDING'}
-                            color={getStatusColor(complaint.status || 'PENDING')}
-                            size="small"
-                          />
-                        </TableCell>
                         <TableCell align="right">
                           <IconButton
                             onClick={(e) => handleViewComplaint(complaint, e)}
@@ -258,13 +236,6 @@ export function TabelPetugasMasyarakat() {
                             sx={{ mr: 1 }}
                           >
                             <RemoveRedEyeIcon />
-                          </IconButton>
-                          <IconButton
-                            onClick={(e) => handleManageComplaint(complaint.id, e)}
-                            color="primary"
-                            title="Kelola pengaduan"
-                          >
-                            <EditIcon />
                           </IconButton>
                         </TableCell>
                       </TableRow>
@@ -322,18 +293,6 @@ export function TabelPetugasMasyarakat() {
                 </Typography>
                 <Typography>{viewDialog.complaint.nameUnit}</Typography>
               </Box>
-
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Status
-                </Typography>
-                <Chip
-                  label={viewDialog.complaint.status}
-                  color={getStatusColor(viewDialog.complaint.status)}
-                  size="small"
-                />
-              </Box>
-
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
                   Harapan Pelapor

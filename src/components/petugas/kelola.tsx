@@ -50,7 +50,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const responseFormRef = useRef<HTMLFormElement>(null);
 
-  const statusOptions = ['PENDING', 'PROSES', 'SELESAI'];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -208,16 +207,20 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
     }
   };
 
-  // Update handleResponseSubmit to use complaint ID
-  const handleResponseSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!complaint?.id) {
-      toast.error('ID pengaduan tidak ditemukan');
-      return;
-    }
+  // First, update the status options to match exactly what the API expects
+const statusOptions = ['PENDING', 'PROCESS', 'DONE']; // Changed 'PROSES' to 'PROCESS'
 
-    setLoading(true);
+// Then update the handleResponseSubmit function
+const handleResponseSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+  if (!complaint?.id) {
+    toast.error('ID pengaduan tidak ditemukan');
+    return;
+  }
 
+  setLoading(true);
+
+  try {
     const token = localStorage.getItem('custom-auth-token');
     if (!token) {
       toast.error('Anda harus login terlebih dahulu.');
@@ -225,47 +228,56 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
       return;
     }
 
-    try {
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${complaint.id}`,
-        {
-          status: selectedStatus,
-          response: responseText,
+    // Log the complaint ID for debugging
+    console.log('📋 ID Pengaduan:', complaint.id);
+
+    // Format payload to match API expectations
+    const payload = {
+      status: selectedStatus === 'PROSES' ? 'PROCESS' : selectedStatus, // Ensure correct status value
+      response: responseText.trim()
+    };
+
+    console.log('📝 Mengirim tanggapan:', payload);
+
+    const response = await axios.put(
+      `${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${complaint.id}`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        console.log('✅ Tanggapan berhasil diperbarui:', response.data);
-        toast.success('Tanggapan berhasil diperbarui!');
-
-        // Update local state
-        setComplaint((prev) =>
-          prev
-            ? {
-                ...prev,
-                status: selectedStatus,
-                response: responseText,
-              }
-            : null
-        );
-
-        // Reset form if needed
-        responseFormRef.current?.reset();
-        setResponseText('');
       }
-    } catch (error: any) {
-      console.error('❌ Gagal memperbarui tanggapan:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Gagal memperbarui tanggapan');
-    } finally {
-      setLoading(false);
+    );
+
+    console.log('📡 Response:', response.data);
+
+    if (response.status === 200) {
+      console.log('✅ Tanggapan berhasil diperbarui:', response.data);
+      toast.success('Tanggapan berhasil diperbarui!');
+
+      // Update local state
+      setComplaint(prev => prev ? {
+        ...prev,
+        status: selectedStatus,
+        response: responseText
+      } : null);
+
+      // Reset form if needed
+      setResponseText('');
     }
-  };
+  } catch (error: any) {
+    console.error('❌ Gagal memperbarui tanggapan:', error);
+    console.error('Response data:', error.response?.data);
+    console.error('Status code:', error.response?.status);
+    toast.error(
+      error.response?.data?.message || 
+      'Gagal memperbarui tanggapan. Silakan coba lagi.'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Box sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

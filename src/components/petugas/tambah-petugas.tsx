@@ -105,7 +105,7 @@ export default function AddPetugasPage({ unitId }: AddPetugasPageProps) {
   const handleCloseFeedbackModal = () => {
     setFeedbackModal((prev) => ({ ...prev, open: false }));
     if (!feedbackModal.isError) {
-      router.push('/petugas'); // Redirect to petugas list after successful addition
+      router.push('/petugas/add'); // Redirect to petugas list after successful addition
     }
   };
 

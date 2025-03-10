@@ -40,6 +40,12 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
         return;
       }
 
+      else if (user.role === 'KEPALA_PETUGAS_UNIT') {
+        logger.debug('[GuestGuard]: User is KEPALA_PETUGAS_UNIT, redirecting to petugas dashboard');
+        router.replace(paths.dashboard.petugas);
+        return;
+      }
+
       logger.debug('[GuestGuard]: User is logged in, redirecting to overview dashboard');
       router.replace(paths.dashboard.overview);
       return;
