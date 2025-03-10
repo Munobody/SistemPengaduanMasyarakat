@@ -75,7 +75,7 @@ export function PengaduanSaya({ sx }: PengaduanSayaProps): React.JSX.Element {
           <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between" }} spacing={3}>
             <Stack spacing={1}>
               <Typography color="text.secondary" variant="overline">
-                Pengaduan Saya
+                Pengaduan Layanan Saya
               </Typography>
               <Typography variant="h4">{value}</Typography>
             </Stack>

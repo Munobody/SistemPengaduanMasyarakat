@@ -21,7 +21,7 @@ export function PengaduanSelesa({ value, sx }: PengaduanSelesaiProps): React.JSX
           <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }} spacing={3}>
             <Stack spacing={1}>
               <Typography color="text.secondary" gutterBottom variant="overline">
-                Pengaduan Selesai
+                Pengaduan Layanan Selesai
               </Typography>
               <Typography variant="h4">{value}</Typography>
             </Stack>

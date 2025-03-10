@@ -25,6 +25,19 @@ export default function PengaduanPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const textFieldProps = {
+    sx: {
+      '& .MuiOutlinedInput-root': {
+        '&.Mui-focused fieldset': {
+          borderColor: '#16404D',
+        },
+      },
+      '& .MuiInputLabel-root.Mui-focused': {
+        color: '#16404D',
+      },
+    },
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -101,7 +114,7 @@ export default function PengaduanPage() {
       status: "PENDING",
       nameUnit: selectedUnit,
       kategoriId: selectedCategory,
-      harapan_pelapor: formData.get("expectation") as string,
+      harapan_pelapor: formData.get("expectation") as string, // Match the API's camelCase format
       filePendukung: fileUrl,
       response: "",
       filePetugas: "",
@@ -148,56 +161,77 @@ export default function PengaduanPage() {
           <form ref={formRef} onSubmit={handleSubmit} style={{ width: "100%" }}>
             <Grid container spacing={2} direction="column">
               <Grid item xs={12}>
-                <TextField fullWidth label="Judul Laporan" name="title" margin="normal" required />
+              <TextField 
+              fullWidth label="Judul Laporan" 
+              name="title" margin="normal" 
+              required {...textFieldProps} />
               </Grid>
               <Grid item xs={12}>
-                <TextField fullWidth label="Isi Laporan" name="description" margin="normal" multiline rows={4} required />
+              <TextField
+               fullWidth label="Isi Laporan" 
+               name="description" margin="normal" 
+               placeholder="Ceritakan terkait pengaduan ini?" 
+               multiline rows={4} required {...textFieldProps} />
               </Grid>
               <Grid item xs={12}>
-                <TextField 
-                  fullWidth 
-                  select 
-                  label="Kategori" 
-                  name="category" 
-                  margin="normal" 
-                  required
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                >
-                  {categories.map((option) => (
-                    <MenuItem key={option.id} value={option.id}>
-                      {option.nama}
-                    </MenuItem>
-                  ))}
-                </TextField>
+              <TextField 
+                fullWidth 
+                select 
+                label="Kategori" 
+                name="category" 
+                margin="normal" 
+                required {...textFieldProps}
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                {categories.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.nama}
+                </MenuItem>
+                ))}
+              </TextField>
               </Grid>
               <Grid item xs={12}>
-                <TextField 
-                  fullWidth 
-                  select 
-                  label="Unit" 
-                  name="unit" 
-                  margin="normal" 
-                  required
-                  value={selectedUnit} // ✅ Tambahkan value
-                  onChange={(e) => setSelectedUnit(e.target.value)}
-                >
-                  {units.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </TextField>
+              <TextField 
+                fullWidth 
+                select 
+                label="Unit" 
+                name="unit" 
+                margin="normal" 
+                required {...textFieldProps}
+                value={selectedUnit}
+                onChange={(e) => setSelectedUnit(e.target.value)}
+              >
+                {units.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+                ))}
+              </TextField>
               </Grid>
               <Grid item xs={12}>
-                <TextField fullWidth label="Harapan Pelapor" name="expectation" margin="normal" multiline rows={2} required />
-              </Grid>
+              <TextField 
+              fullWidth 
+              label="Harapan Pelapor" 
+              name="expectation"
+              margin="normal" 
+              multiline 
+              rows={2} 
+              required {...textFieldProps}
+              placeholder="Apa harapan Anda terkait pengaduan ini?"
+              />
+            </Grid>
               <Grid item xs={12}>
-                <Button variant="contained" component="label" startIcon={<CloudUploadIcon />}>
-                  Upload File
-                  <input type="file" hidden onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
-                </Button>
-                {selectedFile && <Typography sx={{ mt: 2 }}>{selectedFile.name}</Typography>}
+              <Button 
+                variant="contained" 
+                component="label" 
+                startIcon={<CloudUploadIcon />}
+                sx={{ bgcolor: '#006A67', '&:hover': { bgcolor: '#0F2B33' } }}
+              >
+                Upload File
+                <input type="file" hidden onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+              </Button>
+              {selectedFile && <Typography sx={{ mt: 2 }}>{selectedFile.name}</Typography>}
               </Grid>
             </Grid>
             <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -208,7 +242,6 @@ export default function PengaduanPage() {
           </form>
         </Paper>
       </Container>
-      {/* Tambahkan ToastContainer agar toast bisa muncul */}
       <ToastContainer position="top-right" autoClose={3000} />
     </Box>
   );

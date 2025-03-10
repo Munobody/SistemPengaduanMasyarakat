@@ -19,6 +19,7 @@ import Box from '@mui/material/Box';
 import { authClient } from '@/lib/auth/client';
 import { useUsers } from '@/hooks/use-user';
 import Link from 'next/link';
+import { CircularProgress } from '@mui/material';
 
 type Values = {
   no_identitas: string;
@@ -45,6 +46,7 @@ export function SignInForm(): React.JSX.Element {
 
   const onSubmit = React.useCallback(
     async (values: Values): Promise<void> => {
+      setIsPending(true); 
       try {
         const { error, user } = await authClient.signInWithPassword(values);
 
@@ -166,17 +168,33 @@ export function SignInForm(): React.JSX.Element {
           />
           {errors.root && <Alert color="error">{errors.root.message}</Alert>}
           <Button
-            disabled={isPending}
-            type="submit"
-            variant="contained"
-            sx={{
-              bgcolor: '#79D7BE',
-              color: '#000',
-              '&:hover': { bgcolor: '#B9E5E8'}
-            }}
-          >
-            {isPending ? 'Sedang Masuk...' : 'Masuk'}
-          </Button>
+  disabled={isPending}
+  type="submit"
+  variant="contained"
+  sx={{
+    bgcolor: '#79D7BE',
+    color: '#000',
+    '&:hover': { bgcolor: '#B9E5E8'},
+    position: 'relative', // Add this for loading spinner positioning
+  }}
+>
+  {isPending ? (
+    <>
+      <CircularProgress
+        size={24}
+        sx={{
+          color: '#000',
+          position: 'absolute',
+          left: '50%',
+          marginLeft: '-12px',
+        }}
+      />
+      <span style={{ visibility: 'hidden' }}>Masuk</span>
+    </>
+  ) : (
+    'Masuk'
+  )}
+</Button>
         </Stack>
       </form>
       <Alert sx={{ backgroundColor: '#D1F8EF' }}>

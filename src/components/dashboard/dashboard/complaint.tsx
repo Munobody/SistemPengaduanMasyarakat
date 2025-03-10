@@ -333,21 +333,33 @@ export function LatestComplaints() {
         </IconButton>
       </Box>
       <Box sx={{ p: 2, height: 500, width: "100%" }}>
-        <DataGrid
-          rows={filteredComplaints}
-          columns={columns}
-          pageSizeOptions={[5, 10, 20]}
-          pagination
-          paginationMode="server"
-          rowCount={totalData}
-          onPaginationModelChange={(model) => {
-            setPage(model.page + 1);
-            setPageSize(model.pageSize);
-          }}
-          disableColumnMenu
-          disableRowSelectionOnClick
-          slots={{ toolbar: GridToolbar }}
-        />
+      <DataGrid
+        rows={filteredComplaints}
+        columns={columns}
+        pageSizeOptions={[5, 10, 20]}
+        pagination
+        paginationMode="server"
+        rowCount={totalData}
+        onPaginationModelChange={(model) => {
+          setPage(model.page + 1);
+          setPageSize(model.pageSize);
+        }}
+        disableColumnMenu
+        disableRowSelectionOnClick
+        slots={{ toolbar: GridToolbar }}
+        slotProps={{
+          toolbar: {
+            sx: {
+              '& .MuiButtonBase-root': {
+                color: '#16404D'
+              },
+              '& .MuiIconButton-root': {
+                color: '#16404D'
+              }
+            }
+          }
+        }}
+      />
       </Box>
       <Dialog open={viewOpen} onClose={handleViewClose} maxWidth="md" fullWidth>
         <DialogTitle>Detail Pengaduan</DialogTitle>

@@ -52,16 +52,23 @@ export default function AddPetugasPage({ unitId }: AddPetugasPageProps) {
       return;
     }
 
-    console.log('📝 Mencoba menambahkan petugas:', {
-      petugasIds: [petugasId],
-      unitId,
-    });
-
     try {
       const token = localStorage.getItem('custom-auth-token');
+      if (!token) {
+        throw new Error('Token not found');
+      }
+
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/units/petugas`;
+
+      console.log('📝 Mencoba menambahkan petugas:', {
+        petugasIds: [petugasId.trim()],
+      });
+
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/units/${unitId}/petugas`,
-        { petugasIds: [petugasId.trim()] },
+        endpoint,
+        {
+          petugasIds: [petugasId.trim()],
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
