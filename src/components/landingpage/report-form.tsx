@@ -101,6 +101,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       kategoriId: '',
       nama: '',
       no_telphone: '',
+      harapan_pelapor: '', 
       filePendukung: null as File | null, // File tidak dikirim dalam JSON
     },
     validationSchema: Yup.object({
@@ -242,6 +243,29 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             onBlur={formik.handleBlur}
             error={formik.touched.deskripsi && Boolean(formik.errors.deskripsi)}
             helperText={formik.touched.deskripsi && formik.errors.deskripsi}
+          />
+
+          <TextField
+            id="harapan_pelapor"
+            fullWidth
+            label="Harapan Pelapor"
+            name="harapan_pelapor"
+            variant="outlined"
+            multiline
+            rows={2}
+            sx={{
+              mb: 2,
+              fontSize: '1.2rem',
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+              '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+            }}
+            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
+            InputProps={{ style: { fontSize: '1.2rem' } }}
+            value={formik.values.harapan_pelapor}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            error={formik.touched.harapan_pelapor && Boolean(formik.errors.harapan_pelapor)}
+            helperText={formik.touched.harapan_pelapor && formik.errors.harapan_pelapor}
           />
 
           <TextField
