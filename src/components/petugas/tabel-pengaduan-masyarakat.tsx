@@ -297,13 +297,6 @@ export function TabelPetugasMasyarakat() {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
-                  ID Pelapor
-                </Typography>
-                <Typography>{viewDialog.complaint.pelaporId}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
                   Judul Laporan
                 </Typography>
                 <Typography>{viewDialog.complaint.judul}</Typography>
