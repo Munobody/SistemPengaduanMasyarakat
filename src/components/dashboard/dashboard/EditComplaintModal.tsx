@@ -1,19 +1,33 @@
+import { useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
-  TableContainer,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  Paper,
   Table,
   TableBody,
-  TableRow,
   TableCell,
-  Paper,
+  TableContainer,
+  TableRow,
   TextField,
-  MenuItem,
 } from '@mui/material';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+
 import { Complaint } from './complaint';
+
+interface Unit {
+  nama_unit: string;
+}
+
+interface Category {
+  id: string;
+  nama: string;
+}
 
 interface EditComplaintModalProps {
   open: boolean;
@@ -21,20 +35,83 @@ interface EditComplaintModalProps {
   complaint: Complaint | null;
   onSave: () => void;
   onChange: (updatedComplaint: Complaint) => void;
-  categories: { id: string; nama: string }[];
-  units: string[];
 }
 
-export const EditComplaintModal = ({
-  open,
-  onClose,
-  complaint,
-  onSave,
-  onChange,
-  categories,
-  units,
-}: EditComplaintModalProps) => {
+export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange }: EditComplaintModalProps) => {
+  const [units, setUnits] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalData, setTotalData] = useState(0);
+
+  const fetchCategories = async () => {
+    const token = localStorage.getItem('custom-auth-token');
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/kategori?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.content?.entries) {
+        const sortedCategories = response.data.content.entries.sort((a: Category, b: Category) =>
+          a.nama.localeCompare(b.nama)
+        );
+
+        setCategories(sortedCategories);
+        console.log('📋 Daftar kategori:', sortedCategories);
+        setTotalData(response.data.content.totalData);
+      } else {
+        setCategories([]);
+        console.log('❕ Tidak ada kategori');
+      }
+      return response;
+    } catch (error: any) {
+      console.error('❌ Gagal memuat kategori:', error.response?.data);
+      toast.error('Gagal memuat data kategori');
+      throw error;
+    }
+  };
+
+  const fetchUnits = async () => {
+    const token = localStorage.getItem('custom-auth-token');
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.content?.entries) {
+        const unitList = response.data.content.entries.map((unit: Unit) => unit.nama_unit);
+        setUnits(unitList);
+        console.log('📋 Daftar unit:', response.data.content.entries);
+      }
+      return response;
+    } catch (error: any) {
+      console.error('❌ Gagal memuat unit:', error.response?.data);
+      toast.error('Gagal memuat data unit');
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!open) return;
+
+      setLoading(true);
+      try {
+        await Promise.all([fetchUnits(), fetchCategories()]);
+      } catch (error: any) {
+        console.error('Error fetching data:', error.response?.data || error.message);
+        toast.error('Gagal memuat data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [open]);
+
   if (!complaint) return null;
+  if (loading) return <CircularProgress />;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -44,7 +121,9 @@ export const EditComplaintModal = ({
           <Table>
             <TableBody>
               <TableRow>
-                <TableCell><strong>Judul</strong></TableCell>
+                <TableCell>
+                  <strong>Judul</strong>
+                </TableCell>
                 <TableCell>
                   <TextField
                     fullWidth
@@ -55,7 +134,9 @@ export const EditComplaintModal = ({
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell><strong>Isi</strong></TableCell>
+                <TableCell>
+                  <strong>Isi</strong>
+                </TableCell>
                 <TableCell>
                   <TextField
                     fullWidth
@@ -68,7 +149,9 @@ export const EditComplaintModal = ({
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell><strong>Kategori</strong></TableCell>
+                <TableCell>
+                  <strong>Kategori</strong>
+                </TableCell>
                 <TableCell>
                   <TextField
                     fullWidth
@@ -86,7 +169,9 @@ export const EditComplaintModal = ({
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell><strong>Unit Tertuju</strong></TableCell>
+                <TableCell>
+                  <strong>Unit Tertuju</strong>
+                </TableCell>
                 <TableCell>
                   <TextField
                     fullWidth
@@ -95,16 +180,18 @@ export const EditComplaintModal = ({
                     value={complaint.targetUnit}
                     onChange={(e) => onChange({ ...complaint, targetUnit: e.target.value })}
                   >
-                    {units.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
+                    {units.map((unit) => (
+                      <MenuItem key={unit} value={unit}>
+                        {unit}
                       </MenuItem>
                     ))}
                   </TextField>
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell><strong>Status</strong></TableCell>
+                <TableCell>
+                  <strong>Status</strong>
+                </TableCell>
                 <TableCell>
                   <TextField
                     fullWidth

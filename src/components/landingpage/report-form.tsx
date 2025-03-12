@@ -44,7 +44,6 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     fetchData();
   }, []);
 
-  // Add the fetchCategories function
   const fetchCategories = async () => {
     try {
       const response = await axios.get(
@@ -52,7 +51,6 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       );
 
       if (response.data.content?.entries) {
-        // Sort categories alphabetically by name
         const sortedCategories = response.data.content.entries.sort((a: Category, b: Category) =>
           a.nama.localeCompare(b.nama)
         );
@@ -72,7 +70,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     }
   };
 
-  // Add the fetchUnits function
+
   const fetchUnits = async () => {
     try {
       const response = await axios.get(

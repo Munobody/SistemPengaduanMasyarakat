@@ -32,7 +32,7 @@ const WBSReportForm = () => {
   const [unit, setUnit] = useState('');
   const [category, setCategory] = useState('');
   const [units, setUnits] = useState<string[]>([]);
-  const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
+  const [categories, setCategories] = useState<KategoriWbs[]>([]);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isStatementChecked, setIsStatementChecked] = useState(false);
   const [openModal, setOpenModal] = useState(false);
@@ -45,28 +45,54 @@ const WBSReportForm = () => {
     kategoriId: '',
     tanggalKejadian: dayjs().format('YYYY-MM-DD'),
   });
+  interface KategoriWbs {
+    id: string;
+    nama: string;
+    deskripsi: string | null;
+  }
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [unitResponse, categoryResponse] = await Promise.all([
-          axios.get(`${API_URL}units`),
-          axios.get(`${API_URL}kategori`),
+        const token = localStorage.getItem('custom-auth-token');
+        if (!token) {
+          toast.error('Anda harus login terlebih dahulu.');
+          return;
+        }
+  
+        const [unitResponse, kategoriWbsResponse] = await Promise.all([
+          axios.get(`${API_URL}units`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get(`${API_URL}kategoriWbs`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
         ]);
-
-        const unitList = unitResponse.data?.content?.entries.map((u: { nama_unit: string }) => u.nama_unit) || [];
-        const categoryList = categoryResponse.data?.content?.entries.map((c: { id: string; nama: string }) => ({ id: c.id, nama: c.nama })) || [];
-
+  
+        const unitList = unitResponse.data?.content?.entries.map(
+          (u: { nama_unit: string }) => u.nama_unit
+        ) || [];
+  
+        const kategoriWbsList = kategoriWbsResponse.data?.content?.entries || [];
+  
         setUnits(unitList);
-        setCategories(categoryList);
-
-        if (categoryList.length > 0) setCategory(categoryList[0].id);
-        if (unitList.length > 0) setUnit(unitList[0]);
+        setCategories(kategoriWbsList);
+  
+        // Set default values if available
+        if (kategoriWbsList.length > 0) {
+          setCategory(kategoriWbsList[0].id);
+        }
+        if (unitList.length > 0) {
+          setUnit(unitList[0]);
+        }
+  
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('Gagal memuat data.');
+        toast.error('Gagal memuat data kategori dan unit.');
       }
     };
+  
     fetchData();
   }, []);
 
@@ -98,41 +124,128 @@ const WBSReportForm = () => {
     }));
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+// First add this interface at the top with other interfaces
+interface WBSResponse {
+  content: {
+    id: string;
+    judul: string;
+    deskripsi: string;
+    pihakTerlibat: string;
+    tanggalKejadian: string;
+    lokasi: string;
+    kategoriId: string;
+    unit: string;
+    pelaporId: string;
+    petugasWBSId: string | null;
+    status: string;
+    approvedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+    response: string | null;
+  };
+  message: string;
+  errors: string[];
+}
 
-    const token = localStorage.getItem("custom-auth-token");
-    console.log("Token yang digunakan:", token);
+// Then update the handleSubmit function
+const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
 
-    if (!token) {
-      toast.error("Anda harus login terlebih dahulu.");
-      return;
-    }
+  if (!isStatementChecked) {
+    toast.error("Anda harus menyetujui pernyataan pertanggungjawaban.");
+    return;
+  }
 
-    const data = {
-      ...formData,
+  const token = localStorage.getItem("custom-auth-token");
+  if (!token) {
+    toast.error("Anda harus login terlebih dahulu.");
+    return;
+  }
+
+  // Validate required fields
+  if (!formData.judul || !formData.deskripsi || !formData.lokasi || 
+      !formData.pihakTerlibat || !category || !unit || !date) {
+    toast.error("Semua field harus diisi.");
+    return;
+  }
+
+  try {
+    // Create the main request body exactly matching API expectations
+    const requestBody = {
+      judul: formData.judul.trim(),
+      deskripsi: formData.deskripsi.trim(),
+      lokasi: formData.lokasi.trim(),
+      pihakTerlibat: formData.pihakTerlibat.trim(),
       kategoriId: category,
-      tanggalKejadian: date ? date.format('YYYY-MM-DD') : '',
+      tanggalKejadian: date.format('YYYY-MM-DD'),
+      unit: unit,
+      isAnonymous: Boolean(isAnonymous) // Ensure boolean type
     };
 
-    try {
-      const response = await axios.post(`${API_URL}PelaporanWbs`, data, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+    // Debug log
+    console.log('Request URL:', `${API_URL}PelaporanWbs`);
+    console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+    console.log('Request Headers:', {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
 
-      if (response.status === 200) {
-        toast.success('Laporan berhasil dikirim!');
-      } else {
-        toast.error('Gagal mengirim laporan.');
+    const response = await axios.post<WBSResponse>(
+      `${API_URL}PelaporanWbs`, 
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      toast.error('Terjadi kesalahan saat mengirim laporan.');
+    );
+
+    // Check both status and response data
+    if (response.status === 200 && response.data?.content) {
+      toast.success(response.data.message || 'Laporan WBS berhasil dikirim!');
+      
+      // Reset form
+      setFormData({
+        judul: '',
+        deskripsi: '',
+        lokasi: '',
+        pihakTerlibat: '',
+        kategoriId: '',
+        tanggalKejadian: dayjs().format('YYYY-MM-DD'),
+      });
+      setCategory('');
+      setUnit('');
+      setDate(dayjs());
+      setFile(null);
+      setIsAnonymous(false);
+      setIsStatementChecked(false);
     }
-  };
+  } catch (error: any) {
+    // Detailed error logging
+    console.error('Full error object:', error);
+    console.error('Error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers,
+        data: error.config?.data
+      }
+    });
+    
+    if (error.response?.data?.message) {
+      toast.error(`Error: ${error.response.data.message}`);
+    } else if (error.response?.status === 500) {
+      toast.error('Terjadi kesalahan server. Silakan coba lagi nanti.');
+    } else {
+      toast.error('Gagal mengirim laporan WBS. Silakan coba lagi.');
+    }
+  }
+};
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -159,16 +272,21 @@ const WBSReportForm = () => {
             value={formData.deskripsi}
             onChange={handleChange}
           />
-          <FormControl fullWidth required>
-            <InputLabel>Unit Yang Dilapor</InputLabel>
-            <Select value={unit} onChange={(e) => setUnit(e.target.value)}>
+            <FormControl fullWidth required variant="outlined">
+            <InputLabel shrink>Unit Yang Dilapor</InputLabel>
+            <Select
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              label="Unit Yang Dilapor"
+              sx={{ textAlign: 'left' }}
+            >
               {units.map((u) => (
-                <MenuItem key={u} value={u}>{u}</MenuItem>
+              <MenuItem key={u} value={u}>{u}</MenuItem>
               ))}
             </Select>
-          </FormControl>
+            </FormControl>
 
-          <FormControl fullWidth required variant="outlined">
+            <FormControl fullWidth required variant="outlined">
             <InputLabel shrink>Kategori Laporan</InputLabel>
             <Select
               value={category}
@@ -177,8 +295,10 @@ const WBSReportForm = () => {
               label="Kategori Laporan"
               sx={{ textAlign: 'left' }}
             >
-              {categories.map((c) => (
-                <MenuItem key={c.id} value={c.id}>{c.nama}</MenuItem>
+              {categories.map((c: KategoriWbs) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.nama}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>

@@ -7,7 +7,18 @@ import EditIcon from '@mui/icons-material/Edit';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { Box, Card, CardHeader, Chip, Divider, IconButton, Menu, MenuItem, TextField } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardHeader,
+  Chip,
+  CircularProgress,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  TextField,
+} from '@mui/material';
 import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -17,6 +28,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { EditComplaintModal } from './EditComplaintModal';
 import { ViewComplaintModal } from './ViewComplaintModal';
+import { render } from 'react-dom';
 
 export interface Complaint {
   id: string;
@@ -34,7 +46,8 @@ export interface Complaint {
 }
 
 export function LatestComplaints() {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [complaints, setComplaints] = useState<any>(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedRow, setSelectedRow] = useState<Complaint | null>(null);
@@ -47,168 +60,138 @@ export function LatestComplaints() {
   const [pageSize, setPageSize] = useState(10);
   const [totalData, setTotalData] = useState(0);
 
-  useEffect(() => {
-    const fetchUnitsAndCategories = async () => {
-      try {
-        const token = localStorage.getItem('custom-auth-token');
-        if (!token) {
-          toast.error('Anda harus login terlebih dahulu.');
-          return;
-        }
 
-        const [unitResponse, categoryResponse] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/units`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/kategori`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-        ]);
-
-        const unitList = unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || [];
-        const categoryList =
-          categoryResponse.data?.content?.entries.map((category: { id: string; nama: string }) => ({
-            id: category.id,
-            nama: category.nama,
-          })) || [];
-
-        setUnits(unitList);
-        setCategories(categoryList);
-      } catch (error: any) {
-        console.error('Error fetching units and categories:', error);
-        toast.error(error.response?.data?.message || 'Gagal memuat data unit dan kategori.');
+  const fetchComplaints = async () => {
+    try {
+      const token = localStorage.getItem('custom-auth-token');
+      if (!token) {
+        toast.error('Anda harus login terlebih dahulu.');
+        return;
       }
-    };
 
-    fetchUnitsAndCategories();
-  }, []);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan?page=${page}&rows=${pageSize}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-// Update the fetchComplaints function mapping
-const fetchComplaints = async () => {
-  try {
-    const token = localStorage.getItem('custom-auth-token');
-    if (!token) {
-      toast.error('Anda harus login terlebih dahulu.');
-      return;
+      const data = response.data;
+      if (data?.content) {
+        setComplaints(data?.content);
+      }
+    } catch (error: any) {
+      console.error('Error fetching complaints:', error);
+      toast.error(error.response?.data?.message || 'Gagal memuat data pengaduan.');
     }
+  };
 
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan?page=${page}&rows=${pageSize}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  // Update the handleEditOpen function mapping
+  const handleEditOpen = async (row: Complaint) => {
+    try {
+      const token = localStorage.getItem('custom-auth-token');
+      if (!token) {
+        toast.error('Anda harus login terlebih dahulu.');
+        return;
+      }
 
-    const data = response.data;
-    if (data?.content?.entries) {
-      setComplaints(
-        data.content.entries.map((entry: any) => ({
-          id: entry.id,
-          title: entry.judul || 'Tidak Ada Judul',
-          content: entry.deskripsi || 'Tidak Ada Deskripsi',
-          date: dayjs(entry.createdAt).format('MMM D, YYYY'),
-          category: entry.kategori?.nama || 'Tidak Ada',
-          targetUnit: entry.unit?.nama_unit || 'Tidak Ada',
-          complaintType: 'Belum Ditentukan',
-          status: entry.status || 'PENDING',
-          response: entry.response || '-',
-          filePendukung: entry.filePendukung || '',
-          filePetugas: entry.filePetugas || '', // Changed null to empty string for consistency
-          harapan_pelapor: entry.harapan_pelapor || '-'
-        }))
-      );
-      console.log('Fetched complaints:', data.content.entries); // Debug log
-      setTotalData(data.content.totalData || 0);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = response.data.content;
+      console.log('Edit complaint data:', data); // Debug log
+      setEditedComplaint({
+        id: data.id,
+        title: data.judul || 'Tidak Ada Judul',
+        content: data.deskripsi || 'Tidak Ada Deskripsi',
+        date: dayjs(data.createdAt).format('MMM D, YYYY'),
+        category: data.kategori?.id || '',
+        targetUnit: data.unit?.nama_unit || '',
+        complaintType: 'Belum Ditentukan',
+        status: data.status || 'PENDING',
+        response: data.response || '',
+        filePendukung: data.filePendukung || '',
+        filePetugas: data.filePetugas || '', // Changed null to empty string
+        harapan_pelapor: data.harapan_pelapor || '-',
+      });
+      setEditOpen(true);
+    } catch (error: any) {
+      console.error('Error fetching complaint details:', error);
+      toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
     }
-  } catch (error: any) {
-    console.error('Error fetching complaints:', error);
-    toast.error(error.response?.data?.message || 'Gagal memuat data pengaduan.');
-  }
-};
-
-// Update the handleEditOpen function mapping
-const handleEditOpen = async (row: Complaint) => {
-  try {
-    const token = localStorage.getItem('custom-auth-token');
-    if (!token) {
-      toast.error('Anda harus login terlebih dahulu.');
-      return;
-    }
-
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = response.data.content;
-    console.log('Edit complaint data:', data); // Debug log
-    setEditedComplaint({
-      id: data.id,
-      title: data.judul || 'Tidak Ada Judul',
-      content: data.deskripsi || 'Tidak Ada Deskripsi',
-      date: dayjs(data.createdAt).format('MMM D, YYYY'),
-      category: data.kategori?.id || '',
-      targetUnit: data.unit?.nama_unit || '',
-      complaintType: 'Belum Ditentukan',
-      status: data.status || 'PENDING',
-      response: data.response || '',
-      filePendukung: data.filePendukung || '',
-      filePetugas: data.filePetugas || '', // Changed null to empty string
-      harapan_pelapor: data.harapan_pelapor || '-'
-    });
-    setEditOpen(true);
-  } catch (error: any) {
-    console.error('Error fetching complaint details:', error);
-    toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
-  }
-};
+  };
 
   useEffect(() => {
     fetchComplaints();
   }, [page, pageSize]);
 
-  const filteredComplaints = complaints.filter((complaint) =>
-    complaint.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const columns: GridColDef[] = [
-    { field: 'title', headerName: 'Judul Laporan', flex: 1, headerAlign: 'center', align: 'center' },
-    { field: 'content', headerName: 'Isi Laporan', flex: 2, headerAlign: 'center', align: 'center' },
+  const columns: any = [
+    { field: 'title',
+       headerName: 'Judul Laporan',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => <span>{params?.row?.judul ?? '-'}</span>,
+    },
+    { field: 'content', 
+      headerName: 'Isi Laporan', 
+      flex: 2, 
+      headerAlign: 'center', 
+      align: 'center',
+      renderCell: (params: any) => <span>{params?.row?.deskripsi ?? '-'}</span>,
+    },
     {
       field: 'date',
       headerName: 'Tanggal',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
+      renderCell: (params: any) => <span>{params?.row?.createdAt ?? '-'}</span>,
     },
-    { field: 'category', headerName: 'Kategori', flex: 1, headerAlign: 'center', align: 'center' },
-    { field: 'targetUnit', headerName: 'Unit Tertuju', flex: 1, headerAlign: 'center', align: 'center' },
+    {
+      field: 'category',
+      headerName: 'Kategori',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => <span>{params?.row?.kategori?.nama ?? '-'}</span>,
+    },
+    {
+      field: 'targetUnit',
+      headerName: 'Unit Tertuju',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => <span>{params?.row?.nameUnit ?? '-'}</span>,
+    },
     {
       field: 'status',
       headerName: 'Status',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => (
-        <Chip
-          label={params.value}
-          sx={{
-            backgroundColor:
-              params.value === 'PENDING'
-                ? '#F59E0B'
-                : params.value === 'PROSES'
-                  ? '#3B82F6'
-                  : params.value === 'SELESAI'
-                    ? '#10B981'
-                    : '#EF4444',
-            color: 'white',
-          }}
-        />
-      ),
+      renderCell: (params: any) => {
+        const backgroundColor =
+          params?.row?.status === 'PENDING'
+            ? '#F59E0B'
+            : params?.row?.status === 'PROCESS'
+              ? '#3B82F6'
+              : params?.row?.status === 'COMPLETED'
+                ? '#10B981'
+                : '#EF4444';
+
+        return (
+          <Chip
+            label={params.row?.status ?? '-'}
+            sx={{
+              backgroundColor: backgroundColor,
+              color: 'white',
+            }}
+          />
+        );
+      },
     },
     {
       field: 'response',
@@ -216,101 +199,106 @@ const handleEditOpen = async (row: Complaint) => {
       flex: 1.5,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => (
-        <div style={{ 
-          whiteSpace: 'normal', 
-          wordWrap: 'break-word',
-          width: '100%',
-          textAlign: 'center',
-          padding: '8px'
-        }}>
-          {params.value || '-'}
-        </div>
+      renderCell: (params: any) => (
+        <span
+          style={{
+            whiteSpace: 'normal',
+            wordWrap: 'break-word',
+            width: '100%',
+            textAlign: 'center',
+            padding: '8px',
+          }}
+        >
+          {params?.row?.response ?? '-'}
+        </span>
       ),
-    },
-    {
+        },
+        {
       field: 'filePendukung',
       headerName: 'File Pendukung',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) =>
-        params.value ? (
+      renderCell: (params: any) => ( 
+        params?.row?.filePendukung ? (
           <IconButton size="small" href={params.value} target="_blank" title="Lihat File Pendukung">
-            <AttachFileIcon />
+        <AttachFileIcon />
           </IconButton>
-        ) : (
-          '-'
-        ),
-    },
-    {
-      field: 'filePetugas',
+        ) : '-'
+      ),
+        },
+        {
+      field: 'filePetugas', 
       headerName: 'File Petugas',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) =>
-        params.value ? (
-          <IconButton size="small" href={params.value} target="_blank" title="Lihat File Petugas">
-            <AttachFileIcon />
-          </IconButton>
-        ) : (
-          '-'
-        ),
+      renderCell: (params: any) => (
+        params?.row?.filePetugas ? (
+        <IconButton size="small" href={params.value} target="_blank" title="Lihat File Petugas">
+          <AttachFileIcon />
+        </IconButton>
+        ) : '-'
+      ),
     },
     {
       field: 'actions',
       headerName: 'Aksi',
       flex: 0.5,
       sortable: false,
-      filterable: false, // Add this
-      hideable: false,  // Add this
+      filterable: false,
+      hideable: false, 
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <IconButton
-            onClick={(event) => {
-              setMenuAnchor(event.currentTarget);
-              setSelectedRow(params.row);
-            }}
-            size="small"
-          >
-            <MoreVertIcon />
-          </IconButton>
-          <Menu 
-            anchorEl={menuAnchor} 
-            open={Boolean(menuAnchor)} 
-            onClose={() => setMenuAnchor(null)}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-          >
-            <MenuItem
-              onClick={() => {
-                selectedRow && handleViewOpen(selectedRow);
-                setMenuAnchor(null);
+      renderCell: (params: any) => {
+        return (
+          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <IconButton
+              onClick={(event) => {
+                setMenuAnchor(event.currentTarget);
+                setSelectedRow(params.row);
+              }}
+              size="small"
+            >
+              <MoreVertIcon />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={() => setMenuAnchor(null)}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
               }}
             >
-              <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                selectedRow && handleEditOpen(selectedRow);
-                setMenuAnchor(null);
-              }}
-            >
-              <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
-            </MenuItem>
-          </Menu>
-        </Box>
-      ),
-    }
+              <MenuItem
+                onClick={() => {
+                  selectedRow && handleViewOpen(selectedRow);
+                  setMenuAnchor(null);
+                }}
+              >
+                <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+              </MenuItem>
+
+                {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
+                <MenuItem
+                  onClick={() => {
+                  selectedRow && handleEditOpen(selectedRow);
+                  setMenuAnchor(null);
+                  }}
+                >
+                  <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
+                </MenuItem>
+                )}
+            </Menu>
+          </Box>
+        );
+      },
+    },
   ];
 
   const handleViewOpen = (row: Complaint) => {
@@ -377,9 +365,9 @@ const handleEditOpen = async (row: Complaint) => {
         'Tanggapan Petugas',
         'File Pendukung',
         'File Petugas',
-        'Harapan Pelapor'
+        'Harapan Pelapor',
       ],
-      ...complaints.map((c) => [
+      ...complaints.map((c: any) => [
         c.title,
         c.content,
         c.date,
@@ -389,12 +377,12 @@ const handleEditOpen = async (row: Complaint) => {
         c.response,
         c.filePendukung || '-',
         c.filePetugas || '-',
-        c.harapan_pelapor
+        c.harapan_pelapor,
       ]),
     ]
-      .map((e) => e.map(x => `"${(x || '').toString().replace(/"/g, '""')}"`).join(','))
+      .map((e) => e.map((x: any) => `"${(x || '').toString().replace(/"/g, '""')}"`).join(','))
       .join('\n');
-  
+
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -423,19 +411,22 @@ const handleEditOpen = async (row: Complaint) => {
       </Box>
       <Box sx={{ p: 2, height: 500, width: '100%' }}>
         <DataGrid
-          rows={filteredComplaints}
+          rows={complaints?.entries ?? []}
           columns={columns}
           pageSizeOptions={[5, 10, 20]}
           pagination
           paginationMode="server"
-          rowCount={totalData}
+          rowCount={complaints?.totalData ?? 0}
           onPaginationModelChange={(model) => {
             setPage(model.page + 1);
             setPageSize(model.pageSize);
           }}
           disableColumnMenu
           disableRowSelectionOnClick
-          slots={{ toolbar: GridToolbar }}
+          disableColumnFilter
+          disableColumnSelector
+          disableColumnResize
+          disableColumnSorting
           slotProps={{
             toolbar: {
               sx: {
@@ -448,6 +439,7 @@ const handleEditOpen = async (row: Complaint) => {
               },
             },
           }}
+          // slots={{ isla: <CircularProgress /> }}
         />
       </Box>
       <ViewComplaintModal open={viewOpen} onClose={handleViewClose} complaint={selectedRow} />
@@ -458,8 +450,6 @@ const handleEditOpen = async (row: Complaint) => {
         complaint={editedComplaint}
         onSave={handleSaveChanges}
         onChange={setEditedComplaint}
-        categories={categories}
-        units={units}
       />
 
       <ToastContainer position="top-right" autoClose={3000} />
