@@ -80,7 +80,7 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center">
-          <a href="/dashboard">
+          <a href="/auth/sign-in">
             <button className="px-4 py-2 md:px-8 md:py-4 bg-[#087163] text-white rounded-xl text-sm font-medium hover:bg-[#0A5A4D] transition-colors shadow-2xl mr-4 md:mr-20">
               Sign in
             </button>

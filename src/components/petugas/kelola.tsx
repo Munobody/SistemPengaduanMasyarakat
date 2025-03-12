@@ -207,8 +207,7 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
     }
   };
 
-  // First, update the status options to match exactly what the API expects
-const statusOptions = ['PENDING', 'PROCESS', 'DONE']; // Changed 'PROSES' to 'PROCESS'
+const statusOptions = ['PENDING', 'PROCESS', 'REJECTED', 'COMPLETED']; 
 
 // Then update the handleResponseSubmit function
 const handleResponseSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

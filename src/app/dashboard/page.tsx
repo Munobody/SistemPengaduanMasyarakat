@@ -5,10 +5,10 @@ import dayjs from 'dayjs';
 
 import { config } from '@/config';
 import { ReportUniv } from '@/components/dashboard/dashboard/report-univ';
+import { PengaduanSelesa } from '@/components/dashboard/dashboard/pengaduan-selesai';
+import { PengaduanBelumSelesai} from '@/components/dashboard/dashboard/pengaduan-belum';
 import { LatestComplaints } from '@/components/dashboard/dashboard/complaint';
 import { PengaduanSaya } from '@/components/dashboard/dashboard/pengaduan';
-import { PengaduanSelesa } from '@/components/dashboard/dashboard/pengaduan-selesai';
-import { PengaduanBelumSelesai } from '@/components/dashboard/dashboard/pengaduan-belum';
 
 export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
 

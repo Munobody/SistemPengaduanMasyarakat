@@ -29,7 +29,7 @@ export interface Complaint {
   response: string;
   status: string;
   filePendukung: string;
-  filePetugas: string | null;
+  filePetugas: string;
   harapan_pelapor: string;
 }
 
@@ -47,7 +47,6 @@ export function LatestComplaints() {
   const [pageSize, setPageSize] = useState(10);
   const [totalData, setTotalData] = useState(0);
 
-  // Fetch units and categories
   useEffect(() => {
     const fetchUnitsAndCategories = async () => {
       try {
@@ -88,45 +87,85 @@ export function LatestComplaints() {
     fetchUnitsAndCategories();
   }, []);
 
-  const fetchComplaints = async () => {
-    try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        toast.error('Anda harus login terlebih dahulu.');
-        return;
-      }
-
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan?page=${page}&rows=${pageSize}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = response.data;
-      if (data?.content?.entries) {
-        setComplaints(
-          data.content.entries.map((entry: any) => ({
-            id: entry.id,
-            title: entry.judul || 'Tidak Ada Judul',
-            content: entry.deskripsi || 'Tidak Ada Deskripsi',
-            date: dayjs(entry.createdAt).format('MMM D, YYYY'),
-            category: entry.kategori?.nama || 'Tidak Ada',
-            targetUnit: entry.unit?.nama_unit || 'Tidak Ada',
-            complaintType: 'Belum Ditentukan',
-            status: entry.status || 'PENDING',
-            response: entry.response || '-',
-            filePendukung: entry.filePendukung || '',
-            filePetugas: entry.filePetugas || null,
-            harapan_pelapor: entry.harapan_pelapor || '-'
-          }))
-        );
-        setTotalData(data.content.totalData || 0);
-      }
-    } catch (error: any) {
-      console.error('Error fetching complaints:', error);
-      toast.error(error.response?.data?.message || 'Gagal memuat data pengaduan.');
+// Update the fetchComplaints function mapping
+const fetchComplaints = async () => {
+  try {
+    const token = localStorage.getItem('custom-auth-token');
+    if (!token) {
+      toast.error('Anda harus login terlebih dahulu.');
+      return;
     }
-  };
+
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan?page=${page}&rows=${pageSize}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = response.data;
+    if (data?.content?.entries) {
+      setComplaints(
+        data.content.entries.map((entry: any) => ({
+          id: entry.id,
+          title: entry.judul || 'Tidak Ada Judul',
+          content: entry.deskripsi || 'Tidak Ada Deskripsi',
+          date: dayjs(entry.createdAt).format('MMM D, YYYY'),
+          category: entry.kategori?.nama || 'Tidak Ada',
+          targetUnit: entry.unit?.nama_unit || 'Tidak Ada',
+          complaintType: 'Belum Ditentukan',
+          status: entry.status || 'PENDING',
+          response: entry.response || '-',
+          filePendukung: entry.filePendukung || '',
+          filePetugas: entry.filePetugas || '', // Changed null to empty string for consistency
+          harapan_pelapor: entry.harapan_pelapor || '-'
+        }))
+      );
+      console.log('Fetched complaints:', data.content.entries); // Debug log
+      setTotalData(data.content.totalData || 0);
+    }
+  } catch (error: any) {
+    console.error('Error fetching complaints:', error);
+    toast.error(error.response?.data?.message || 'Gagal memuat data pengaduan.');
+  }
+};
+
+// Update the handleEditOpen function mapping
+const handleEditOpen = async (row: Complaint) => {
+  try {
+    const token = localStorage.getItem('custom-auth-token');
+    if (!token) {
+      toast.error('Anda harus login terlebih dahulu.');
+      return;
+    }
+
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = response.data.content;
+    console.log('Edit complaint data:', data); // Debug log
+    setEditedComplaint({
+      id: data.id,
+      title: data.judul || 'Tidak Ada Judul',
+      content: data.deskripsi || 'Tidak Ada Deskripsi',
+      date: dayjs(data.createdAt).format('MMM D, YYYY'),
+      category: data.kategori?.id || '',
+      targetUnit: data.unit?.nama_unit || '',
+      complaintType: 'Belum Ditentukan',
+      status: data.status || 'PENDING',
+      response: data.response || '',
+      filePendukung: data.filePendukung || '',
+      filePetugas: data.filePetugas || '', // Changed null to empty string
+      harapan_pelapor: data.harapan_pelapor || '-'
+    });
+    setEditOpen(true);
+  } catch (error: any) {
+    console.error('Error fetching complaint details:', error);
+    toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
+  }
+};
 
   useEffect(() => {
     fetchComplaints();
@@ -224,10 +263,12 @@ export function LatestComplaints() {
       headerName: 'Aksi',
       flex: 0.5,
       sortable: false,
+      filterable: false, // Add this
+      hideable: false,  // Add this
       headerAlign: 'center',
       align: 'center',
       renderCell: (params) => (
-        <>
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <IconButton
             onClick={(event) => {
               setMenuAnchor(event.currentTarget);
@@ -237,14 +278,26 @@ export function LatestComplaints() {
           >
             <MoreVertIcon />
           </IconButton>
-          <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+          <Menu 
+            anchorEl={menuAnchor} 
+            open={Boolean(menuAnchor)} 
+            onClose={() => setMenuAnchor(null)}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
             <MenuItem
               onClick={() => {
                 selectedRow && handleViewOpen(selectedRow);
                 setMenuAnchor(null);
               }}
             >
-              <VisibilityIcon fontSize="small" /> Lihat
+              <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -252,12 +305,12 @@ export function LatestComplaints() {
                 setMenuAnchor(null);
               }}
             >
-              <EditIcon fontSize="small" /> Edit
+              <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
             </MenuItem>
           </Menu>
-        </>
+        </Box>
       ),
-    },
+    }
   ];
 
   const handleViewOpen = (row: Complaint) => {
@@ -268,42 +321,6 @@ export function LatestComplaints() {
   const handleViewClose = () => {
     setViewOpen(false);
     setSelectedRow(null);
-  };
-
-  const handleEditOpen = async (row: Complaint) => {
-    try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        toast.error('Anda harus login terlebih dahulu.');
-        return;
-      }
-  
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      const data = response.data.content;
-      setEditedComplaint({
-        id: data.id,
-        title: data.judul || 'Tidak Ada Judul',
-        content: data.deskripsi || 'Tidak Ada Deskripsi',
-        date: dayjs(data.createdAt).format('MMM D, YYYY'),
-        category: data.kategori?.id || '',
-        targetUnit: data.unit?.nama_unit || '',
-        complaintType: 'Belum Ditentukan',
-        status: data.status || 'PENDING',
-        response: data.response || '',
-        filePendukung: data.filePendukung || '', // Changed from entry to data
-        filePetugas: data.filePetugas || null,   // Changed from entry to data
-        harapan_pelapor: data.harapan_pelapor || '-' // Changed from entry to data
-      });
-      setEditOpen(true);
-    } catch (error: any) {
-      console.error('Error fetching complaint details:', error);
-      toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
-    }
   };
   const handleEditClose = () => {
     setEditOpen(false);
@@ -340,7 +357,7 @@ export function LatestComplaints() {
         toast.success('Pengaduan berhasil diperbarui!');
         setEditOpen(false);
         setEditedComplaint(null);
-        fetchComplaints(); // Refresh the complaints list
+        fetchComplaints();
       }
     } catch (error: any) {
       console.error('Error updating complaint:', error);
