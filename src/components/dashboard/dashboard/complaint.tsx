@@ -19,7 +19,7 @@ import {
   MenuItem,
   TextField,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
+import { DataGrid, } from '@mui/x-data-grid';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
@@ -28,7 +28,6 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { EditComplaintModal } from './EditComplaintModal';
 import { ViewComplaintModal } from './ViewComplaintModal';
-import { render } from 'react-dom';
 
 export interface Complaint {
   id: string;
@@ -54,12 +53,8 @@ export function LatestComplaints() {
   const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [editedComplaint, setEditedComplaint] = useState<Complaint | null>(null);
-  const [units, setUnits] = useState<string[]>([]);
-  const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [totalData, setTotalData] = useState(0);
-
 
   const fetchComplaints = async () => {
     try {
@@ -167,33 +162,6 @@ export function LatestComplaints() {
       renderCell: (params: any) => <span>{params?.row?.nameUnit ?? '-'}</span>,
     },
     {
-      field: 'status',
-      headerName: 'Status',
-      flex: 1,
-      headerAlign: 'center',
-      align: 'center',
-      renderCell: (params: any) => {
-        const backgroundColor =
-          params?.row?.status === 'PENDING'
-            ? '#F59E0B'
-            : params?.row?.status === 'PROCESS'
-              ? '#3B82F6'
-              : params?.row?.status === 'COMPLETED'
-                ? '#10B981'
-                : '#EF4444';
-
-        return (
-          <Chip
-            label={params.row?.status ?? '-'}
-            sx={{
-              backgroundColor: backgroundColor,
-              color: 'white',
-            }}
-          />
-        );
-      },
-    },
-    {
       field: 'response',
       headerName: 'Tanggapan Petugas',
       flex: 1.5,
@@ -240,6 +208,33 @@ export function LatestComplaints() {
         </IconButton>
         ) : '-'
       ),
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => {
+        const backgroundColor =
+          params?.row?.status === 'PENDING'
+            ? '#F59E0B'
+            : params?.row?.status === 'PROCESS'
+              ? '#3B82F6'
+              : params?.row?.status === 'COMPLETED'
+                ? '#10B981'
+                : '#EF4444';
+
+        return (
+          <Chip
+            label={params.row?.status ?? '-'}
+            sx={{
+              backgroundColor: backgroundColor,
+              color: 'white',
+            }}
+          />
+        );
+      },
     },
     {
       field: 'actions',
@@ -439,7 +434,6 @@ export function LatestComplaints() {
               },
             },
           }}
-          // slots={{ isla: <CircularProgress /> }}
         />
       </Box>
       <ViewComplaintModal open={viewOpen} onClose={handleViewClose} complaint={selectedRow} />

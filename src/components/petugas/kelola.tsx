@@ -35,7 +35,6 @@ interface KelolaPengaduanPageProps {
 }
 
 export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
-  // Add new state for complaint data
   const [complaint, setComplaint] = useState<Pengaduan | null>(null);
 
   const [loading, setLoading] = useState(false);
@@ -227,13 +226,35 @@ const handleResponseSubmit = async (event: React.FormEvent<HTMLFormElement>) => 
       return;
     }
 
-    // Log the complaint ID for debugging
-    console.log('📋 ID Pengaduan:', complaint.id);
-
-    // Format payload to match API expectations
+    let filePetugasUrl = '';
+    if (petugasFile) {
+      const formData = new FormData();
+      formData.append('file', petugasFile);
+    
+      const uploadResponse = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/upload`, 
+        formData, 
+        {
+          headers: { 
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`
+          },
+        }
+      );
+    
+      if (uploadResponse.status === 200) {
+        filePetugasUrl = uploadResponse.data.content.secure_url;
+        console.log('✅ File berhasil diupload:', filePetugasUrl);
+      } else {
+        throw new Error('Gagal mengunggah file.');
+      }
+    }
+    
+    // Then update the payload section:
     const payload = {
-      status: selectedStatus === 'PROSES' ? 'PROCESS' : selectedStatus, // Ensure correct status value
-      response: responseText.trim()
+      status: selectedStatus === 'PROSES' ? 'PROCESS' : selectedStatus,
+      response: responseText.trim(),
+      filePetugas: filePetugasUrl || complaint.filePetugas || null
     };
 
     console.log('📝 Mengirim tanggapan:', payload);
@@ -249,8 +270,6 @@ const handleResponseSubmit = async (event: React.FormEvent<HTMLFormElement>) => 
       }
     );
 
-    console.log('📡 Response:', response.data);
-
     if (response.status === 200) {
       console.log('✅ Tanggapan berhasil diperbarui:', response.data);
       toast.success('Tanggapan berhasil diperbarui!');
@@ -259,11 +278,13 @@ const handleResponseSubmit = async (event: React.FormEvent<HTMLFormElement>) => 
       setComplaint(prev => prev ? {
         ...prev,
         status: selectedStatus,
-        response: responseText
+        response: responseText,
+        filePetugas: filePetugasUrl || prev.filePetugas
       } : null);
 
-      // Reset form if needed
+      // Reset form
       setResponseText('');
+      setPetugasFile(null);
     }
   } catch (error: any) {
     console.error('❌ Gagal memperbarui tanggapan:', error);

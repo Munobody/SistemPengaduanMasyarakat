@@ -309,7 +309,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           >
             {categories.map((category) => (
               <MenuItem key={category.id} value={category.id}>
-                {category.nama} {/* Hanya menampilkan nama kategori */}
+                {category.nama}
               </MenuItem>
             ))}
           </TextField>

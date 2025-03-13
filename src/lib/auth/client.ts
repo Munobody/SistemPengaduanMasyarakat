@@ -2,6 +2,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { User } from '@/types/user';
 import { paths } from '@/paths';
+import { toast } from 'react-toastify';
 
 export interface SignInWithPasswordParams {
   no_identitas: string;
@@ -68,40 +69,60 @@ class AuthClient {
     }
   }
 
-  async resetPassword(_: any): Promise<{ error?: string }> {
-    return { error: 'Password reset not implemented' };
-  }
+  // async resetPassword(_: any): Promise<{ error?: string }> {
+  //   return { error: 'Password reset not implemented' };
+  // }
 
-  async updatePassword(_: any): Promise<{ error?: string }> {
-    return { error: 'Update reset not implemented' };
-  }
+  // async updatePassword(_: any): Promise<{ error?: string }> {
+  //   return { error: 'Update reset not implemented' };
+  // }
 
   async getUser(): Promise<{ data?: User | null; error?: string }> {
     if (typeof window === 'undefined') {
       return { data: null };
     }
+
+  const token = localStorage.getItem('custom-auth-token');
+  if (!token) {
+    return { data: null };
+  }
   
-    const token = localStorage.getItem('custom-auth-token');
-    if (!token) {
-      return { data: null };
+  try {
+    const decodedToken = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    if (decodedToken.exp < currentTime) {
+      console.warn('Token kadaluarsa, menjalankan proses logout otomatis');
+      // Hapus data autentikasi
+      localStorage.removeItem('custom-auth-token');
+      localStorage.removeItem('user');
+    
+      toast.error('Sesi anda telah berakhir. Silakan login kembali.');
+      
+      setTimeout(() => {
+        window.location.href = paths.auth.signIn;
+      }, 1000);
+
+      return { 
+        data: null, 
+        error: 'Token telah kadaluarsa. Silakan login kembali.' 
+      };
     }
-  
-    try {
-      const decodedToken = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Math.floor(Date.now() / 1000);
-  
-      if (decodedToken.exp < currentTime) {
-        console.warn('Token kadaluarsa, hapus dan minta login ulang');
-        localStorage.removeItem('custom-auth-token');
-        localStorage.removeItem('user');
-        return { data: null, error: 'Token expired' };
-      }
   
       const user = localStorage.getItem('user');
       return { data: user ? JSON.parse(user) : null };
     } catch (error) {
-      console.error('Error decoding token:', error);
-      return { data: null, error: 'Token tidak valid' };
+      console.error('Error saat memverifikasi token:', error);
+
+      localStorage.removeItem('custom-auth-token');
+      localStorage.removeItem('user');
+
+      window.location.href = paths.auth.signIn;
+
+      return{
+        data: null,
+        error: 'Terjadi kesalahan saat memverifikasi token. Silakan login kembali.' 
+      }
     }
   }
   
