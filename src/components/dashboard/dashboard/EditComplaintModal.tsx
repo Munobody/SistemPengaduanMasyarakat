@@ -157,8 +157,8 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange 
                     fullWidth
                     select
                     margin="dense"
-                    value={complaint.category}
-                    onChange={(e) => onChange({ ...complaint, category: e.target.value })}
+                    value={complaint.nama}
+                    onChange={(e) => onChange({ ...complaint, nama: e.target.value })}
                   >
                     {categories.map((option) => (
                       <MenuItem key={option.id} value={option.id}>
@@ -177,8 +177,8 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange 
                     fullWidth
                     select
                     margin="dense"
-                    value={complaint.targetUnit}
-                    onChange={(e) => onChange({ ...complaint, targetUnit: e.target.value })}
+                    value={complaint.nameUnit}
+                    onChange={(e) => onChange({ ...complaint, nameUnit: e.target.value })}
                   >
                     {units.map((unit) => (
                       <MenuItem key={unit} value={unit}>

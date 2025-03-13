@@ -19,7 +19,7 @@ import {
   MenuItem,
   TextField,
 } from '@mui/material';
-import { DataGrid, } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
@@ -30,12 +30,13 @@ import { EditComplaintModal } from './EditComplaintModal';
 import { ViewComplaintModal } from './ViewComplaintModal';
 
 export interface Complaint {
+  kategoriId: any;
   id: string;
   title: string;
   content: string;
   date: string;
-  category: string;
-  targetUnit: string;
+  nama: string;
+  nameUnit: string;
   complaintType: string;
   response: string;
   status: string;
@@ -46,7 +47,6 @@ export interface Complaint {
 
 export function LatestComplaints() {
   const [complaints, setComplaints] = useState<any>(null);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedRow, setSelectedRow] = useState<Complaint | null>(null);
@@ -98,17 +98,18 @@ export function LatestComplaints() {
       const data = response.data.content;
       console.log('Edit complaint data:', data); // Debug log
       setEditedComplaint({
+        kategoriId: data.kategori?.id,
         id: data.id,
         title: data.judul || 'Tidak Ada Judul',
         content: data.deskripsi || 'Tidak Ada Deskripsi',
         date: dayjs(data.createdAt).format('MMM D, YYYY'),
-        category: data.kategori?.id || '',
-        targetUnit: data.unit?.nama_unit || '',
+        nama: data.kategori?.id || '',
+        nameUnit: data.unit?.nama_unit || '',
         complaintType: 'Belum Ditentukan',
         status: data.status || 'PENDING',
         response: data.response || '',
         filePendukung: data.filePendukung || '',
-        filePetugas: data.filePetugas || '', // Changed null to empty string
+        filePetugas: data.filePetugas || '',
         harapan_pelapor: data.harapan_pelapor || '-',
       });
       setEditOpen(true);
@@ -123,17 +124,19 @@ export function LatestComplaints() {
   }, [page, pageSize]);
 
   const columns: any = [
-    { field: 'title',
-       headerName: 'Judul Laporan',
+    {
+      field: 'title',
+      headerName: 'Judul Laporan',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) => <span>{params?.row?.judul ?? '-'}</span>,
     },
-    { field: 'content', 
-      headerName: 'Isi Laporan', 
-      flex: 2, 
-      headerAlign: 'center', 
+    {
+      field: 'content',
+      headerName: 'Isi Laporan',
+      flex: 2,
+      headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) => <span>{params?.row?.deskripsi ?? '-'}</span>,
     },
@@ -180,34 +183,36 @@ export function LatestComplaints() {
           {params?.row?.response ?? '-'}
         </span>
       ),
-        },
-        {
+    },
+    {
       field: 'filePendukung',
       headerName: 'File Pendukung',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => ( 
+      renderCell: (params: any) =>
         params?.row?.filePendukung ? (
           <IconButton size="small" href={params.value} target="_blank" title="Lihat File Pendukung">
-        <AttachFileIcon />
+            <AttachFileIcon />
           </IconButton>
-        ) : '-'
-      ),
-        },
-        {
-      field: 'filePetugas', 
+        ) : (
+          '-'
+        ),
+    },
+    {
+      field: 'filePetugas',
       headerName: 'File Petugas',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => (
+      renderCell: (params: any) =>
         params?.row?.filePetugas ? (
-        <IconButton size="small" href={params.value} target="_blank" title="Lihat File Petugas">
-          <AttachFileIcon />
-        </IconButton>
-        ) : '-'
-      ),
+          <IconButton size="small" href={params.value} target="_blank" title="Lihat File Petugas">
+            <AttachFileIcon />
+          </IconButton>
+        ) : (
+          '-'
+        ),
     },
     {
       field: 'status',
@@ -242,7 +247,7 @@ export function LatestComplaints() {
       flex: 0.5,
       sortable: false,
       filterable: false,
-      hideable: false, 
+      hideable: false,
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) => {
@@ -279,16 +284,16 @@ export function LatestComplaints() {
                 <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
               </MenuItem>
 
-                {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
+              {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
                 <MenuItem
                   onClick={() => {
-                  selectedRow && handleEditOpen(selectedRow);
-                  setMenuAnchor(null);
+                    selectedRow && handleEditOpen(selectedRow);
+                    setMenuAnchor(null);
                   }}
                 >
                   <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
                 </MenuItem>
-                )}
+              )}
             </Menu>
           </Box>
         );
@@ -296,10 +301,45 @@ export function LatestComplaints() {
     },
   ];
 
-  const handleViewOpen = (row: Complaint) => {
-    setSelectedRow(row);
-    setViewOpen(true);
+  const handleViewOpen = async (row: Complaint) => {
+    try {
+      const token = localStorage.getItem('custom-auth-token');
+      if (!token) {
+        toast.error('Anda harus login terlebih dahulu.');
+        return;
+      }
+  
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = response.data.content;
+  
+      setSelectedRow({
+        kategoriId: data.kategoriId || 'Tidak Ada Kategori', 
+        nameUnit: data.nameUnit || 'Tidak Ada Unit', 
+        id: data.id,
+        title: data.judul,
+        content: data.deskripsi,
+        date: dayjs(data.createdAt).format('MMM D, YYYY'),
+        nama: data.nama || 'Anonim',
+        complaintType: 'Belum Ditentukan',
+        status: data.status || 'PENDING',
+        response: data.response || '',
+        filePendukung: data.filePendukung || '',
+        filePetugas: data.filePetugas || '',
+        harapan_pelapor: data.harapan_pelapor || '-',
+      });
+  
+      setViewOpen(true);
+    } catch (error: any) {
+      console.error('Error fetching complaint details:', error);
+      toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
+    }
   };
+  
 
   const handleViewClose = () => {
     setViewOpen(false);
@@ -325,8 +365,8 @@ export function LatestComplaints() {
         {
           judul: editedComplaint.title,
           deskripsi: editedComplaint.content,
-          kategoriId: editedComplaint.category,
-          nameUnit: editedComplaint.targetUnit,
+          kategoriId: editedComplaint.nama,
+          nameUnit: editedComplaint.nameUnit,
         },
         {
           headers: {
@@ -437,7 +477,6 @@ export function LatestComplaints() {
         />
       </Box>
       <ViewComplaintModal open={viewOpen} onClose={handleViewClose} complaint={selectedRow} />
-
       <EditComplaintModal
         open={editOpen}
         onClose={handleEditClose}

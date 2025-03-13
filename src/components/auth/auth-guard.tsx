@@ -56,8 +56,7 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
     if (!user.role || (allowedRoles.length > 0 && !allowedRoles.includes(user.role))) {
       logger.debug(`[AuthGuard]: User role ${user.role || 'undefined'} not allowed`);
       toast.error('Anda tidak memiliki akses ke halaman ini');
-
-      // Redirect based on role
+      
       switch (user.role) {
         case 'PETUGAS':
         case 'KEPALA_PETUGAS_UNIT':

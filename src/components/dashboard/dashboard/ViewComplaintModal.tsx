@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -10,10 +11,27 @@ import {
   TableRow,
   TableCell,
   Paper,
+  IconButton,
   Chip,
-  Typography,
 } from '@mui/material';
-import { Complaint } from './complaint';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+
+
+interface Complaint {
+  title: string;
+  content: string;
+  date: string;
+  nameUnit: string;
+  status: string;
+  response?: string;
+  filePendukung?: string;
+  filePetugas?: string;
+  harapan_pelapor?: string;
+  kategori?: {
+    id: string;
+    nama: string;
+  };
+}
 
 interface ViewComplaintModalProps {
   open: boolean;
@@ -24,6 +42,22 @@ interface ViewComplaintModalProps {
 export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintModalProps) => {
   if (!complaint) return null;
 
+  console.log("Data Complaint:", complaint);
+
+  // Warna berdasarkan status
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return '#F59E0B';
+      case 'PROCESS':
+        return '#3B82F6';
+      case 'COMPLETED':
+        return '#10B981';
+      default:
+        return '#EF4444';
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Detail Pengaduan</DialogTitle>
@@ -33,23 +67,23 @@ export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintMo
             <TableBody>
               <TableRow>
                 <TableCell><strong>Judul</strong></TableCell>
-                <TableCell>{complaint.title}</TableCell>
+                <TableCell>{complaint.title || '-'}</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell><strong>Isi</strong></TableCell>
-                <TableCell>{complaint.content}</TableCell>
+                <TableCell><strong>Isi Laporan</strong></TableCell>
+                <TableCell>{complaint.content || '-'}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Tanggal</strong></TableCell>
-                <TableCell>{complaint.date}</TableCell>
+                <TableCell>{complaint.date || '-'}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Kategori</strong></TableCell>
-                <TableCell>{complaint.category}</TableCell>
+                <TableCell>{complaint.kategori?.nama || '-'}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Unit Tertuju</strong></TableCell>
-                <TableCell>{complaint.targetUnit}</TableCell>
+                <TableCell>{complaint.nameUnit || '-'}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Status</strong></TableCell>
@@ -57,34 +91,54 @@ export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintMo
                   <Chip
                     label={complaint.status}
                     sx={{
-                      backgroundColor: 
-                        complaint.status === "PENDING" ? "#F59E0B" : 
-                        complaint.status === "PROCESS" ? "#3B82F6" :
-                        complaint.status === "SELESAI" ? "#10B981" : "#EF4444",
-                      color: "white",
+                      backgroundColor: getStatusColor(complaint.status),
+                      color: 'white',
                     }}
                   />
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Tanggapan Petugas</strong></TableCell>
+                <TableCell>{complaint.response || '-'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>File Pendukung</strong></TableCell>
                 <TableCell>
-                  <Typography
-                    sx={{
-                      whiteSpace: 'pre-wrap',
-                      color: complaint.response === '-' ? 'text.secondary' : 'text.primary'
-                    }}
-                  >
-                    {complaint.response}
-                  </Typography>
+                  {complaint.filePendukung ? (
+                    <IconButton 
+                      href={complaint.filePendukung} 
+                      target="_blank"
+                      title="Buka File Pendukung"
+                    >
+                      <AttachFileIcon />
+                    </IconButton>
+                  ) : '-'}
                 </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>File Petugas</strong></TableCell>
+                <TableCell>
+                  {complaint.filePetugas ? (
+                    <IconButton 
+                      href={complaint.filePetugas} 
+                      target="_blank"
+                      title="Buka File Petugas"
+                    >
+                      <AttachFileIcon />
+                    </IconButton>
+                  ) : '-'}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Harapan Pelapor</strong></TableCell>
+                <TableCell>{complaint.harapan_pelapor || '-'}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
         </TableContainer>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Tutup</Button>
+        <Button onClick={onClose} sx={{ color: '#16404D' }} >Tutup</Button>
       </DialogActions>
     </Dialog>
   );
