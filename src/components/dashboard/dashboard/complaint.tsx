@@ -221,26 +221,27 @@ export function LatestComplaints() {
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) => {
-        const backgroundColor =
+        const textColor =
           params?.row?.status === 'PENDING'
-            ? '#F59E0B'
+            ? '#F59E0B' // Kuning
             : params?.row?.status === 'PROCESS'
-              ? '#3B82F6'
+              ? '#3B82F6' // Biru
               : params?.row?.status === 'COMPLETED'
-                ? '#10B981'
-                : '#EF4444';
-
+                ? '#10B981' // Hijau
+                : '#EF4444'; // Merah
+    
         return (
           <Chip
             label={params.row?.status ?? '-'}
             sx={{
-              backgroundColor: backgroundColor,
-              color: 'white',
+              color: textColor,
+              fontWeight: 'bold', // Opsional: agar lebih jelas
+              backgroundColor: 'transparent', // Pastikan tidak ada background
             }}
           />
         );
       },
-    },
+    },    
     {
       field: 'actions',
       headerName: 'Aksi',

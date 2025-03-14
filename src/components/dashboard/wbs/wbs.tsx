@@ -17,23 +17,30 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Box,
+  Paper,
+  Container,
+  Grid,
 } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/`;
 
 const WBSReportForm = () => {
   const [date, setDate] = useState<Dayjs | null>(dayjs());
+  const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [unit, setUnit] = useState('');
   const [category, setCategory] = useState('');
   const [units, setUnits] = useState<string[]>([]);
   const [categories, setCategories] = useState<KategoriWbs[]>([]);
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  // const [isAnonymous, setIsAnonymous] = useState(false);
   const [isStatementChecked, setIsStatementChecked] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalType, setModalType] = useState('');
@@ -102,9 +109,10 @@ const WBSReportForm = () => {
   };
 
   const handleConfirm = () => {
-    if (modalType === 'anonymous') {
-      setIsAnonymous(true);
-    } else if (modalType === 'statement') {
+    // if (modalType === 'anonymous') {
+    //   setIsAnonymous(true);
+    // }
+     if (modalType === 'statement') {
       setIsStatementChecked(true);
     }
     setOpenModal(false);
@@ -124,7 +132,6 @@ const WBSReportForm = () => {
     }));
   };
 
-// First add this interface at the top with other interfaces
 interface WBSResponse {
   content: {
     id: string;
@@ -141,13 +148,13 @@ interface WBSResponse {
     approvedBy: string | null;
     createdAt: string;
     updatedAt: string;
-    response: string | null;
   };
   message: string;
   errors: string[];
 }
 
 // Then update the handleSubmit function
+// Replace the handleSubmit function with this implementation
 const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
   event.preventDefault();
 
@@ -161,210 +168,261 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     toast.error("Anda harus login terlebih dahulu.");
     return;
   }
-
-  // Validate required fields
+  
   if (!formData.judul || !formData.deskripsi || !formData.lokasi || 
       !formData.pihakTerlibat || !category || !unit || !date) {
     toast.error("Semua field harus diisi.");
     return;
   }
 
+  // Prepare the request body that EXACTLY matches the example
+  const requestBody = {
+    judul: formData.judul.trim(),
+    deskripsi: formData.deskripsi.trim(),
+    lokasi: formData.lokasi.trim(),
+    pihakTerlibat: formData.pihakTerlibat.trim(),
+    kategoriId: category,
+    tanggalKejadian: date.format('YYYY-MM-DD'),
+    unit: unit
+  };
+
+  console.log('Request body:', requestBody);
+
   try {
-    // Create the main request body exactly matching API expectations
-    const requestBody = {
-      judul: formData.judul.trim(),
-      deskripsi: formData.deskripsi.trim(),
-      lokasi: formData.lokasi.trim(),
-      pihakTerlibat: formData.pihakTerlibat.trim(),
-      kategoriId: category,
-      tanggalKejadian: date.format('YYYY-MM-DD'),
-      unit: unit,
-      isAnonymous: Boolean(isAnonymous) // Ensure boolean type
-    };
-
-    // Debug log
-    console.log('Request URL:', `${API_URL}PelaporanWbs`);
-    console.log('Request Body:', JSON.stringify(requestBody, null, 2));
-    console.log('Request Headers:', {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+    // Use native fetch API instead of axios
+    const response = await fetch(`${API_URL}PelaporanWbs`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
     });
 
-    const response = await axios.post<WBSResponse>(
-      `${API_URL}PelaporanWbs`, 
-      requestBody,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const responseData = await response.json();
+    console.log('Response:', responseData);
 
-    // Check both status and response data
-    if (response.status === 200 && response.data?.content) {
-      toast.success(response.data.message || 'Laporan WBS berhasil dikirim!');
-      
-      // Reset form
-      setFormData({
-        judul: '',
-        deskripsi: '',
-        lokasi: '',
-        pihakTerlibat: '',
-        kategoriId: '',
-        tanggalKejadian: dayjs().format('YYYY-MM-DD'),
-      });
-      setCategory('');
-      setUnit('');
-      setDate(dayjs());
-      setFile(null);
-      setIsAnonymous(false);
-      setIsStatementChecked(false);
+    if (!response.ok) {
+      console.error('Server error:', responseData);
+      if (responseData.message) {
+        toast.error(`Error: ${responseData.message}`);
+      } else if (responseData.errors && responseData.errors.length > 0) {
+        toast.error(`Validation errors: ${responseData.errors.join(', ')}`);
+      } else {
+        toast.error(`Error ${response.status}: ${response.statusText}`);
+      }
+      return;
     }
-  } catch (error: any) {
-    // Detailed error logging
-    console.error('Full error object:', error);
-    console.error('Error details:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers,
-        data: error.config?.data
-      }
-    });
+
+    toast.success(responseData.message || 'Laporan WBS berhasil dikirim!');
     
-    if (error.response?.data?.message) {
-      toast.error(`Error: ${error.response.data.message}`);
-    } else if (error.response?.status === 500) {
-      toast.error('Terjadi kesalahan server. Silakan coba lagi nanti.');
-    } else {
-      toast.error('Gagal mengirim laporan WBS. Silakan coba lagi.');
+    // Handle file upload if present
+    if (file && responseData.content && responseData.content.id) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('wbsId', responseData.content.id);
+      
+      const uploadResponse = await fetch(`${API_URL}upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) {
+        toast.warning('Laporan berhasil dikirim, tetapi terjadi kesalahan saat mengunggah file.');
+      } else {
+        toast.success('File berhasil diunggah.');
+      }
     }
+    
+    // Reset form after successful submission
+    setFormData({
+      judul: '',
+      deskripsi: '',
+      lokasi: '',
+      pihakTerlibat: '',
+      kategoriId: '',
+      tanggalKejadian: dayjs().format('YYYY-MM-DD'),
+    });
+    setCategory('');
+    setUnit('');
+    setDate(dayjs());
+    setFile(null);
+    setIsStatementChecked(false);
+    
+  } catch (error) {
+    console.error('Error submitting form:', error);
+    toast.error('Terjadi kesalahan. Silakan coba lagi.');
   }
 };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
-        <Typography variant="h5" fontWeight="bold" gutterBottom>
-          SAMPAIKAN PENGADUAN WBS ANDA
-        </Typography>
-        <form onSubmit={handleSubmit} style={{ width: '60%', display: 'grid', gap: '16px' }}>
-          <TextField
-            label="Judul Laporan"
-            fullWidth
-            required
-            name="judul"
-            value={formData.judul}
-            onChange={handleChange}
-          />
-          <TextField
-            label="Isi Laporan"
-            fullWidth
-            multiline
-            rows={4}
-            required
-            name="deskripsi"
-            value={formData.deskripsi}
-            onChange={handleChange}
-          />
-            <FormControl fullWidth required variant="outlined">
-            <InputLabel shrink>Unit Yang Dilapor</InputLabel>
-            <Select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              label="Unit Yang Dilapor"
-              sx={{ textAlign: 'left' }}
-            >
-              {units.map((u) => (
-              <MenuItem key={u} value={u}>{u}</MenuItem>
-              ))}
-            </Select>
-            </FormControl>
+      <Box sx={{ flexGrow: 1, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <Container maxWidth="xl" sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center", py: 4 }}>
+          <Paper elevation={3} sx={{ p: 6, borderRadius: 2, width: "80%" }}>
+            <Typography sx={{ pb: 4 }} variant="h5" gutterBottom textAlign="center">
+              Form Pengaduan
+            </Typography>
+            <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+              <Grid container spacing={2} direction="column">
+                <Grid item xs={12}>
+                  <TextField 
+                  fullWidth label="Judul Laporan" 
+                  name="judul" 
+                  margin="normal" 
+                  required value={formData.judul} 
+                  onChange={handleChange}
+                  sx={{
+                    mb: 2,
+                    fontSize: '1.2rem',
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                  }}/> 
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField 
+                  fullWidth label="Isi Laporan" 
+                  name="deskripsi"
+                  margin="normal" 
+                  multiline rows={4} 
+                  required value={formData.deskripsi} 
+                  onChange={handleChange} 
+                  sx={{
+                    mb: 2,
+                    fontSize: '1.2rem',
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                  }}/>
+                </Grid>
+                <Grid item xs={12}>
+  <FormControl 
+    fullWidth 
+    required 
+    sx={{
+      "& .MuiOutlinedInput-root": {
+        "& fieldset": { borderColor: "#16404D" },
+        "&:hover fieldset": { borderColor: "#16404D" },
+        "&.Mui-focused fieldset": { borderColor: "#16404D" },
+      },
+      "& .MuiInputLabel-root": {
+        color: "#16404D", 
+      },
+      "& .MuiInputLabel-shrink": {
+        backgroundColor: "white",
+        paddingX: "4px",
+        marginLeft: "-4px",
+      }
+    }}
+  >
+    <InputLabel shrink>Unit Yang Dilapor</InputLabel>
+    <Select value={unit} onChange={(e) => setUnit(e.target.value)}>
+      {units.map((u) => (
+        <MenuItem key={u} value={u}>{u}</MenuItem>
+      ))}
+    </Select>
+  </FormControl>
+</Grid>
 
-            <FormControl fullWidth required variant="outlined">
-            <InputLabel shrink>Kategori Laporan</InputLabel>
-            <Select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              displayEmpty
-              label="Kategori Laporan"
-              sx={{ textAlign: 'left' }}
-            >
-              {categories.map((c: KategoriWbs) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.nama}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+<Grid item xs={12}>
+  <FormControl 
+    fullWidth 
+    required 
+    sx={{
+      "& .MuiOutlinedInput-root": {
+        "& fieldset": { borderColor: "#16404D" },
+        "&:hover fieldset": { borderColor: "#16404D" },
+        "&.Mui-focused fieldset": { borderColor: "#16404D" },
+      },
+      "& .MuiInputLabel-root": {
+        color: "#16404D", 
+      },
+      "& .MuiInputLabel-shrink": {
+        backgroundColor: "white",
+        paddingX: "4px",
+        marginLeft: "-4px",
+      }
+    }}
+  >
+    <InputLabel shrink>Kategori Laporan</InputLabel>
+    <Select value={category} onChange={(e) => setCategory(e.target.value)}>
+      {categories.map((c) => (
+        <MenuItem key={c.id} value={c.id}>{c.nama}</MenuItem>
+      ))}
+    </Select>
+  </FormControl>
+</Grid>
 
-          <TextField
-            label="Lokasi Kejadian"
-            fullWidth
-            required
-            name="lokasi"
-            value={formData.lokasi}
-            onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Nama Yang Dilaporkan"
-            fullWidth
-            required
-            name="pihakTerlibat"
-            value={formData.pihakTerlibat}
-            onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
-          />
-          
-          <DatePicker
-            label="Tanggal Kejadian"
-            value={date}
-            onChange={(newDate) => setDate(newDate)}
-            slotProps={{ textField: { fullWidth: true, required: true, InputLabelProps: { shrink: true } } }}
-          />
-
-          <Button variant="contained" component="label" color="warning">
-            Choose File Here
-            <input type="file" hidden onChange={handleFileChange} />
-          </Button>
-          {file && <Typography variant="body2">File: {file.name}</Typography>}
-
-          {/* RADIO BUTTON DENGAN KONFIRMASI */}
-          <FormControl component="fieldset">
-            <RadioGroup>
-              <FormControlLabel
-                value="anonymous"
-                control={<Radio checked={isAnonymous} onChange={() => handleRadioChange('anonymous')} />}
-                label="Rahasia Identitas"
-              />
-              <FormControlLabel
-                value="statement"
-                control={<Radio checked={isStatementChecked} onChange={() => handleRadioChange('statement')} />}
-                label="Saya menyatakan bahwa laporan saya sah dan dapat dipertanggungjawabkan"
-              />
-            </RadioGroup>
-          </FormControl>
-
-          <Button type="submit" variant="contained" color="warning" fullWidth>
-            LAPOR
-          </Button>
-        </form>
-
+                <Grid item xs={12}>
+                  <TextField 
+                  fullWidth label="Lokasi Kejadian" 
+                  name="lokasi" 
+                  required value={formData.lokasi} 
+                  onChange={handleChange}
+                  sx={{
+                    mb: 2,
+                    fontSize: '1.2rem',
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                  }}/> 
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField 
+                  fullWidth label="Nama Yang Dilaporkan" 
+                  name="pihakTerlibat" 
+                  required value={formData.pihakTerlibat} 
+                  onChange={handleChange} 
+                  sx={{
+                  mb: 2,
+                  fontSize: '1.2rem',
+                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                      }}/>
+                </Grid>
+                <Grid item xs={12}>
+                  <DatePicker 
+                  label="Tanggal Kejadian" 
+                  value={date} 
+                  onChange={(newDate) => setDate(newDate)} 
+                  sx={{
+                  mb: 2,
+                  fontSize: '1.2rem',
+                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                    }}/>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button variant="contained" component="label" startIcon={<CloudUploadIcon />} sx={{ bgcolor: '#006A67', '&:hover': { bgcolor: '#0F2B33' } }}>
+                    Upload File
+                    <input type="file" hidden onChange={handleFileChange} />
+                  </Button>
+                  {file && <Typography sx={{ mt: 2 }}>{file.name}</Typography>}
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl component="fieldset">
+                    <RadioGroup>
+                      <FormControlLabel value="statement" control={<Radio checked={isStatementChecked} onChange={() => handleRadioChange('statement')} />} label="Saya menyatakan bahwa laporan saya sah dan dapat dipertanggungjawabkan" />
+                    </RadioGroup>
+                  </FormControl>
+                </Grid>
+              </Grid>
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                <Button type="submit" variant="contained" sx={{ width: "30%", py: 1.5, bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }} disabled={loading}>
+                  {loading ? "Mengirim..." : "Kirim Laporan"}
+                </Button>
+              </Box>
+            </form>
+          </Paper>
+        </Container>
         <ToastContainer position="top-right" autoClose={3000} />
-
-        {/* MODAL KONFIRMASI */}
         <Dialog open={openModal} onClose={() => setOpenModal(false)}>
           <DialogTitle>Konfirmasi</DialogTitle>
           <DialogContent>
             <Typography>
-              {modalType === 'anonymous' ? 'Apakah Anda yakin ingin merahasiakan identitas Anda?' :
-                'Apakah Anda yakin bahwa laporan ini sah dan dapat dipertanggungjawabkan?'}
+              {modalType === 'anonymous' ? 'Apakah Anda yakin ingin merahasiakan identitas Anda?' : 'Apakah Anda yakin bahwa laporan ini sah dan dapat dipertanggungjawabkan?'}
             </Typography>
           </DialogContent>
           <DialogActions>
@@ -372,7 +430,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
             <Button onClick={handleConfirm} color="primary">Iya</Button>
           </DialogActions>
         </Dialog>
-      </div>
+      </Box>
     </LocalizationProvider>
   );
 };

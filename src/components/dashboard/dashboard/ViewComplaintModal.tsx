@@ -48,15 +48,15 @@ export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintMo
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return '#F59E0B';
+        return '#F59E0B'; // Kuning
       case 'PROCESS':
-        return '#3B82F6';
+        return '#3B82F6'; // Biru
       case 'COMPLETED':
-        return '#10B981';
+        return '#10B981'; // Hijau
       default:
-        return '#EF4444';
+        return '#EF4444'; // Merah
     }
-  };
+  }; 
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -88,14 +88,16 @@ export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintMo
               <TableRow>
                 <TableCell><strong>Status</strong></TableCell>
                 <TableCell>
-                  <Chip
-                    label={complaint.status}
-                    sx={{
-                      backgroundColor: getStatusColor(complaint.status),
-                      color: 'white',
-                    }}
-                  />
-                </TableCell>
+  <Chip
+    label={complaint.status}
+    sx={{
+      color: getStatusColor(complaint.status), // Hanya warna teks yang berubah
+      backgroundColor: 'transparent', // Tidak ada background
+      fontWeight: 'bold', // Opsional: agar lebih jelas
+      border: 'none', // Hapus border jika ada
+    }}
+  />
+</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Tanggapan Petugas</strong></TableCell>

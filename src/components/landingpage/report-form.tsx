@@ -164,10 +164,6 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     <Box className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
       <ToastContainer position="top-right" autoClose={3000} />
 
-      <Typography variant="h4" className="font-bold text-center text-black pb-10">
-        SAMPAIKAN PENGADUAN LAYANAN ANDA
-      </Typography>
-
       <Paper
         elevation={3}
         className="p-6 rounded-lg w-full"
