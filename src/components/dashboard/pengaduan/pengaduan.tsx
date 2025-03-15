@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import {
   Container,
   TextField,
@@ -13,6 +12,9 @@ import {
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import api from "@/lib/api/api";
+
+
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/pelaporan`;
 
@@ -42,8 +44,8 @@ export default function PengaduanPage() {
     const fetchData = async () => {
       try {
         const [unitResponse, categoryResponse] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/units`),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/kategori`),
+          api.get("/units"), 
+          api.get("/kategori"),
         ]);
 
         const unitList = unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || [];
@@ -67,32 +69,17 @@ export default function PengaduanPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-  
-    const token = localStorage.getItem("custom-auth-token");
-    console.log("📝 Token yang digunakan:", token);
-  
-    if (!token) {
-      toast.error("Anda harus login terlebih dahulu.");
-      setLoading(false);
-      return;
-    }
-  
+
     let fileUrl = "";
     if (selectedFile) {
       const formData = new FormData();
       formData.append("file", selectedFile);
-  
+
       try {
-        const uploadResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/upload`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-  
+        const uploadResponse = await api.post("/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
         if (uploadResponse.status === 200) {
           fileUrl = uploadResponse.data.content.secure_url;
           console.log("✅ File berhasil diunggah:", fileUrl);
@@ -114,30 +101,21 @@ export default function PengaduanPage() {
       status: "PENDING",
       nameUnit: selectedUnit,
       kategoriId: selectedCategory,
-      harapan_pelapor: formData.get("expectation") as string, // Match the API's camelCase format
+      harapan_pelapor: formData.get("expectation") as string,
       filePendukung: fileUrl,
       response: "",
       filePetugas: "",
     };
-  
+
     console.log("📝 Data yang akan dikirim:", values);
-  
+
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/pelaporan`,
-        values,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-        }
-      );
-  
+      const response = await api.post("/pelaporan", values);
+
       if (response.status === 201) {
         console.log("✅ Laporan berhasil dikirim:", response.data);
         toast.success("Laporan berhasil dikirim!");
-        
+
         // Reset form
         formRef.current!.reset();
         setSelectedFile(null);

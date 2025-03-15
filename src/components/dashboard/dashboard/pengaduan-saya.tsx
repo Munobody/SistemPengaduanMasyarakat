@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { ArrowDown as ArrowDownIcon } from '@phosphor-icons/react/dist/ssr/ArrowDown';
 import { ArrowUp as ArrowUpIcon } from '@phosphor-icons/react/dist/ssr/ArrowUp';
 import { Users as UsersIcon } from '@phosphor-icons/react/dist/ssr/Users';
+import api from '@/lib/api/api';
 
 export interface PengaduanSayaProps {
   sx?: SxProps;
@@ -28,19 +29,7 @@ export function PengaduanSaya({ sx }: PengaduanSayaProps): React.JSX.Element {
       console.log("fetchPengaduan called"); // Debugging log
 
       try {
-        const token = localStorage.getItem("custom-auth-token");
-
-        if (!token) {
-          console.error("No token found in localStorage");
-          return;
-        }
-
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan?page=1&rows=1`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await api.get(`/pelaporan?page=1&rows=1`);
 
         const data = response.data;
         console.log("Response data:", data);
@@ -63,7 +52,7 @@ export function PengaduanSaya({ sx }: PengaduanSayaProps): React.JSX.Element {
     };
 
     fetchPengaduan();
-  }, []); // Dependency array kosong agar hanya dipanggil sekali
+  }, []);
 
   const TrendIcon = trend === "up" ? ArrowUpIcon : ArrowDownIcon;
   const trendColor = trend === "up" ? "var(--mui-palette-success-main)" : "var(--mui-palette-error-main)";

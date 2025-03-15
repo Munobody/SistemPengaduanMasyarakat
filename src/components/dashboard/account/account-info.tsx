@@ -51,9 +51,6 @@ export function AccountInfo(): React.JSX.Element {
       </CardContent>
       <Divider />
       <CardActions>
-        {/* <Button fullWidth variant="text">
-          Upload picture
-        </Button> */}
       </CardActions>
     </Card>
   );

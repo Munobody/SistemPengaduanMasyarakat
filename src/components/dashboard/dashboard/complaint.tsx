@@ -28,6 +28,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { EditComplaintModal } from './EditComplaintModal';
 import { ViewComplaintModal } from './ViewComplaintModal';
+import api from '@/lib/api/api';
 
 export interface Complaint {
   kategoriId: any;
@@ -58,17 +59,7 @@ export function LatestComplaints() {
 
   const fetchComplaints = async () => {
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        toast.error('Anda harus login terlebih dahulu.');
-        return;
-      }
-
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan?page=${page}&rows=${pageSize}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get(`/pelaporan?page=${page}&rows=${pageSize}`);
 
       const data = response.data;
       if (data?.content) {
@@ -83,17 +74,8 @@ export function LatestComplaints() {
   // Update the handleEditOpen function mapping
   const handleEditOpen = async (row: Complaint) => {
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        toast.error('Anda harus login terlebih dahulu.');
-        return;
-      }
 
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get(`/pelaporan/${row.id}`);
 
       const data = response.data.content;
       console.log('Edit complaint data:', data); // Debug log

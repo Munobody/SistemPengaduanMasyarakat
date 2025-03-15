@@ -30,6 +30,7 @@ import {
   Typography,
 } from '@mui/material';
 import axios from 'axios';
+import api from '@/lib/api/api';
 
 interface Pengaduan {
   id: string;
@@ -81,23 +82,16 @@ export function TabelPetugas() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        throw new Error('Token not found');
-      }
 
       const searchFilters = searchQuery ? { judul: searchQuery } : {};
 
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan`, {
+      const response = await api.get(`/pelaporan`, {
         params: {
           page: page + 1,
           rows: rowsPerPage,
           searchFilters: JSON.stringify(searchFilters),
           orderKey: 'judul',
           orderRule: 'asc',
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
         },
       });
 

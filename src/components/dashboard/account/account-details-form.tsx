@@ -21,19 +21,16 @@ export function AccountDetailsForm(): React.JSX.Element {
     lastName: '',
     email: '',
     phone: '',
-    state: '',
-    city: '',
   });
 
   React.useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setAccountDetails({
       firstName: user.name.split(' ')[0],
-      lastName: user.name.split(' ')[1] || '',
+      lastName:user.name.split(' ').slice(1).join(' ') || '',
       email: user.email,
       phone: user.no_identitas,
-      state: '', // Sesuaikan dengan data yang ada
-      city: '', // Sesuaikan dengan data yang ada
+
     });
   }, []);
 
