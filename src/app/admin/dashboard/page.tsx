@@ -4,10 +4,10 @@ import Grid from '@mui/material/Unstable_Grid2';
 import dayjs from 'dayjs';
 
 import { config } from '@/config';
-import { ReportUniv } from '@/components/dashboard/dashboard/report-univ';
-import { PengaduanSelesa } from '@/components/dashboard/dashboard/pengaduan-selesai';
-import { PengaduanBelumSelesai } from '@/components/dashboard/dashboard/pengaduan-belum';
 import { Register } from '@/components/admin/kelola/register'; // Add this import
+import { PengaduanBelumSelesai } from '@/components/dashboard/dashboard/pengaduan-belum';
+import { PengaduanSelesa } from '@/components/dashboard/dashboard/pengaduan-selesai';
+import { ReportUniv } from '@/components/dashboard/dashboard/total-pengaduan';
 
 export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
 
@@ -23,7 +23,7 @@ export default function PetugasPage(): React.JSX.Element {
       <Grid lg={3} sm={6} xs={12}>
         <PengaduanBelumSelesai sx={{ height: '100%' }} value="20" />
       </Grid>
-      
+
       {/* Add Register table */}
       <Grid xs={12}>
         <Register />
