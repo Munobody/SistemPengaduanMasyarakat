@@ -51,13 +51,13 @@ export function MainNav(): React.JSX.Element {
             </IconButton>
           </Stack>
           <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-            <Avatar
-              onClick={userPopover.handleOpen}
-              ref={userPopover.anchorRef}
-              src={isDayTime ? '/assets/logo-usk.png' : '/assets/logo-usk-putih.png'} 
-              sx={{ cursor: 'pointer' }}
-            />
-          </Stack>
+  <Avatar
+    onClick={userPopover.handleOpen}
+    ref={userPopover.anchorRef}
+    src="/assets/logo-usk.png" 
+    sx={{ cursor: 'pointer' }}
+  />
+</Stack>
         </Stack>
       </Box>
       <UserPopover anchorEl={userPopover.anchorRef.current} onClose={userPopover.handleClose} open={userPopover.open} />

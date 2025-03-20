@@ -17,6 +17,7 @@ interface AuthGuardProps {
 const rolePathMapping = {
   ADMIN: [paths.dashboard.admin, paths.dashboard.adminkelola],
   PETUGAS: [paths.dashboard.petugas, paths.dashboard.kelola],
+  PETUGAS_SUPER: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
   KEPALA_PETUGAS_UNIT: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
   MAHASISWA: [
     paths.dashboard.overview,
@@ -58,6 +59,7 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
       toast.error('Anda tidak memiliki akses ke halaman ini');
       
       switch (user.role) {
+        case 'PETUGAS_SUPER':
         case 'PETUGAS':
         case 'KEPALA_PETUGAS_UNIT':
           router.replace(paths.dashboard.petugas);
@@ -79,8 +81,9 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
       logger.debug('[AuthGuard]: Path not allowed for user role');
       toast.error('Anda tidak memiliki akses ke halaman ini');
 
-      // Redirect to appropriate dashboard
+
       switch (user.role) {
+        case 'PETUGAS_SUPER':
         case 'PETUGAS':
         case 'KEPALA_PETUGAS_UNIT':
           router.replace(paths.dashboard.petugas);

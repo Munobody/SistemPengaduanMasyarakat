@@ -91,10 +91,10 @@ export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintMo
   <Chip
     label={complaint.status}
     sx={{
-      color: getStatusColor(complaint.status), // Hanya warna teks yang berubah
-      backgroundColor: 'transparent', // Tidak ada background
-      fontWeight: 'bold', // Opsional: agar lebih jelas
-      border: 'none', // Hapus border jika ada
+      color: getStatusColor(complaint.status),
+      backgroundColor: 'transparent', 
+      fontWeight: 'bold', 
+      border: 'none', 
     }}
   />
 </TableCell>
