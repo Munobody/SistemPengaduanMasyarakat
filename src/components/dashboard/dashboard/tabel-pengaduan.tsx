@@ -23,12 +23,14 @@ import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import 'react-toastify/dist/ReactToastify.css';
 
-import { EditComplaintModal } from './EditComplaintModal';
-import { ViewComplaintModal } from './ViewComplaintModal';
 import api from '@/lib/api/api';
+
+import { EditComplaintModal } from './modal/EditComplaintModal';
+import { ViewComplaintModal } from './modal/ViewComplaintModal';
 
 export interface Complaint {
   kategoriId: any;
@@ -71,10 +73,25 @@ export function LatestComplaints() {
     }
   };
 
+  const handleDeleteComplaint = async (id: string) => {
+    try {
+      const response = await api.delete(`/pelaporan?ids=["${id}"]`, {
+      });
+  
+      if (response.status === 200) {
+        toast.success('Pengaduan berhasil dihapus!');
+        fetchComplaints(); // Refresh data setelah penghapusan
+      }
+    } catch (error: any) {
+      console.error('Error deleting complaint:', error);
+      toast.error(error.response?.data?.message || 'Gagal menghapus pengaduan.');
+    }
+  };
+  
+
   // Update the handleEditOpen function mapping
   const handleEditOpen = async (row: Complaint) => {
     try {
-
       const response = await api.get(`/pelaporan/${row.id}`);
 
       const data = response.data.content;
@@ -211,7 +228,7 @@ export function LatestComplaints() {
               : params?.row?.status === 'COMPLETED'
                 ? '#10B981' // Hijau
                 : '#EF4444'; // Merah
-    
+
         return (
           <Chip
             label={params.row?.status ?? '-'}
@@ -223,7 +240,7 @@ export function LatestComplaints() {
           />
         );
       },
-    },    
+    },
     {
       field: 'actions',
       headerName: 'Aksi',
@@ -277,6 +294,16 @@ export function LatestComplaints() {
                   <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
                 </MenuItem>
               )}
+             {(selectedRow?.status === 'COMPLETED' || selectedRow?.status === 'REJECTED') && (
+            <MenuItem
+              onClick={() => {
+                selectedRow && handleDeleteComplaint(selectedRow.id);
+                setMenuAnchor(null);
+              }}
+            >
+              <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
+            </MenuItem>
+          )}
             </Menu>
           </Box>
         );
@@ -286,23 +313,14 @@ export function LatestComplaints() {
 
   const handleViewOpen = async (row: Complaint) => {
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        toast.error('Anda harus login terlebih dahulu.');
-        return;
-      }
-  
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
       });
-  
+
       const data = response.data.content;
-  
+
       setSelectedRow({
-        kategoriId: data.kategoriId || 'Tidak Ada Kategori', 
-        nameUnit: data.nameUnit || 'Tidak Ada Unit', 
+        kategoriId: data.kategoriId || 'Tidak Ada Kategori',
+        nameUnit: data.nameUnit || 'Tidak Ada Unit',
         id: data.id,
         title: data.judul,
         content: data.deskripsi,
@@ -315,14 +333,13 @@ export function LatestComplaints() {
         filePetugas: data.filePetugas || '',
         harapan_pelapor: data.harapan_pelapor || '-',
       });
-  
+
       setViewOpen(true);
     } catch (error: any) {
       console.error('Error fetching complaint details:', error);
       toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
     }
   };
-  
 
   const handleViewClose = () => {
     setViewOpen(false);

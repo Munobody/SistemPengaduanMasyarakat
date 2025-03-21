@@ -97,6 +97,22 @@ const ComplaintsVisual: React.FC = () => {
       }
     };
 
+    const fetchWbs = async () => {
+      try {
+        const response = await api.get<ApiResponse>('/PelaporanWbs');
+        if (isMounted) {
+          setData(response.data);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError('Failed to fetch data');
+          console.error('Error fetching data:', err);
+          setLoading(false);
+        }
+      }
+    };
+
     const fetchNotifications = async () => {
       try {
         const response = await api.get<NotificationResponse>('/notification');

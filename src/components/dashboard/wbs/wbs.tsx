@@ -28,11 +28,13 @@ import dayjs, { Dayjs } from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-
+import api from '@/lib/api/api';
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/`;
 
 const WBSReportForm = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [date, setDate] = useState<Dayjs | null>(dayjs());
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -40,7 +42,6 @@ const WBSReportForm = () => {
   const [category, setCategory] = useState('');
   const [units, setUnits] = useState<string[]>([]);
   const [categories, setCategories] = useState<KategoriWbs[]>([]);
-  // const [isAnonymous, setIsAnonymous] = useState(false);
   const [isStatementChecked, setIsStatementChecked] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [modalType, setModalType] = useState('');
@@ -52,54 +53,36 @@ const WBSReportForm = () => {
     kategoriId: '',
     tanggalKejadian: dayjs().format('YYYY-MM-DD'),
   });
+
   interface KategoriWbs {
     id: string;
     nama: string;
     deskripsi: string | null;
   }
 
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('custom-auth-token');
-        if (!token) {
-          toast.error('Anda harus login terlebih dahulu.');
-          return;
-        }
-  
-        const [unitResponse, kategoriWbsResponse] = await Promise.all([
-          axios.get(`${API_URL}units`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axios.get(`${API_URL}kategoriWbs`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
+        const [unitResponse, categoryResponse] = await Promise.all([
+          api.get("/units"), 
+          api.get("/kategoriWbs"),
         ]);
-  
-        const unitList = unitResponse.data?.content?.entries.map(
-          (u: { nama_unit: string }) => u.nama_unit
-        ) || [];
-  
-        const kategoriWbsList = kategoriWbsResponse.data?.content?.entries || [];
-  
+
+        const unitList = unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || [];
+        const categoryList = categoryResponse.data?.content?.entries.map((category: { id: string; nama: string }) => ({ id: category.id, nama: category.nama })) || [];
+
         setUnits(unitList);
-        setCategories(kategoriWbsList);
-  
-        // Set default values if available
-        if (kategoriWbsList.length > 0) {
-          setCategory(kategoriWbsList[0].id);
-        }
-        if (unitList.length > 0) {
-          setUnit(unitList[0]);
-        }
-  
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Gagal memuat data kategori dan unit.');
+        setCategories(categoryList);
+
+        // ✅ Set nilai default jika ada data
+        if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
+        if (unitList.length > 0) setSelectedUnit(unitList[0]);
+      } catch (error: any) {
+        console.error("Error fetching data:", error.response?.data || error.message);
+        toast.error("Gagal memuat data.");
       }
     };
-  
+
     fetchData();
   }, []);
 
@@ -109,10 +92,7 @@ const WBSReportForm = () => {
   };
 
   const handleConfirm = () => {
-    // if (modalType === 'anonymous') {
-    //   setIsAnonymous(true);
-    // }
-     if (modalType === 'statement') {
+    if (modalType === 'statement') {
       setIsStatementChecked(true);
     }
     setOpenModal(false);
@@ -131,133 +111,91 @@ const WBSReportForm = () => {
       [name as string]: value,
     }));
   };
-
-interface WBSResponse {
-  content: {
-    id: string;
-    judul: string;
-    deskripsi: string;
-    pihakTerlibat: string;
-    tanggalKejadian: string;
-    lokasi: string;
-    kategoriId: string;
-    unit: string;
-    pelaporId: string;
-    petugasWBSId: string | null;
-    status: string;
-    approvedBy: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-  message: string;
-  errors: string[];
-}
-
-// Then update the handleSubmit function
-// Replace the handleSubmit function with this implementation
-const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-
-  if (!isStatementChecked) {
-    toast.error("Anda harus menyetujui pernyataan pertanggungjawaban.");
-    return;
-  }
-
-  const token = localStorage.getItem("custom-auth-token");
-  if (!token) {
-    toast.error("Anda harus login terlebih dahulu.");
-    return;
-  }
   
-  if (!formData.judul || !formData.deskripsi || !formData.lokasi || 
-      !formData.pihakTerlibat || !category || !unit || !date) {
-    toast.error("Semua field harus diisi.");
-    return;
-  }
-
-  // Prepare the request body that EXACTLY matches the example
-  const requestBody = {
-    judul: formData.judul.trim(),
-    deskripsi: formData.deskripsi.trim(),
-    lokasi: formData.lokasi.trim(),
-    pihakTerlibat: formData.pihakTerlibat.trim(),
-    kategoriId: category,
-    tanggalKejadian: date.format('YYYY-MM-DD'),
-    unit: unit
-  };
-
-  console.log('Request body:', requestBody);
-
-  try {
-    // Use native fetch API instead of axios
-    const response = await fetch(`${API_URL}PelaporanWbs`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    const responseData = await response.json();
-    console.log('Response:', responseData);
-
-    if (!response.ok) {
-      console.error('Server error:', responseData);
-      if (responseData.message) {
-        toast.error(`Error: ${responseData.message}`);
-      } else if (responseData.errors && responseData.errors.length > 0) {
-        toast.error(`Validation errors: ${responseData.errors.join(', ')}`);
-      } else {
-        toast.error(`Error ${response.status}: ${response.statusText}`);
-      }
-      return;
-    }
-
-    toast.success(responseData.message || 'Laporan WBS berhasil dikirim!');
-    
-    // Handle file upload if present
-    if (file && responseData.content && responseData.content.id) {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+  
+    let fileUrl = "";
+  
+    // Upload file terlebih dahulu jika ada
+    if (file) {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('wbsId', responseData.content.id);
-      
-      const uploadResponse = await fetch(`${API_URL}upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-      
-      if (!uploadResponse.ok) {
-        toast.warning('Laporan berhasil dikirim, tetapi terjadi kesalahan saat mengunggah file.');
-      } else {
-        toast.success('File berhasil diunggah.');
+      formData.append("file", file);
+  
+      try {
+        const uploadResponse = await api.post("/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+  
+        if (uploadResponse.status === 200) {
+          fileUrl = uploadResponse.data.content.secure_url;
+          console.log("✅ File berhasil diunggah:", fileUrl);
+        } else {
+          throw new Error("Gagal mengunggah file.");
+        }
+      } catch (error: any) {
+        console.error("❌ Error uploading file:", error.response?.data || error.message);
+        toast.error("Gagal mengunggah file.");
+        setLoading(false);
+        return;
       }
     }
-    
-    // Reset form after successful submission
-    setFormData({
-      judul: '',
-      deskripsi: '',
-      lokasi: '',
-      pihakTerlibat: '',
-      kategoriId: '',
-      tanggalKejadian: dayjs().format('YYYY-MM-DD'),
-    });
-    setCategory('');
-    setUnit('');
-    setDate(dayjs());
-    setFile(null);
-    setIsStatementChecked(false);
-    
-  } catch (error) {
-    console.error('Error submitting form:', error);
-    toast.error('Terjadi kesalahan. Silakan coba lagi.');
-  }
-};
+  
+    // Siapkan data laporan
+    const requestBody = {
+      judul: formData.judul.trim(),
+      deskripsi: formData.deskripsi.trim(),
+      lokasi: formData.lokasi.trim(),
+      pihakTerlibat: formData.pihakTerlibat.trim(),
+      kategoriId: category,
+      tanggalKejadian: date?.format('YYYY-MM-DD'),
+      unit: unit,
+      filePendukung: fileUrl, // URL file yang sudah diunggah
+    };
+  
+    console.log("📝 Data yang akan dikirim:", JSON.stringify(requestBody, null, 2));
+  
+    try {
+      const response = await api.post("/PelaporanWbs", requestBody);
+  
+      if (response.status === 201) {
+        console.log("✅ Laporan berhasil dikirim:", response.data);
+        toast.success(response.data.message || 'Laporan WBS berhasil dikirim!');
+  
+        // Reset form setelah berhasil
+        setFormData({
+          judul: '',
+          deskripsi: '',
+          lokasi: '',
+          pihakTerlibat: '',
+          kategoriId: '',
+          tanggalKejadian: dayjs().format('YYYY-MM-DD'),
+        });
+        setCategory('');
+        setUnit('');
+        setDate(dayjs());
+        setFile(null);
+        setIsStatementChecked(false);
+      } else {
+        throw new Error(response.data.message || "Gagal mengirim laporan.");
+      }
+    } catch (error: any) {
+      console.error('❌ Error submitting form:', error.response?.data || error.message);
+      
+      // Tampilkan pesan error dari server jika ada
+      if (error.response?.data?.message) {
+        toast.error(`Error: ${error.response.data.message}`);
+      } else if (error.response?.data?.errors) {
+        // Jika ada error validasi, tampilkan semua pesan error
+        toast.error(`Validation errors: ${error.response.data.errors.join(', ')}`);
+      } else {
+        toast.error('Terjadi kesalahan. Silakan coba lagi.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -271,128 +209,131 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
               <Grid container spacing={2} direction="column">
                 <Grid item xs={12}>
                   <TextField 
-                  fullWidth label="Judul Laporan" 
-                  name="judul" 
-                  margin="normal" 
-                  required value={formData.judul} 
-                  onChange={handleChange}
-                  sx={{
-                    mb: 2,
-                    fontSize: '1.2rem',
-                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
-                  }}/> 
+                    fullWidth label="Judul Laporan" 
+                    name="judul" 
+                    margin="normal" 
+                    required value={formData.judul} 
+                    onChange={handleChange}
+                    sx={{
+                      mb: 2,
+                      fontSize: '1.2rem',
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                      '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                    }}
+                  /> 
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                  fullWidth label="Isi Laporan" 
-                  name="deskripsi"
-                  margin="normal" 
-                  multiline rows={4} 
-                  required value={formData.deskripsi} 
-                  onChange={handleChange} 
-                  sx={{
-                    mb: 2,
-                    fontSize: '1.2rem',
-                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
-                  }}/>
+                    fullWidth label="Isi Laporan" 
+                    name="deskripsi"
+                    margin="normal" 
+                    multiline rows={4} 
+                    required value={formData.deskripsi} 
+                    onChange={handleChange} 
+                    sx={{
+                      mb: 2,
+                      fontSize: '1.2rem',
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                      '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                    }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
-  <FormControl 
-    fullWidth 
-    required 
-    sx={{
-      "& .MuiOutlinedInput-root": {
-        "& fieldset": { borderColor: "#16404D" },
-        "&:hover fieldset": { borderColor: "#16404D" },
-        "&.Mui-focused fieldset": { borderColor: "#16404D" },
-      },
-      "& .MuiInputLabel-root": {
-        color: "#16404D", 
-      },
-      "& .MuiInputLabel-shrink": {
-        backgroundColor: "white",
-        paddingX: "4px",
-        marginLeft: "-4px",
-      }
-    }}
-  >
-    <InputLabel shrink>Unit Yang Dilapor</InputLabel>
-    <Select value={unit} onChange={(e) => setUnit(e.target.value)}>
-      {units.map((u) => (
-        <MenuItem key={u} value={u}>{u}</MenuItem>
-      ))}
-    </Select>
-  </FormControl>
-</Grid>
-
-<Grid item xs={12}>
-  <FormControl 
-    fullWidth 
-    required 
-    sx={{
-      "& .MuiOutlinedInput-root": {
-        "& fieldset": { borderColor: "#16404D" },
-        "&:hover fieldset": { borderColor: "#16404D" },
-        "&.Mui-focused fieldset": { borderColor: "#16404D" },
-      },
-      "& .MuiInputLabel-root": {
-        color: "#16404D", 
-      },
-      "& .MuiInputLabel-shrink": {
-        backgroundColor: "white",
-        paddingX: "4px",
-        marginLeft: "-4px",
-      }
-    }}
-  >
-    <InputLabel shrink>Kategori Laporan</InputLabel>
-    <Select value={category} onChange={(e) => setCategory(e.target.value)}>
-      {categories.map((c) => (
-        <MenuItem key={c.id} value={c.id}>{c.nama}</MenuItem>
-      ))}
-    </Select>
-  </FormControl>
-</Grid>
-
+                  <FormControl 
+                    fullWidth 
+                    required 
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: "#16404D" },
+                        "&:hover fieldset": { borderColor: "#16404D" },
+                        "&.Mui-focused fieldset": { borderColor: "#16404D" },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "#16404D", 
+                      },
+                      "& .MuiInputLabel-shrink": {
+                        backgroundColor: "white",
+                        paddingX: "4px",
+                        marginLeft: "-4px",
+                      }
+                    }}
+                  >
+                    <InputLabel shrink>Unit Yang Dilapor</InputLabel>
+                    <Select value={unit} onChange={(e) => setUnit(e.target.value)}>
+                      {units.map((u) => (
+                        <MenuItem key={u} value={u}>{u}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
                 <Grid item xs={12}>
-                  <TextField 
-                  fullWidth label="Lokasi Kejadian" 
-                  name="lokasi" 
-                  required value={formData.lokasi} 
-                  onChange={handleChange}
-                  sx={{
-                    mb: 2,
-                    fontSize: '1.2rem',
-                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-                    '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
-                  }}/> 
+                  <FormControl 
+                    fullWidth 
+                    required 
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: "#16404D" },
+                        "&:hover fieldset": { borderColor: "#16404D" },
+                        "&.Mui-focused fieldset": { borderColor: "#16404D" },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "#16404D", 
+                      },
+                      "& .MuiInputLabel-shrink": {
+                        backgroundColor: "white",
+                        paddingX: "4px",
+                        marginLeft: "-4px",
+                      }
+                    }}
+                  >
+                    <InputLabel shrink>Kategori Laporan</InputLabel>
+                    <Select value={category} onChange={(e) => setCategory(e.target.value)}>
+                      {categories.map((c) => (
+                        <MenuItem key={c.id} value={c.id}>{c.nama}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                  fullWidth label="Nama Yang Dilaporkan" 
-                  name="pihakTerlibat" 
-                  required value={formData.pihakTerlibat} 
-                  onChange={handleChange} 
-                  sx={{
-                  mb: 2,
-                  fontSize: '1.2rem',
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
-                      }}/>
+                    fullWidth label="Lokasi Kejadian" 
+                    name="lokasi" 
+                    required value={formData.lokasi} 
+                    onChange={handleChange}
+                    sx={{
+                      mb: 2,
+                      fontSize: '1.2rem',
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                      '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                    }}
+                  /> 
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField 
+                    fullWidth label="Nama Yang Dilaporkan" 
+                    name="pihakTerlibat" 
+                    required value={formData.pihakTerlibat} 
+                    onChange={handleChange} 
+                    sx={{
+                      mb: 2,
+                      fontSize: '1.2rem',
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                      '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                    }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <DatePicker 
-                  label="Tanggal Kejadian" 
-                  value={date} 
-                  onChange={(newDate) => setDate(newDate)} 
-                  sx={{
-                  mb: 2,
-                  fontSize: '1.2rem',
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
-                    }}/>
+                    label="Tanggal Kejadian" 
+                    value={date} 
+                    onChange={(newDate) => setDate(newDate)} 
+                    sx={{
+                      mb: 2,
+                      fontSize: '1.2rem',
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
+                      '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                    }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <Button variant="contained" component="label" startIcon={<CloudUploadIcon />} sx={{ bgcolor: '#006A67', '&:hover': { bgcolor: '#0F2B33' } }}>
@@ -410,7 +351,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
                 </Grid>
               </Grid>
               <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                <Button type="submit" variant="contained" sx={{ width: "30%", py: 1.5, bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }} disabled={loading}>
+                <Button type="submit" variant="contained" sx={{ width: "30%", py: 1.5, bgcolor: '#3A4F6A', '&:hover': { bgcolor: '#4A7EB0' } }} disabled={loading}>
                   {loading ? "Mengirim..." : "Kirim Laporan"}
                 </Button>
               </Box>

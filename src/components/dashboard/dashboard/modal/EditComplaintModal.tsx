@@ -18,10 +18,9 @@ import {
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-import { Complaint } from './complaint';
 import api from '@/lib/api/api';
 
-
+import { Complaint } from '@/components/dashboard/dashboard/tabel-pengaduan';
 
 interface Unit {
   nama_unit: string;
@@ -51,9 +50,12 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange 
   const fetchCategories = async () => {
     const token = localStorage.getItem('custom-auth-token');
     try {
-      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/kategori?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/kategori?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data.content?.entries) {
         const sortedCategories = response.data.content.entries.sort((a: Category, b: Category) =>
@@ -78,9 +80,12 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange 
   const fetchUnits = async () => {
     const token = localStorage.getItem('custom-auth-token');
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data.content?.entries) {
         const unitList = response.data.content.entries.map((unit: Unit) => unit.nama_unit);

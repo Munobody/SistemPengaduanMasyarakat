@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import Grid from "@mui/material/Grid";
-import PengaduanPage from "@/components/dashboard/pengaduan/pengaduan";
-import { LatestComplaints } from "@/components/dashboard/dashboard/complaint";
+import Grid from '@mui/material/Grid';
+
+import { LatestComplaints } from '@/components/dashboard/dashboard/tabel-pengaduan';
+import PengaduanPage from '@/components/dashboard/pengaduan/pengaduan';
 
 export default function Page() {
   return (
