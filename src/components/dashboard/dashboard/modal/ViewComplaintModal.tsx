@@ -88,16 +88,16 @@ export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintMo
               <TableRow>
                 <TableCell><strong>Status</strong></TableCell>
                 <TableCell>
-  <Chip
-    label={complaint.status}
-    sx={{
-      color: getStatusColor(complaint.status),
-      backgroundColor: 'transparent', 
-      fontWeight: 'bold', 
-      border: 'none', 
-    }}
-  />
-</TableCell>
+              <Chip
+                label={complaint.status}
+                sx={{
+                  color: getStatusColor(complaint.status),
+                  backgroundColor: 'transparent', 
+                  fontWeight: 'bold', 
+                  border: 'none', 
+                }}
+              />
+            </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Tanggapan Petugas</strong></TableCell>

@@ -1,110 +1,78 @@
 import { useEffect, useRef, useState } from 'react';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Box, Button, CircularProgress, Container, Grid, MenuItem, Paper, TextField, Typography } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import api from '@/lib/api/api'; // Asumsi api sudah mengelola interceptor dan token
+import api from '@/lib/api/api'; // Asumsi token sudah dikelola di sini
 
-// Update the Pengaduan interface
 interface Pengaduan {
   id: string;
   judul: string;
   deskripsi: string;
+  pihakTerlibat: string;
+  tanggalKejadian: string;
+  lokasi: string;
   kategoriId: string;
-  nameUnit: string;
+  unit: string;
   pelaporId: string;
   status: string;
   approvedBy: string | null;
-  harapan_pelapor: string | null;
-  filePendukung: string;
   response: string;
-  filePetugas: string;
+  filePendukung: string;
+  filePetugas: string | null;
+  createdAt: string;
+  updatedAt: string;
   kategori?: {
     id: string;
     nama: string;
   };
 }
 
-// Update the component props to accept id
-interface KelolaPengaduanPageProps {
+interface KelolaPengaduanWbsPageProps {
   id?: string;
 }
 
-export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
+export default function KelolaPengaduanWbsPage({ id }: KelolaPengaduanWbsPageProps) {
   const [complaint, setComplaint] = useState<Pengaduan | null>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [units, setUnits] = useState<string[]>([]);
-  const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>('PENDING');
   const [responseText, setResponseText] = useState<string>('');
   const [petugasFile, setPetugasFile] = useState<File | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string>('PENDING');
-  const formRef = useRef<HTMLFormElement>(null);
   const responseFormRef = useRef<HTMLFormElement>(null);
 
   const statusOptions = ['PENDING', 'PROCESS', 'REJECTED', 'COMPLETED'];
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [unitResponse, categoryResponse] = await Promise.all([
-          api.get('/units'),
-          api.get('/kategori'),
-        ]);
+  // Format tanggal ke format yang lebih mudah dibaca
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
-        const unitList = unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || [];
-        const categoryList =
-          categoryResponse.data?.content?.entries.map((category: { id: string; nama: string }) => ({
-            id: category.id,
-            nama: category.nama,
-          })) || [];
-
-        setUnits(unitList);
-        setCategories(categoryList);
-
-        if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
-        if (unitList.length > 0) setSelectedUnit(unitList[0]);
-      } catch (error: any) {
-        console.error('Error fetching data:', error.response?.data || error.message);
-        toast.error('Gagal memuat data.');
-      }
-    };
-
-    fetchData();
-  }, []);
-
+  // Ambil detail pengaduan
   useEffect(() => {
     const fetchComplaint = async () => {
       if (!id) return;
 
       setLoading(true);
       try {
-        const response = await api.get(`/pelaporan/${id}`);
+        const response = await api.get(`PelaporanWbs/${id}`);
         const complaintData = response.data.content;
 
-        // Ensure kategori data exists
+        // Jika kategori tidak ada, ambil data kategori terpisah
         if (!complaintData.kategori) {
-          // If kategori is missing, fetch it separately
-          try {
-            const kategoriResponse = await api.get(`/kategori/${complaintData.kategoriId}`);
-            complaintData.kategori = kategoriResponse.data.content;
-          } catch (error) {
-            console.error('❌ Gagal memuat data kategori:', error);
-          }
+          const kategoriResponse = await api.get(`kategori/${complaintData.kategoriId}`);
+          complaintData.kategori = kategoriResponse.data.content;
         }
 
         setComplaint(complaintData);
-        setSelectedCategory(complaintData.kategoriId);
-        setSelectedUnit(complaintData.nameUnit);
         setSelectedStatus(complaintData.status);
         setResponseText(complaintData.response || '');
-
-        console.log('✅ Detail pengaduan dengan kategori:', complaintData);
       } catch (error: any) {
-        console.error('❌ Gagal memuat detail pengaduan:', error.response?.data);
+        console.error('Gagal memuat detail pengaduan:', error.response?.data || error.message);
         toast.error('Gagal memuat detail pengaduan');
       } finally {
         setLoading(false);
@@ -114,67 +82,29 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
     fetchComplaint();
   }, [id]);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-
-    let fileUrl = '';
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      try {
-        const uploadResponse = await api.post('/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-
-        if (uploadResponse.status === 200) {
-          fileUrl = uploadResponse.data.content.secure_url;
-        } else {
-          throw new Error('Gagal mengunggah file.');
-        }
-      } catch (error: any) {
-        console.error('Error uploading file:', error.response?.data || error.message);
-        toast.error('Gagal mengunggah file.');
-        setLoading(false);
-        return;
-      }
-    }
-
-    const formData = new FormData(formRef.current!);
-    const values = {
-      judul: formData.get('title') as string,
-      deskripsi: formData.get('description') as string,
-      status: 'PENDING',
-      nameUnit: selectedUnit,
-      response: '',
-      kategoriId: selectedCategory,
-      filePendukung: fileUrl,
-      filePetugas: '',
-    };
-
+  // Fungsi untuk mengupload file
+  const handleFileUpload = async (file: File) => {
     try {
-      const response = await api.post('/pelaporan', values);
+      const formData = new FormData();
+      formData.append('file', file);
 
-      if (response.status === 201) {
-        toast.success('Laporan berhasil dikirim!');
-        formRef.current!.reset();
-        setSelectedFile(null);
-      } else {
-        toast.error('Gagal mengirim laporan.');
-      }
+      const uploadResponse = await api.post('upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return uploadResponse.data.content.secure_url;
     } catch (error: any) {
-      console.error('Error submitting form:', error.response?.data || error.message);
-      toast.error('Terjadi kesalahan saat mengirim laporan.');
-    } finally {
-      setLoading(false);
+      console.error('Gagal mengunggah file:', error.response?.data || error.message);
+      toast.error('Gagal mengunggah file');
+      throw error;
     }
   };
 
+  // Handle submit tanggapan
   const handleResponseSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     if (!complaint?.id) {
       toast.error('ID pengaduan tidak ditemukan');
       return;
@@ -183,48 +113,34 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
     setLoading(true);
 
     try {
-      let filePetugasUrl = '';
+      let filePetugasUrl = complaint.filePetugas;
+
+      // Upload file petugas jika ada
       if (petugasFile) {
-        const formData = new FormData();
-        formData.append('file', petugasFile);
-
-        const uploadResponse = await api.post('/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-
-        if (uploadResponse.status === 200) {
-          filePetugasUrl = uploadResponse.data.content.secure_url;
-          console.log('✅ File berhasil diupload:', filePetugasUrl);
-        } else {
-          throw new Error('Gagal mengunggah file.');
-        }
+        filePetugasUrl = await handleFileUpload(petugasFile);
       }
 
-      // Then update the payload section:
+      // Payload untuk mengupdate status dan response
       const payload = {
-        status: selectedStatus === 'PROSES' ? 'PROCESS' : selectedStatus,
+        status: selectedStatus,
         response: responseText.trim(),
-        filePetugas: filePetugasUrl || complaint.filePetugas || null,
+        filePetugas: filePetugasUrl || null,
       };
 
-      console.log('📝 Mengirim tanggapan:', payload);
-
-      const response = await api.put(`/pelaporan/${complaint.id}`, payload);
+      // Kirim permintaan PUT ke endpoint /PelaporanWbs/:id
+      const response = await api.put(`PelaporanWbs/${complaint.id}`, payload);
 
       if (response.status === 200) {
-        console.log('✅ Tanggapan berhasil diperbarui:', response.data);
-        toast.success('Tanggapan berhasil diperbarui!');
+        toast.success('Status dan tanggapan berhasil diperbarui!');
 
-        // Update local state
+        // Update state lokal dengan data terbaru
         setComplaint((prev) =>
           prev
             ? {
                 ...prev,
                 status: selectedStatus,
-                response: responseText,
-                filePetugas: filePetugasUrl || prev.filePetugas,
+                response: responseText.trim(),
+                filePetugas: filePetugasUrl,
               }
             : null
         );
@@ -234,12 +150,8 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
         setPetugasFile(null);
       }
     } catch (error: any) {
-      console.error('❌ Gagal memperbarui tanggapan:', error);
-      console.error('Response data:', error.response?.data);
-      console.error('Status code:', error.response?.status);
-      toast.error(
-        error.response?.data?.message || 'Gagal memperbarui tanggapan. Silakan coba lagi.'
-      );
+      console.error('Gagal memperbarui status dan tanggapan:', error.response?.data || error.message);
+      toast.error(error.response?.data?.message || 'Gagal memperbarui status dan tanggapan');
     } finally {
       setLoading(false);
     }
@@ -280,16 +192,30 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
                     <Typography variant="subtitle2" color="text.secondary">
                       Deskripsi
                     </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        wordWrap: 'break-word',
-                        whiteSpace: 'pre-wrap',
-                        overflowWrap: 'break-word',
-                      }}
-                    >
+                    <Typography variant="body1" sx={{ wordWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
                       {complaint.deskripsi}
                     </Typography>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Pihak Terlibat
+                    </Typography>
+                    <Typography variant="body1">{complaint.pihakTerlibat}</Typography>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Tanggal Kejadian
+                    </Typography>
+                    <Typography variant="body1">{formatDate(complaint.tanggalKejadian)}</Typography>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Lokasi
+                    </Typography>
+                    <Typography variant="body1">{complaint.lokasi}</Typography>
                   </Grid>
 
                   <Grid item xs={12}>
@@ -303,7 +229,7 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
                     <Typography variant="subtitle2" color="text.secondary">
                       Unit
                     </Typography>
-                    <Typography variant="body1">{complaint.nameUnit}</Typography>
+                    <Typography variant="body1">{complaint.unit}</Typography>
                   </Grid>
 
                   <Grid item xs={12}>
@@ -315,9 +241,9 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
 
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Harapan Pelapor
+                      Tanggapan Petugas
                     </Typography>
-                    <Typography variant="body1">{complaint.harapan_pelapor || '-'}</Typography>
+                    <Typography variant="body1">{complaint.response || '-'}</Typography>
                   </Grid>
 
                   {complaint.filePendukung && (

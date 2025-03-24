@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 
 import { config } from '@/config';
 import { Register } from '@/components/admin/kelola/register'; // Add this import
+import ComplaintsVisual from '@/components/dashboard/dashboard/visual-complaint';
 
 export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
 

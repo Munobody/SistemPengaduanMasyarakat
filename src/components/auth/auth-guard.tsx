@@ -11,7 +11,7 @@ import { useUsers } from '@/hooks/use-user';
 
 interface AuthGuardProps {
   children: React.ReactNode;
-  allowedRoles?: string[]; // Make allowedRoles optional
+  allowedRoles?: string[];
 }
 
 const rolePathMapping = {
@@ -19,13 +19,12 @@ const rolePathMapping = {
   PETUGAS: [paths.dashboard.petugas, paths.dashboard.kelola],
   PETUGAS_SUPER: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
   KEPALA_PETUGAS_UNIT: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
-  MAHASISWA: [
-    paths.dashboard.overview,
-  ],
-  DOSEN: [
-    paths.dashboard.overview,
-  ],
+  PETUGAS_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs],
+  KEPALA_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.petugaswbs], 
+  MAHASISWA: [paths.dashboard.overview],
+  DOSEN: [paths.dashboard.overview],
 };
+
 
 export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): React.JSX.Element | null {
   const router = useRouter();
@@ -66,6 +65,10 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
           break;
         case 'ADMIN':
           router.replace(paths.dashboard.admin);
+          break;
+        case 'PETUGAS_WBS':
+          case 'KEPALA_WBS':
+          router.replace(paths.dashboard.dashboardwbs);
           break;
         case 'MAHASISWA':
         case 'DOSEN':

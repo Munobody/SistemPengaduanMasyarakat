@@ -38,7 +38,7 @@ interface User {
   role: Role;
 }
 
-const ROLES = ['ALL', 'USER', 'ADMIN', 'PETUGAS_SUPER', 'PETUGAS', 'KEPALA_PETUGAS_UNIT'] as const;
+const ROLES = ['ALL', 'MAHASISWA', 'DOSEN' ,'TENAGA_KEPENDIDIKAN', 'ADMIN', 'PETUGAS_SUPER', 'PETUGAS', 'KEPALA_PETUGAS_UNIT'] as const;
 
 type Role = (typeof ROLES)[number];
 
@@ -126,7 +126,7 @@ export function Register() {
         name: '',
         no_identitas: '',
         program_studi: '',
-        role: 'USER',
+        role: 'ALL',
       });
     } catch (error: any) {
       console.error('❌ Gagal mendaftarkan pengguna:', error);

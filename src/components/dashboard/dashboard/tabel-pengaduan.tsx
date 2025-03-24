@@ -89,7 +89,6 @@ export function LatestComplaints() {
   };
   
 
-  // Update the handleEditOpen function mapping
   const handleEditOpen = async (row: Complaint) => {
     try {
       const response = await api.get(`/pelaporan/${row.id}`);

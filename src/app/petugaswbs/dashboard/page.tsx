@@ -4,9 +4,8 @@ import Grid from '@mui/material/Unstable_Grid2';
 import dayjs from 'dayjs';
 
 import { config } from '@/config';
-import ComplaintsVisual from '@/components/dashboard/dashboard/visual-complaint';
-import { TabelPetugas } from '@/components/petugas/tabel-pengaduan-internal';
-import { TabelPetugasMasyarakat } from '@/components/petugas/tabel-pengaduan-masyarakat';
+import { TabelPetugasWbs } from '@/components/petugaswbs/tabel-pengaduan-wbs';
+import ComplaintsVisualWbs from '@/components/petugaswbs/complaint-visual-wbs';
 
 export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
 
@@ -14,13 +13,10 @@ export default function PetugasPage(): React.JSX.Element {
   return (
     <Grid container spacing={3}>
       <Grid lg={12} md={12} xs={12}>
-        <ComplaintsVisual />
+        <ComplaintsVisualWbs />
       </Grid>
       <Grid lg={12} md={12} xs={12}>
-        <TabelPetugas />
-      </Grid>
-      <Grid lg={12} md={12} xs={12}>
-        <TabelPetugasMasyarakat />
+        <TabelPetugasWbs />
       </Grid>
     </Grid>
   );

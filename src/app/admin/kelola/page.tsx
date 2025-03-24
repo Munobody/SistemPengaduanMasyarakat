@@ -6,9 +6,7 @@ import dayjs from 'dayjs';
 import { config } from '@/config';
 import { KelolaKategori } from '@/components/admin/kelola/kelola-kategori';
 import { KelolaUnit } from '@/components/admin/kelola/kelola-unit';
-import { PengaduanBelumSelesai } from '@/components/dashboard/dashboard/pengaduan-belum';
-import { PengaduanSelesa } from '@/components/dashboard/dashboard/pengaduan-selesai';
-import { ReportUniv } from '@/components/dashboard/dashboard/total-pengaduan';
+import { KelolaKategoriWbs } from '@/components/admin/kelola/kelola-wbs';
 
 export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
 
@@ -20,6 +18,9 @@ export default function KelolaPage(): React.JSX.Element {
       </Grid>
       <Grid xs={12}>
         <KelolaUnit />
+      </Grid>
+      <Grid xs={12}>
+        <KelolaKategoriWbs />
       </Grid>
     </Grid>
   );
