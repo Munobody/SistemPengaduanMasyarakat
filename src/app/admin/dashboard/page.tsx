@@ -4,17 +4,18 @@ import Grid from '@mui/material/Unstable_Grid2';
 import dayjs from 'dayjs';
 
 import { config } from '@/config';
-import { Register } from '@/components/admin/kelola/register'; // Add this import
-import ComplaintsVisual from '@/components/dashboard/dashboard/visual-complaint';
 
-export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
+import { AuthGuard } from '@/components/auth/auth-guard'; // Import the AuthGuard
+import UserManagement from '@/components/admin/kelola/user-management';
 
-export default function PetugasPage(): React.JSX.Element {
+export const metadata = { title: `Admin Management | Dashboard | ${config.site.name}` } satisfies Metadata;
+
+export default function AdminManagementPage(): React.JSX.Element {
   return (
-    <Grid container spacing={3}>
-      <Grid xs={12}>
-        <Register />
+      <Grid container spacing={3}>
+        <Grid xs={12}>
+         <UserManagement/>
+        </Grid>
       </Grid>
-    </Grid>
   );
 }

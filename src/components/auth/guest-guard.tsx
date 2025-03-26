@@ -28,37 +28,37 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
     }
 
     if (user) {
-      if (user.role === 'PETUGAS') {
+      if (user.userLevel?.name === 'PETUGAS') {
         logger.debug('[GuestGuard]: User is PETUGAS, redirecting to petugas dashboard');
         router.replace(paths.dashboard.petugas);
         return;
       }
 
-      else if (user.role === 'ADMIN') {
+      else if (user.userLevel?.name === 'ADMIN') {
         logger.debug('[GuestGuard]: User is ADMIN, redirecting to admin dashboard');
         router.replace(paths.dashboard.admin);
         return;
       }
 
-      else if (user.role === 'KEPALA_PETUGAS_UNIT') {
+      else if (user.userLevel?.name === 'KEPALA_PETUGAS_UNIT') {
         logger.debug('[GuestGuard]: User is KEPALA_PETUGAS_UNIT, redirecting to petugas dashboard');
         router.replace(paths.dashboard.petugas);
         return;
       }
 
-      else if (user.role === 'PETUGAS_SUPER') {
+      else if (user.userLevel?.name === 'PETUGAS_SUPER') {
         logger.debug('[GuestGuard]: User is PETUGAS_SUPER, redirecting to petugas dashboard');
         router.replace(paths.dashboard.petugas);
         return;
       }
 
-      else if (user.role === 'PETUGAS_WBS') {
+      else if (user.userLevel?.name === 'PETUGAS_WBS') {
         logger.debug('[GuestGuard]: User is PETUGAS_WBS, redirecting to petugaswbs dashboard');
         router.replace(paths.dashboard.dashboardwbs);
         return;
       }
 
-      else if (user.role === 'KEPALA_WBS') {
+      else if (user.userLevel?.name === 'KEPALA_WBS') {
         logger.debug('[GuestGuard]: User is PETUGAS_WBS, redirecting to petugaswbs dashboard');
         router.replace(paths.dashboard.dashboardwbs);
         return;

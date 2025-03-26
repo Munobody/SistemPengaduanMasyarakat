@@ -20,11 +20,21 @@ const rolePathMapping = {
   PETUGAS_SUPER: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
   KEPALA_PETUGAS_UNIT: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
   PETUGAS_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs],
-  KEPALA_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.petugaswbs], 
-  MAHASISWA: [paths.dashboard.overview],
-  DOSEN: [paths.dashboard.overview],
+  KEPALA_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.petugaswbs],
+  MAHASISWA: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.account],
+  DOSEN: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.wbs, paths.dashboard.account],
 };
 
+const fallbackPaths = {
+  ADMIN: paths.dashboard.admin,
+  PETUGAS: paths.dashboard.petugas,
+  PETUGAS_SUPER: paths.dashboard.petugas,
+  KEPALA_PETUGAS_UNIT: paths.dashboard.petugas,
+  PETUGAS_WBS: paths.dashboard.dashboardwbs,
+  KEPALA_WBS: paths.dashboard.dashboardwbs,
+  MAHASISWA: paths.dashboard.overview,
+  DOSEN: paths.dashboard.overview,
+};
 
 export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): React.JSX.Element | null {
   const router = useRouter();
@@ -35,73 +45,66 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
   const checkAccess = React.useCallback(() => {
     if (!user || !pathname) return false;
 
-    const userRole = user.role;
-    // Add null check for userRole
+    const userRole = user.userLevel?.name;
     if (!userRole) return false;
 
+    // Check against allowedRoles if specified
+    if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+      logger.debug(`[AuthGuard] Role ${userRole} not in allowed roles:`, allowedRoles);
+      return false;
+    }
+
     const allowedPaths = rolePathMapping[userRole as keyof typeof rolePathMapping] || [];
-    return allowedPaths.some((path) => pathname.startsWith(path));
-  }, [user, pathname]);
+    const isAllowed = allowedPaths.some((path) => pathname.startsWith(path));
+    
+    if (!isAllowed) {
+      logger.debug(`[AuthGuard] Path ${pathname} not allowed for role ${userRole}`);
+    }
+
+    return isAllowed;
+  }, [user, pathname, allowedRoles]);
 
   React.useEffect(() => {
-    if (isLoading) return;
+    if (isLoading) {
+      return;
+    }
+
+    // Debug logs
+    logger.debug('[AuthGuard] Checking access...', {
+      user: user?.userLevel?.name,
+      pathname,
+      allowedRoles,
+      isLoading
+    });
 
     if (!user) {
-      logger.debug('[AuthGuard]: No user found, redirecting to login');
+      logger.debug('[AuthGuard] No user found, redirecting to login');
       router.replace(paths.auth.signIn);
       return;
     }
 
-    // Add null checks for user.role and allowedRoles
-    if (!user.role || (allowedRoles.length > 0 && !allowedRoles.includes(user.role))) {
-      logger.debug(`[AuthGuard]: User role ${user.role || 'undefined'} not allowed`);
-      toast.error('Anda tidak memiliki akses ke halaman ini');
-      
-      switch (user.role) {
-        case 'PETUGAS_SUPER':
-        case 'PETUGAS':
-        case 'KEPALA_PETUGAS_UNIT':
-          router.replace(paths.dashboard.petugas);
-          break;
-        case 'ADMIN':
-          router.replace(paths.dashboard.admin);
-          break;
-        case 'PETUGAS_WBS':
-          case 'KEPALA_WBS':
-          router.replace(paths.dashboard.dashboardwbs);
-          break;
-        case 'MAHASISWA':
-        case 'DOSEN':
-          router.replace(paths.dashboard.overview);
-          break;
-        default:
-          router.replace(paths.dashboard.overview);
-      }
+    const userRole = user.userLevel?.name;
+    if (!userRole) {
+      logger.debug('[AuthGuard] No user role found, redirecting to login');
+      router.replace(paths.auth.signIn);
       return;
     }
 
     if (!checkAccess()) {
-      logger.debug('[AuthGuard]: Path not allowed for user role');
+      logger.debug('[AuthGuard] Access denied', {
+        userRole,
+        pathname,
+        allowedRoles
+      });
+      
       toast.error('Anda tidak memiliki akses ke halaman ini');
-
-
-      switch (user.role) {
-        case 'PETUGAS_SUPER':
-        case 'PETUGAS':
-        case 'KEPALA_PETUGAS_UNIT':
-          router.replace(paths.dashboard.petugas);
-          break;
-        case 'ADMIN':
-          router.replace(paths.dashboard.admin);
-          break;
-        default:
-          router.replace(paths.dashboard.overview);
-      }
+      router.replace(fallbackPaths[userRole as keyof typeof fallbackPaths] || paths.home);
       return;
     }
 
+    logger.debug('[AuthGuard] Access granted');
     setIsChecking(false);
-  }, [user, error, isLoading, allowedRoles, router, checkAccess]);
+  }, [user, error, isLoading, allowedRoles, router, checkAccess, pathname]);
 
   if (isChecking || isLoading) {
     return null;

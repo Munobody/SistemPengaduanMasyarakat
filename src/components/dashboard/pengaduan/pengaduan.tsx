@@ -16,8 +16,6 @@ import api from "@/lib/api/api";
 
 
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/pelaporan`;
-
 export default function PengaduanPage() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");

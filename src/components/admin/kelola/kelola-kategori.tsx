@@ -54,7 +54,7 @@ export function KelolaKategori() {
   const [editMode, setEditMode] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState('');
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalData, setTotalData] = useState(0);
@@ -249,21 +249,23 @@ export function KelolaKategori() {
   };
 
   return (
-    <Card>
+    <Card sx={{ backgroundColor: '#E3FEF7' }}>
       <CardHeader
-        title="Kelola Kategori"
+        title="Kelola Kategori Layanan"
+        titleTypographyProps={{ color: '#003C43', fontWeight: 'bold' }}
         action={
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <IconButton
-              onClick={() => setIsExpanded(!isExpanded)}
-              sx={{
-                transition: 'transform 0.3s',
-                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-              }}
-            >
-              <ExpandMoreIcon />
+            <IconButton onClick={() => setIsExpanded(!isExpanded)}>
+              <ExpandMoreIcon sx={{ color: '#003C43' }} />
             </IconButton>
-            <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#135D66',
+                '&:hover': { backgroundColor: '#003C43' },
+              }}
+              onClick={() => setOpen(true)}
+            >
               Tambah Kategori
             </Button>
           </Box>

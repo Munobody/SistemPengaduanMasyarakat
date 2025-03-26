@@ -10,8 +10,9 @@ import { toast, ToastContainer } from 'react-toastify';
 import * as Yup from 'yup';
 
 import 'react-toastify/dist/ReactToastify.css';
+import api from '@/lib/api/api';
 
-// Update the interfaces
+
 interface Category {
   id: string;
   nama: string;
@@ -46,8 +47,8 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/kategori?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`
+      const response = await api.get(
+        `/kategori?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`
       );
 
       if (response.data.content?.entries) {
@@ -73,8 +74,8 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 
   const fetchUnits = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/units?page=1&rows=100&orderKey=nama_unit&orderRule=asc`
+      const response = await api.get(
+        `/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`
       );
 
       if (response.data.content?.entries) {

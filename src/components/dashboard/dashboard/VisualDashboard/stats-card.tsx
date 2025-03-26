@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Card, CardContent, Skeleton } from '@mui/material';
+import { Box, Typography, Card, CardContent, Skeleton, CircularProgress } from '@mui/material';
 
 interface StatsCardProps {
   title: string;
@@ -7,27 +7,44 @@ interface StatsCardProps {
   loading: boolean;
   icon: React.ReactNode;
   color?: string;
+  backgroundColor?: string;
+  textColor?: string;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, loading, icon, color }) => {
+const StatsCard: React.FC<StatsCardProps> = ({
+  title,
+  value,
+  loading,
+  icon,
+  backgroundColor = '#E3FEF7',
+  textColor = '#000000'
+}) => {
   return (
-    <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          {icon}
-          <Typography variant="h6" color="textSecondary">
-            {title}
-          </Typography>
-        </Box>
+    <Box
+      sx={{
+        p: 5,
+        borderRadius: 2,
+        boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        backgroundColor,
+        color: textColor,
+      }}
+    >
+      <Box sx={{ mr: 2 }}>{icon}</Box>
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+          {title}
+        </Typography>
         {loading ? (
-          <Skeleton variant="text" width="60%" height={40} />
+          <CircularProgress size={24} />
         ) : (
-          <Typography variant="h3" component="div" sx={{ color }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
             {value}
           </Typography>
         )}
-      </CardContent>
-    </Card>
+      </Box>
+    </Box>
   );
 };
 

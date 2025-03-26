@@ -7,8 +7,9 @@ import { config } from '@/config';
 import { KelolaKategori } from '@/components/admin/kelola/kelola-kategori';
 import { KelolaUnit } from '@/components/admin/kelola/kelola-unit';
 import { KelolaKategoriWbs } from '@/components/admin/kelola/kelola-wbs';
+import UserManagement from '@/components/admin/kelola/user-management';
 
-export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
+export const metadata = { title: `Admin Kelola | Dashboard | ${config.site.name}` } satisfies Metadata;
 
 export default function KelolaPage(): React.JSX.Element {
   return (
@@ -22,6 +23,9 @@ export default function KelolaPage(): React.JSX.Element {
       <Grid xs={12}>
         <KelolaKategoriWbs />
       </Grid>
+      <Grid xs={12}>
+         <UserManagement/>
+        </Grid>
     </Grid>
   );
 }

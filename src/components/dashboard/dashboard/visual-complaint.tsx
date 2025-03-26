@@ -185,7 +185,7 @@ const ComplaintsVisual: React.FC = () => {
 
   return (
 <Box sx={{ flexGrow: 1, p: 3, pt: 0 }}>
-  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, pt: 0 }}>
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, pt: 0, }}>
     <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', paddingTop: '0', marginTop: '0' }}>
       Selamat Datang {userName || 'Mahasiswa'} 👋
     </h2>

@@ -4,8 +4,11 @@ export interface User {
   name?: string;
   program_studi?: string;
   email?: string;
-  role?: string ;
+  userLevel?: userLevel;
   unit_id?: string;
-
   [key: string]: unknown;
+}
+
+export interface userLevel {
+  name: string;
 }

@@ -39,7 +39,10 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
     setIsDayTime(hour >= 6 && hour < 18);
   }, []);
 
-  const filteredNavItems = navItems.filter((item) => user?.role && item.roles?.includes(user.role));
+  const filteredNavItems = navItems.filter((item) => 
+    user?.userLevel?.name && 
+    item.userLevel.includes(user.userLevel.name)
+  );
 
   return (
     <Drawer

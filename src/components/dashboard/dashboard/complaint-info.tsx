@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 
 const ComplaintInfo: React.FC = () => {
   return (
-    <Paper sx={{ p: 3, height: '100%' }}>
+    <Paper sx={{ p: 3, height: '100%' , backgroundColor: '#E3FEF7', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)'}}>
       <Typography variant="h6" gutterBottom>
         Tata Cara Pengaduan
       </Typography>
