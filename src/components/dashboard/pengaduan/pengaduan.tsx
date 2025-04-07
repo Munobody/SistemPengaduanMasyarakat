@@ -14,14 +14,22 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import api from "@/lib/api/api";
 
+interface Unit {
+  id: string;
+  nama_unit: string;
+}
 
+interface Category {
+  id: string;
+  nama: string;
+}
 
 export default function PengaduanPage() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedUnit, setSelectedUnit] = useState<string>("");
-  const [units, setUnits] = useState<string[]>([]);
-  const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -46,15 +54,15 @@ export default function PengaduanPage() {
           api.get("/kategori"),
         ]);
 
-        const unitList = unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || [];
-        const categoryList = categoryResponse.data?.content?.entries.map((category: { id: string; nama: string }) => ({ id: category.id, nama: category.nama })) || [];
+        const unitList: Unit[] = unitResponse.data?.content?.entries || [];
+        const categoryList: Category[] = categoryResponse.data?.content?.entries || [];
 
         setUnits(unitList);
         setCategories(categoryList);
 
-        // ✅ Set nilai default jika ada data
+        // Set default values if data exists
         if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
-        if (unitList.length > 0) setSelectedUnit(unitList[0]);
+        if (unitList.length > 0) setSelectedUnit(unitList[0].id);
       } catch (error: any) {
         console.error("Error fetching data:", error.response?.data || error.message);
         toast.error("Gagal memuat data.");
@@ -97,7 +105,7 @@ export default function PengaduanPage() {
       judul: formData.get("title") as string,
       deskripsi: formData.get("description") as string,
       status: "PENDING",
-      nameUnit: selectedUnit,
+      unitId: selectedUnit, // Send unitId instead of nameUnit
       kategoriId: selectedCategory,
       harapan_pelapor: formData.get("expectation") as string,
       filePendukung: fileUrl,
@@ -118,7 +126,7 @@ export default function PengaduanPage() {
         formRef.current!.reset();
         setSelectedFile(null);
         setSelectedCategory(categories[0]?.id || "");
-        setSelectedUnit(units[0] || "");
+        setSelectedUnit(units[0]?.id || "");
       }
     } catch (error: any) {
       console.error("❌ Error submitting form:", error.response?.data || error.message);
@@ -127,6 +135,7 @@ export default function PengaduanPage() {
       setLoading(false);
     }
   };
+
   return (
     <Box sx={{ flexGrow: 1, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Container maxWidth="xl" sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center", py: 4 }}>
@@ -137,81 +146,99 @@ export default function PengaduanPage() {
           <form ref={formRef} onSubmit={handleSubmit} style={{ width: "100%" }}>
             <Grid container spacing={2} direction="column">
               <Grid item xs={12}>
-              <TextField 
-              fullWidth label="Judul Laporan" 
-              name="title" margin="normal" 
-              required {...textFieldProps} />
+                <TextField 
+                  fullWidth 
+                  label="Judul Laporan" 
+                  name="title" 
+                  margin="normal" 
+                  required 
+                  {...textFieldProps} 
+                />
               </Grid>
               <Grid item xs={12}>
-              <TextField
-               fullWidth label="Isi Laporan" 
-               name="description" margin="normal" 
-               placeholder="Ceritakan terkait pengaduan ini?" 
-               multiline rows={4} required {...textFieldProps} />
+                <TextField
+                  fullWidth 
+                  label="Isi Laporan" 
+                  name="description" 
+                  margin="normal" 
+                  placeholder="Ceritakan terkait pengaduan ini?" 
+                  multiline 
+                  rows={4} 
+                  required 
+                  {...textFieldProps} 
+                />
               </Grid>
               <Grid item xs={12}>
-              <TextField 
-                fullWidth 
-                select 
-                label="Kategori" 
-                name="category" 
-                margin="normal" 
-                required {...textFieldProps}
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                {categories.map((option) => (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.nama}
-                </MenuItem>
-                ))}
-              </TextField>
+                <TextField 
+                  fullWidth 
+                  select 
+                  label="Kategori" 
+                  name="category" 
+                  margin="normal" 
+                  required 
+                  {...textFieldProps}
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  {categories.map((option) => (
+                    <MenuItem key={option.id} value={option.id}>
+                      {option.nama}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid item xs={12}>
-              <TextField 
-                fullWidth 
-                select 
-                label="Unit" 
-                name="unit" 
-                margin="normal" 
-                required {...textFieldProps}
-                value={selectedUnit}
-                onChange={(e) => setSelectedUnit(e.target.value)}
-              >
-                {units.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-                ))}
-              </TextField>
+                <TextField 
+                  fullWidth 
+                  select 
+                  label="Unit" 
+                  name="unit" 
+                  margin="normal" 
+                  required 
+                  {...textFieldProps}
+                  value={selectedUnit}
+                  onChange={(e) => setSelectedUnit(e.target.value)}
+                >
+                  {units.map((unit) => (
+                    <MenuItem key={unit.id} value={unit.id}>
+                      {unit.nama_unit}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid item xs={12}>
-              <TextField 
-              fullWidth 
-              label="Harapan Pelapor" 
-              name="expectation"
-              margin="normal" 
-              multiline 
-              rows={2} 
-              required {...textFieldProps}
-              placeholder="Apa harapan Anda terkait pengaduan ini?"
-              />
-            </Grid>
+                <TextField 
+                  fullWidth 
+                  label="Harapan Pelapor" 
+                  name="expectation"
+                  margin="normal" 
+                  multiline 
+                  rows={2} 
+                  required 
+                  {...textFieldProps}
+                  placeholder="Apa harapan Anda terkait pengaduan ini?"
+                />
+              </Grid>
               <Grid item xs={12}>
-              <Button 
-                variant="contained" 
-                component="label" 
-                startIcon={<CloudUploadIcon />}
-                sx={{ bgcolor: '#006A67', '&:hover': { bgcolor: '#0F2B33' } }}
-              >
-                Upload File
-                <input type="file" hidden onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
-              </Button>
-              {selectedFile && <Typography sx={{ mt: 2 }}>{selectedFile.name}</Typography>}
+                <Button 
+                  variant="contained" 
+                  component="label" 
+                  startIcon={<CloudUploadIcon />}
+                  sx={{ bgcolor: '#006A67', '&:hover': { bgcolor: '#0F2B33' } }}
+                >
+                  Upload File
+                  <input type="file" hidden onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                </Button>
+                {selectedFile && <Typography sx={{ mt: 2 }}>{selectedFile.name}</Typography>}
               </Grid>
             </Grid>
             <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-              <Button type="submit" variant="contained" sx={{ width: "30%", py: 1.5, bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }} disabled={loading}>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                sx={{ width: "30%", py: 1.5, bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }} 
+                disabled={loading}
+              >
                 {loading ? "Mengirim..." : "Kirim Laporan"}
               </Button>
             </Box>

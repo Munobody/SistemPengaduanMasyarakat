@@ -224,7 +224,7 @@ export function TabelPetugas() {
                             </div>
                           </Box>
                         </TableCell>
-                        <TableCell>{complaint.nameUnit}</TableCell>
+                        <TableCell>{complaint.unit.nama_unit}</TableCell>
                         <TableCell>{complaint.kategori.nama}</TableCell>
                         <TableCell>
                           <Chip label={complaint.status} color={getStatusColor(complaint.status)} size="small" />
@@ -306,7 +306,7 @@ export function TabelPetugas() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Unit
                 </Typography>
-                <Typography>{viewDialog.complaint.nameUnit}</Typography>
+                <Typography>{viewDialog.complaint.unit.nama_unit}</Typography>
               </Box>
 
               <Box>

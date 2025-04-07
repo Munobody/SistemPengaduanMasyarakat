@@ -29,8 +29,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import axios from 'axios';
 import api from '@/lib/api/api';
+import dayjs from 'dayjs';
+import 'dayjs/locale/id'; // Import Indonesian locale
+dayjs.locale('id'); // Set locale to Indonesian
 
 interface Pengaduan {
   id: string;
@@ -42,6 +44,7 @@ interface Pengaduan {
   no_telphone: string;
   approvedBy: string | null;
   harapan_pelapor: string | null;
+  createdAt: string|null;
   filePendukung: string;
   response: string;
   filePetugas: string;
@@ -220,7 +223,7 @@ export function TabelPetugasMasyarakat() {
                             '-'
                           )}
                         </TableCell>
-                        <TableCell>{complaint.nameUnit || '-'}</TableCell>
+                        <TableCell>{complaint.unit?.nama_unit || '-'}</TableCell>
                         <TableCell>{complaint.kategori?.nama || 'Tidak ada kategori'}</TableCell>
                         <TableCell align="right">
                           <IconButton
@@ -257,83 +260,93 @@ export function TabelPetugasMasyarakat() {
 
       <Dialog open={viewDialog.open} onClose={handleCloseView} maxWidth="md" fullWidth>
         <DialogTitle>Detail Pengaduan</DialogTitle>
-        <DialogContent dividers>
-          {viewDialog.complaint && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Judul Laporan
-                </Typography>
-                <Typography>{viewDialog.complaint.judul}</Typography>
-              </Box>
+<DialogContent dividers>
+  {viewDialog.complaint && (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box>
+        <Typography variant="subtitle2" color="text.secondary">
+          Judul Laporan
+        </Typography>
+        <Typography>{viewDialog.complaint.judul}</Typography>
+      </Box>
 
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Deskripsi
-                </Typography>
-                <Typography>{viewDialog.complaint.deskripsi}</Typography>
-              </Box>
+      <Box>
+        <Typography variant="subtitle2" color="text.secondary">
+          Deskripsi
+        </Typography>
+        <Typography>{viewDialog.complaint.deskripsi}</Typography>
+      </Box>
 
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Kategori
-                </Typography>
-                <Typography>{viewDialog.complaint.kategori.nama}</Typography>
-              </Box>
+      <Box>
+        <Typography variant="subtitle2" color="text.secondary">
+          Kategori
+        </Typography>
+        <Typography>{viewDialog.complaint.kategori.nama}</Typography>
+      </Box>
 
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Unit
-                </Typography>
-                <Typography>{viewDialog.complaint.nameUnit}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Harapan Pelapor
-                </Typography>
-                <Typography>{viewDialog.complaint.harapan_pelapor || '-'}</Typography>
-              </Box>
+      <Box>
+        <Typography variant="subtitle2" color="text.secondary">
+          Unit
+        </Typography>
+        <Typography>{viewDialog.complaint.unit.nama_unit}</Typography>
+      </Box>
 
-              {viewDialog.complaint.filePendukung && (
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    File Pendukung
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    href={viewDialog.complaint.filePendukung}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Lihat File
-                  </Button>
-                </Box>
-              )}
+      <Box>
+        <Typography variant="subtitle2" color="text.secondary">
+          Tanggal Dibuat
+        </Typography>
+        <Typography>
+          {dayjs(viewDialog.complaint.createdAt).format('dddd, DD MMMM YYYY HH:mm')}
+        </Typography>
+      </Box>
 
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Pelapor
-                </Typography>
-                <Typography>{viewDialog.complaint.nama}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {viewDialog.complaint.no_telphone ? (
-                    <a
-                      href={`https://wa.me/${viewDialog.complaint.no_telphone}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'inherit', textDecoration: 'none' }}
-                    >
-                      {viewDialog.complaint.no_telphone.replace(/^62/, '+62 ')}
-                    </a>
-                  ) : (
-                    '-'
-                  )}
-                </Typography>
-              </Box>
-            </Box>
+      <Box>
+        <Typography variant="subtitle2" color="text.secondary">
+          Harapan Pelapor
+        </Typography>
+        <Typography>{viewDialog.complaint.harapan_pelapor || '-'}</Typography>
+      </Box>
+
+      {viewDialog.complaint.filePendukung && (
+        <Box>
+          <Typography variant="subtitle2" color="text.secondary">
+            File Pendukung
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            href={viewDialog.complaint.filePendukung}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Lihat File
+          </Button>
+        </Box>
+      )}
+
+      <Box>
+        <Typography variant="subtitle2" color="text.secondary">
+          Pelapor
+        </Typography>
+        <Typography>{viewDialog.complaint.nama}</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          {viewDialog.complaint.no_telphone ? (
+            <a
+              href={`https://wa.me/${viewDialog.complaint.no_telphone}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'inherit', textDecoration: 'none' }}
+            >
+              {viewDialog.complaint.no_telphone.replace(/^62/, '+62 ')}
+            </a>
+          ) : (
+            '-'
           )}
-        </DialogContent>
+        </Typography>
+      </Box>
+    </Box>
+  )}
+</DialogContent>
         <DialogActions>
           <Button onClick={handleCloseView}>Tutup</Button>
           <Button

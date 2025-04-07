@@ -25,7 +25,7 @@ interface Unit {
 
 const ReportForm: React.FC = (): React.JSX.Element => {
   const [loading, setLoading] = useState(false);
-  const [units, setUnits] = useState<string[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [fileName, setFileName] = useState('');
   const [rowsPerPage] = useState(100); // Set high to get all categories
@@ -35,13 +35,16 @@ const ReportForm: React.FC = (): React.JSX.Element => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [unitResponse, categoryResponse] = await Promise.all([fetchUnits(), fetchCategories()]);
+        const [unitResponse, categoryResponse] = await Promise.all([
+          fetchUnits(),
+          fetchCategories(),
+        ]);
       } catch (error: any) {
         console.error('Error fetching data:', error.response?.data || error.message);
         toast.error('Gagal memuat data.');
       }
     };
-
+  
     fetchData();
   }, []);
 
@@ -75,16 +78,23 @@ const ReportForm: React.FC = (): React.JSX.Element => {
   const fetchUnits = async () => {
     try {
       const response = await api.get(
-        `/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`
+        `/units?page=1&rows=12&orderKey=nama_unit&orderRule=asc`
       );
-
+  
       if (response.data.content?.entries) {
-        setUnits(response.data.content.entries.map((unit: Unit) => unit.nama_unit));
-        console.log('📋 Daftar unit:', response.data.content.entries);
+        const unitList = response.data.content.entries.map((unit: Unit) => ({
+          id: unit.id,
+          nama_unit: unit.nama_unit,
+        }));
+        setUnits(unitList);
+        console.log('📋 Daftar unit:', unitList);
+      } else {
+        setUnits([]);
+        console.log('❕ Tidak ada unit');
       }
       return response;
     } catch (error: any) {
-      console.error('❌ Gagal memuat unit:', error.response?.data);
+      console.error('❌ Gagal memuat unit:', error.response?.data || error.message);
       toast.error('Gagal memuat data unit');
       throw error;
     }
@@ -95,13 +105,13 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       judul: '',
       deskripsi: '',
       status: 'PENDING',
-      nameUnit: '',
+      unitId: '',
       response: '',
       kategoriId: '',
       nama: '',
       no_telphone: '',
-      harapan_pelapor: '', 
-      filePendukung: null as File | null, // File tidak dikirim dalam JSON
+      harapan_pelapor: '',
+      filePendukung: null as File | null,
     },
     validationSchema: Yup.object({
       nama: Yup.string().required('Nama wajib diisi'),
@@ -111,42 +121,51 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         .matches(/^62\d{9,13}$/, 'Nomor WhatsApp harus diawali dengan 62 dan berisi 9-13 digit')
         .required('Nomor WhatsApp wajib diisi'),
       kategoriId: Yup.string().required('Pilih kategori laporan'),
-      nameUnit: Yup.string().required('Pilih unit yang dilapor'),
+      unitId: Yup.string().required('Pilih unit yang dilapor'),
     }),
-
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/pengaduan`;
-
+    
       try {
         let fileUrl = '';
         if (values.filePendukung) {
           const formData = new FormData();
           formData.append('file', values.filePendukung);
-
+    
           const uploadResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
-
+    
           if (uploadResponse.status === 200) {
             fileUrl = uploadResponse.data.content.secure_url;
+            console.log('File URL:', fileUrl);
           } else {
             throw new Error('Gagal mengunggah file.');
           }
         }
-
+    
         const dataToSend = {
-          ...values,
+          judul: values.judul.trim(),
+          deskripsi: values.deskripsi.trim(),
+          status: 'PENDING',
+          unitId: values.unitId,
+          response: '',
+          kategoriId: values.kategoriId,
+          nama: values.nama.trim(),
+          no_telphone: values.no_telphone.trim(),
           filePendukung: fileUrl,
+          filePetugas: '',
         };
-
+    
+        console.log('Payload being sent:', dataToSend);
+    
         const response = await axios.post(apiUrl, dataToSend, {
           headers: { 'Content-Type': 'application/json' },
         });
-
-        if (response.status === 200) {
+    
+        if (response.status === 201) {
           toast.success('Laporan berhasil dikirim!');
-          console.log('Laporan berhasil dikirim:', dataToSend);
           resetForm();
           setFileName('');
         } else {
@@ -291,7 +310,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             name="kategoriId"
             select
             value={formik.values.kategoriId || ''}
-            onChange={(event) => formik.setFieldValue('kategoriId', event.target.value)} // Pastikan yang dikirim adalah ID
+            onChange={(event) => formik.setFieldValue('kategoriId', event.target.value)}
             onBlur={formik.handleBlur}
             error={formik.touched.kategoriId && Boolean(formik.errors.kategoriId)}
             helperText={formik.touched.kategoriId && formik.errors.kategoriId}
@@ -312,16 +331,16 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           </TextField>
 
           <TextField
-            id="nameUnit"
+            id="unitId"
             fullWidth
             label="Unit Yang Dilapor"
-            name="nameUnit"
+            name="unitId"
             select
-            value={formik.values.nameUnit}
-            onChange={formik.handleChange}
+            value={formik.values.unitId || ''}
+            onChange={(event) => formik.setFieldValue('unitId', event.target.value)}
             onBlur={formik.handleBlur}
-            error={formik.touched.nameUnit && Boolean(formik.errors.nameUnit)}
-            helperText={formik.touched.nameUnit && formik.errors.nameUnit}
+            error={formik.touched.unitId && Boolean(formik.errors.unitId)}
+            helperText={formik.touched.unitId && formik.errors.unitId}
             sx={{
               mb: 2,
               fontSize: '1.2rem',
@@ -332,8 +351,8 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             InputProps={{ style: { fontSize: '1.2rem' } }}
           >
             {units.map((unit) => (
-              <MenuItem key={unit} value={unit}>
-                {unit}
+              <MenuItem key={unit.id} value={unit.id}>
+                {unit.nama_unit}
               </MenuItem>
             ))}
           </TextField>

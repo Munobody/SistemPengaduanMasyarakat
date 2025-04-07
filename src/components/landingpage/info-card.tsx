@@ -10,6 +10,7 @@ import {
   useMediaQuery,
   Theme
 } from '@mui/material';
+import Image from 'next/image';
 
 interface CardProps {
   title: string;
@@ -130,13 +131,6 @@ const ReportSummary: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return (
     <Box 
       display="flex" 
@@ -144,7 +138,9 @@ const ReportSummary: React.FC = () => {
       alignItems="center" 
       p={isSmallScreen ? 2 : 4}
       width="100%"
+      position="relative"
     >
+      
       <Typography 
         variant={isSmallScreen ? "h5" : "h4"} 
         fontWeight="bold" 
