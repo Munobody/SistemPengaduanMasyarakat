@@ -30,21 +30,17 @@ const ReportForm: React.FC = (): React.JSX.Element => {
   const [fileName, setFileName] = useState('');
   const [rowsPerPage] = useState(100); // Set high to get all categories
   const [page] = useState(0);
-  const [totalData, setTotalData] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [unitResponse, categoryResponse] = await Promise.all([
-          fetchUnits(),
-          fetchCategories(),
-        ]);
+        await Promise.all([fetchUnits(), fetchCategories()]);
       } catch (error: any) {
         console.error('Error fetching data:', error.response?.data || error.message);
         toast.error('Gagal memuat data.');
       }
     };
-  
+
     fetchData();
   }, []);
 
@@ -61,16 +57,13 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 
         setCategories(sortedCategories);
         console.log('📋 Daftar kategori:', sortedCategories);
-        setTotalData(response.data.content.totalData);
       } else {
         setCategories([]);
         console.log('❕ Tidak ada kategori');
       }
-      return response;
     } catch (error: any) {
       console.error('❌ Gagal memuat kategori:', error.response?.data);
       toast.error('Gagal memuat data kategori');
-      throw error;
     }
   };
 
@@ -80,7 +73,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       const response = await api.get(
         `/units?page=1&rows=12&orderKey=nama_unit&orderRule=asc`
       );
-  
+
       if (response.data.content?.entries) {
         const unitList = response.data.content.entries.map((unit: Unit) => ({
           id: unit.id,
@@ -92,11 +85,9 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         setUnits([]);
         console.log('❕ Tidak ada unit');
       }
-      return response;
     } catch (error: any) {
       console.error('❌ Gagal memuat unit:', error.response?.data || error.message);
       toast.error('Gagal memuat data unit');
-      throw error;
     }
   };
 
@@ -126,17 +117,17 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/pengaduan`;
-    
+
       try {
         let fileUrl = '';
         if (values.filePendukung) {
           const formData = new FormData();
           formData.append('file', values.filePendukung);
-    
+
           const uploadResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
-    
+
           if (uploadResponse.status === 200) {
             fileUrl = uploadResponse.data.content.secure_url;
             console.log('File URL:', fileUrl);
@@ -144,7 +135,6 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             throw new Error('Gagal mengunggah file.');
           }
         }
-    
         const dataToSend = {
           judul: values.judul.trim(),
           deskripsi: values.deskripsi.trim(),
@@ -154,6 +144,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           kategoriId: values.kategoriId,
           nama: values.nama.trim(),
           no_telphone: values.no_telphone.trim(),
+          harapan_pelapor: values.harapan_pelapor.trim() || '',
           filePendukung: fileUrl,
           filePetugas: '',
         };
@@ -164,7 +155,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           headers: { 'Content-Type': 'application/json' },
         });
     
-        if (response.status === 201) {
+        if (response.status === 200) {
           toast.success('Laporan berhasil dikirim!');
           resetForm();
           setFileName('');
@@ -181,13 +172,13 @@ const ReportForm: React.FC = (): React.JSX.Element => {
   });
 
   return (
-    <Box className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
+    <Box className="flex flex-col items-center justify-center min-h-screen">
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Paper
         elevation={3}
         className="p-6 rounded-lg w-full"
-        sx={{ maxWidth: { xs: '100%', md: '800px' }, p: { xs: 4, md: 6 } }}
+        sx={{ maxWidth: { xs: '100%', md: '800px' }, p: { xs: 4, md: 6 }, borderRadius: 2 }}
       >
         <Typography variant="h5" className="font-bold text-center pb-4 text-black">
           LAPORKAN!
@@ -203,8 +194,8 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             sx={{
               mb: 2,
               fontSize: '1.2rem',
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#135D66' },
+              '& .MuiInputLabel-root.Mui-focused': { color: '#135D66' },
             }}
             InputLabelProps={{ style: { fontSize: '1.2rem' } }}
             InputProps={{ style: { fontSize: '1.2rem' } }}
@@ -392,10 +383,10 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               variant="contained"
               component="label"
               sx={{
-                backgroundColor: '#578FCA',
+                backgroundColor: '#003C43',
                 color: 'white',
                 fontWeight: 'bold',
-                '&:hover': { backgroundColor: '#7AB2D3' },
+                '&:hover': { backgroundColor: '#135D66' },
                 px: 4,
                 py: 1,
                 textTransform: 'none',
@@ -416,18 +407,18 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             </Button>
           </Box>
           <Box className="flex justify-end">
-            <Button
+          <Button
               type="submit"
               variant="contained"
               disabled={loading}
               sx={{
-                backgroundColor: '#087163',
+                backgroundColor: '#003C43',
                 color: 'white',
                 fontWeight: 'bold',
                 px: 4,
                 py: 1,
                 textTransform: 'none',
-                '&:hover': { backgroundColor: '#A6CDC6' },
+                '&:hover': { backgroundColor: '#135D66' },
                 fontSize: '1.2rem',
               }}
             >

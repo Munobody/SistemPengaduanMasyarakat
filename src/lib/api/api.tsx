@@ -2,24 +2,64 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Interceptor request: update token sebelum setiap request
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") { // Pastikan berjalan di client-side (Next.js)
-    const token = localStorage.getItem("custom-auth-token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// Request interceptor: add auth token and logging
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("custom-auth-token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
-  }
-  return config;
-});
 
-// Interceptor response: handle error
-api.interceptors.response.use(
-  (response) => response,
+    // Debug logging
+    console.log('🚀 Request:', {
+      method: config.method?.toUpperCase(),
+      url: `${config.baseURL}${config.url}`,
+      headers: config.headers,
+      data: config.data
+    });
+
+    return config;
+  },
   (error) => {
-    console.error("API Error:", error.response?.data || error.message);
+    console.error('❌ Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor: enhanced error handling and logging
+api.interceptors.response.use(
+  (response) => {
+    // Log successful responses
+    console.log('✅ Response:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    // Enhanced error logging
+    console.error('❌ API Error:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+      method: error.config?.method,
+      requestData: error.config?.data
+    });
+
+    // Specific error handling
+    if (error.response?.status === 404) {
+      console.error('🔍 Resource not found:', error.config?.url);
+    }
+
     return Promise.reject(error);
   }
 );

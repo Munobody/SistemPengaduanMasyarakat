@@ -33,19 +33,29 @@ import { EditComplaintModal } from './modal/EditComplaintModal';
 import { ViewComplaintModal } from './modal/ViewComplaintModal';
 
 export interface Complaint {
-  kategoriId: any;
+  kategoriId: string;
   id: string;
-  title: string;
-  content: string;
-  date: string;
+  judul: string;
+  deskripsi: string;
+  createdAt: string;
+  date?: string;
   nama: string;
   nameUnit: string;
+  unitId: string;
   complaintType: string;
   response: string;
   status: string;
   filePendukung: string;
   filePetugas: string;
   harapan_pelapor: string;
+  kategori?: {
+    id: string;
+    nama: string;
+  };
+  unit?: {
+    id: string;
+    nama_unit: string;
+  };
 }
 
 export function LatestComplaints() {
@@ -88,27 +98,30 @@ export function LatestComplaints() {
     }
   };
   
+  
 
   const handleEditOpen = async (row: Complaint) => {
     try {
       const response = await api.get(`/pelaporan/${row.id}`);
-
       const data = response.data.content;
-      console.log('Edit complaint data:', data); // Debug log
+
       setEditedComplaint({
-        kategoriId: data.kategori?.id,
         id: data.id,
-        title: data.judul || 'Tidak Ada Judul',
-        content: data.deskripsi || 'Tidak Ada Deskripsi',
-        date: dayjs(data.createdAt).format('MMM D, YYYY'),
-        nama: data.kategori?.id || '',
+        judul: data.judul || 'Tidak Ada Judul',
+        deskripsi: data.deskripsi || 'Tidak Ada Deskripsi',
+        createdAt: dayjs(data.createdAt).format('MMM D, YYYY'),
+        nama: data.nama || '',
         nameUnit: data.unit?.nama_unit || '',
+        unitId: data.unit?.id || '',
+        kategoriId: data.kategori?.id || '',
         complaintType: 'Belum Ditentukan',
         status: data.status || 'PENDING',
         response: data.response || '',
         filePendukung: data.filePendukung || '',
         filePetugas: data.filePetugas || '',
         harapan_pelapor: data.harapan_pelapor || '-',
+        kategori: data.kategori,
+        unit: data.unit
       });
       setEditOpen(true);
     } catch (error: any) {
@@ -318,19 +331,22 @@ export function LatestComplaints() {
       const data = response.data.content;
 
       setSelectedRow({
-        kategoriId: data.kategoriId || 'Tidak Ada Kategori',
-        nameUnit: data.nameUnit || 'Tidak Ada Unit',
         id: data.id,
-        title: data.judul,
-        content: data.deskripsi,
-        date: dayjs(data.createdAt).format('MMM D, YYYY'),
-        nama: data.nama || 'Anonim',
+        judul: data.judul || 'Tidak Ada Judul',
+        deskripsi: data.deskripsi || 'Tidak Ada Deskripsi',
+        createdAt: dayjs(data.createdAt).format('MMM D, YYYY'),
+        nama: data.nama || '',
+        nameUnit: data.unit?.nama_unit || '',
+        unitId: data.unit?.id || '',
+        kategoriId: data.kategori?.id || '',
         complaintType: 'Belum Ditentukan',
         status: data.status || 'PENDING',
         response: data.response || '',
         filePendukung: data.filePendukung || '',
         filePetugas: data.filePetugas || '',
         harapan_pelapor: data.harapan_pelapor || '-',
+        kategori: data.kategori,
+        unit: data.unit
       });
 
       setViewOpen(true);
@@ -349,43 +365,24 @@ export function LatestComplaints() {
     setEditedComplaint(null);
   };
 
-  const handleSaveChanges = async () => {
-    if (!editedComplaint) return;
-
+  const handleSaveChanges = async (field: keyof Complaint, value: any) => {
+    if (!selectedRow?.id) return;
+  
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        toast.error('Anda harus login terlebih dahulu.');
-        return;
-      }
-
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${editedComplaint.id}`,
-        {
-          judul: editedComplaint.title,
-          deskripsi: editedComplaint.content,
-          kategoriId: editedComplaint.nama,
-          nameUnit: editedComplaint.nameUnit,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
+      const response = await api.patch(`/pelaporan/${selectedRow.id}`, {
+        [field]: value
+      });
+  
       if (response.status === 200) {
         toast.success('Pengaduan berhasil diperbarui!');
-        setEditOpen(false);
-        setEditedComplaint(null);
-        fetchComplaints();
+        fetchComplaints(); // Refresh data after update
       }
     } catch (error: any) {
       console.error('Error updating complaint:', error);
       toast.error(error.response?.data?.message || 'Gagal memperbarui pengaduan.');
     }
   };
+  
 
   const handleExportCSV = () => {
     const csvContent = [
@@ -479,9 +476,10 @@ export function LatestComplaints() {
       <EditComplaintModal
         open={editOpen}
         onClose={handleEditClose}
-        complaint={editedComplaint}
-        onSave={handleSaveChanges}
-        onChange={setEditedComplaint}
+        complaint={editedComplaint} // Ensure editedComplaint contains the correct ID
+        onSave={(field, value) => {
+          console.log(`Field ${field} updated with value:`, value);
+        }}
       />
 
       <ToastContainer position="top-right" autoClose={3000} />

@@ -17,19 +17,28 @@ import {
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 
-interface Complaint {
-  title: string;
-  content: string;
-  date: string;
+export interface Complaint {
+  kategoriId: string;
+  id: string;
+  judul: string;
+  deskripsi: string;
+  createdAt: string;
+  nama: string;
   nameUnit: string;
+  unitId: string;
+  complaintType: string;
+  response: string;
   status: string;
-  response?: string;
-  filePendukung?: string;
-  filePetugas?: string;
-  harapan_pelapor?: string;
+  filePendukung: string;
+  filePetugas: string;
+  harapan_pelapor: string;
   kategori?: {
     id: string;
     nama: string;
+  };
+  unit?: {
+    id: string;
+    nama_unit: string;
   };
 }
 
@@ -67,15 +76,15 @@ export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintMo
             <TableBody>
               <TableRow>
                 <TableCell><strong>Judul</strong></TableCell>
-                <TableCell>{complaint.title || '-'}</TableCell>
+                <TableCell>{complaint.judul || '-'}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Isi Laporan</strong></TableCell>
-                <TableCell>{complaint.content || '-'}</TableCell>
+                <TableCell>{complaint.deskripsi || '-'}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Tanggal</strong></TableCell>
-                <TableCell>{complaint.date || '-'}</TableCell>
+                <TableCell>{complaint.createdAt || '-'}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell><strong>Kategori</strong></TableCell>

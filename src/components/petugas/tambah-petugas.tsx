@@ -16,6 +16,7 @@ import {
   TextField,
 } from '@mui/material';
 import axios from 'axios';
+import api from '@/lib/api/api';
 
 interface FeedbackModal {
   open: boolean;
@@ -53,28 +54,17 @@ export default function AddPetugasPage({ unitId }: AddPetugasPageProps) {
     }
 
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        throw new Error('Token not found');
-      }
-
-      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/units/petugas`;
+      const endpoint = `/units/petugas`;
 
       console.log('📝 Mencoba menambahkan petugas:', {
         petugasIds: [petugasId.trim()],
       });
 
-      const response = await axios.post(
+      const response = await api.post(
         endpoint,
         {
           petugasIds: [petugasId.trim()],
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
       );
 
       console.log('✅ Berhasil menambahkan petugas:', response.data);
@@ -124,8 +114,18 @@ export default function AddPetugasPage({ unitId }: AddPetugasPageProps) {
               fullWidth
               helperText="Masukkan ID Petugas yang akan ditambahkan ke unit"
             />
-
-            <Button type="submit" variant="contained" color="primary" size="large" fullWidth sx={{ mt: 2 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              fullWidth
+              sx={{
+                backgroundColor: '#135D66',
+                '&:hover': {
+                  backgroundColor: '#77B0AA',
+                },
+              }}
+            >
               Tambah Petugas
             </Button>
           </Box>

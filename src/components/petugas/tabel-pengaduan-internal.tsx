@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import EditIcon from '@mui/icons-material/Edit';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Alert,
   Box,
@@ -31,6 +32,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import api from '@/lib/api/api';
+import { toast } from 'react-toastify';
 
 interface Pengaduan {
   id: string;
@@ -82,7 +84,6 @@ export function TabelPetugas() {
     setError(null);
 
     try {
-
       const searchFilters = searchQuery ? { judul: searchQuery } : {};
 
       const response = await api.get(`/pelaporan`, {
@@ -167,6 +168,26 @@ export function TabelPetugas() {
     console.log('🔧 Mengelola pengaduan:', id);
   };
 
+  const handleDeleteComplaint = async (id: string) => {
+    if (!id) return;
+
+    try {
+      const response = await api.delete('/pelaporan', {
+        data: { ids: [id] },
+      });
+
+      if (response.status === 200) {
+        toast.success('Pengaduan berhasil dihapus');
+        fetchComplaints(); // Refresh data setelah penghapusan
+      } else {
+        toast.error('Gagal menghapus pengaduan');
+      }
+    } catch (error: any) {
+      console.error('❌ Gagal menghapus pengaduan:', error.response?.data);
+      toast.error('Terjadi kesalahan saat menghapus pengaduan');
+    }
+  };
+
   if (error) {
     return <Alert severity="error">{error}</Alert>;
   }
@@ -238,13 +259,23 @@ export function TabelPetugas() {
                           >
                             <RemoveRedEyeIcon />
                           </IconButton>
-                          <IconButton
-                            onClick={(e) => handleManageComplaint(complaint.id, e)}
-                            color="primary"
-                            title="Kelola pengaduan"
-                          >
-                            <EditIcon />
-                          </IconButton>
+                          {complaint.status !== 'COMPLETED' ? (
+                            <IconButton
+                              onClick={(e) => handleManageComplaint(complaint.id, e)}
+                              color="primary"
+                              title="Kelola pengaduan"
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              onClick={() => handleDeleteComplaint(complaint.id)}
+                              color="error"
+                              title="Hapus pengaduan"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
