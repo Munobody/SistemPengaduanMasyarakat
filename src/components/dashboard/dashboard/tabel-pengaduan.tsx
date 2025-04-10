@@ -425,7 +425,7 @@ export function LatestComplaints() {
 
   return (
     <Card>
-      <CardHeader title="Tabel Pengaduan Saya" sx={{ textAlign: 'center' }} />
+      <CardHeader title="Tabel Pengaduan Layanan" sx={{ textAlign: 'center' }} />
       <Divider />
       <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between' }}>
         <TextField

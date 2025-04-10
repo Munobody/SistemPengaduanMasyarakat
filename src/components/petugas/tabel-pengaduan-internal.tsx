@@ -33,6 +33,9 @@ import {
 import axios from 'axios';
 import api from '@/lib/api/api';
 import { toast } from 'react-toastify';
+import dayjs from 'dayjs';
+import 'dayjs/locale/id';
+dayjs.locale('id'); 
 
 interface Pengaduan {
   id: string;
@@ -47,6 +50,7 @@ interface Pengaduan {
   filePendukung: string;
   response: string;
   filePetugas: string;
+  createdAt: string;
   pelapor: {
     name: string;
     no_identitas: string;
@@ -58,6 +62,7 @@ interface Pengaduan {
   kategori: {
     nama: string;
   };
+
 }
 
 interface ViewComplaintDialog {
@@ -349,6 +354,15 @@ export function TabelPetugas() {
                   color={getStatusColor(viewDialog.complaint.status)}
                   size="small"
                 />
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Tanggal Dibuat
+                </Typography>
+                <Typography>            {viewDialog.complaint.createdAt
+                              ? dayjs(viewDialog.complaint.createdAt).format('dddd, DD MMMM YYYY HH:mm')
+                              : '-'}</Typography>
               </Box>
 
               <Box>

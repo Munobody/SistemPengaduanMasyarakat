@@ -7,7 +7,7 @@ import { config } from '@/config';
 import { TabelPetugasWbs } from '@/components/petugaswbs/tabel-pengaduan-wbs';
 import ComplaintsVisualWbs from '@/components/petugaswbs/complaint-visual-wbs';
 
-export const metadata = { title: `Overview | Dashboard | ${config.site.name}` } satisfies Metadata;
+export const metadata = { title: ` Dashboard Petugas WBS | ${config.site.name}` } satisfies Metadata;
 
 export default function PetugasPage(): React.JSX.Element {
   return (

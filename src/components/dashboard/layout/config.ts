@@ -13,6 +13,6 @@ export const navItems = [
   { key: 'kelola', title: 'Kelola', href: paths.dashboard.adminkelola, icon: 'users', userLevel: ['ADMIN'] },
   { key: 'add', title: 'Tambah Petugas', href: paths.dashboard.tambah, icon: 'users', userLevel: ['KEPALA_PETUGAS_UNIT', 'PETUGAS_SUPER'] },
   { key: 'dashboardpetugaswbs', title: 'Dashboard', href: paths.dashboard.dashboardwbs, icon: 'chart-pie', userLevel: ['PETUGAS_WBS', 'KEPALA_WBS'] },
-  { key: 'kelola', title: 'Kelola', href: paths.dashboard.kelolawbs, icon: 'users', userLevel: ['PETUGAS_WBS', 'KEPALA_WBS'] },
-  { key: 'addwbs', title: 'Tambah Petugas', href: paths.dashboard.petugaswbs, icon: 'users', userLevel: ['KEPALA_WBS'] },
+  // { key: 'kelola', title: 'Kelola', href: paths.dashboard.kelolawbs, icon: 'users', userLevel: ['PETUGAS_WBS', 'KEPALA_WBS'] },
+  { key: 'addwbs', title: 'Tambah Petugas', href: paths.dashboard.petugaswbs, icon: 'users', userLevel: [''] },
 ] satisfies NavItemConfig[];

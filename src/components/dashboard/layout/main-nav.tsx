@@ -136,7 +136,6 @@ export function MainNav(): React.JSX.Element {
         }}
         open={openNav}
       />
-      {/* Tambahkan komponen NotificationMenu di sini */}
       <NotificationMenu
         anchorEl={notificationAnchorEl}
         handleClose={handleNotificationClose}

@@ -24,7 +24,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
       sx={{
         p: 5,
         borderRadius: 2,
-        boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+        // boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
         display: 'flex',
         alignItems: 'center',
         backgroundColor,

@@ -316,7 +316,7 @@ const handleViewOpen = async (row: ComplaintWbs) => {
 
   return (
     <Card>
-      <CardHeader title="Tabel Pengaduan Saya" sx={{ textAlign: 'center' }} />
+      <CardHeader title="Tabel Pengaduan WBS" sx={{ textAlign: 'center' }} />
       <Divider />
       <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between' }}>
         <TextField

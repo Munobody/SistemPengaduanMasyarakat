@@ -231,7 +231,9 @@ const ComplaintsVisual: React.FC = () => {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <PieChart data={processedData.pieChartData} loading={loading} />
+          <Box sx={{ height: 600, overflow: 'auto' }}>
+            <PieChart data={processedData.pieChartData} loading={loading} />
+          </Box>
         </Grid>
         <Grid item xs={12} md={6}>
           <ComplaintInfo />

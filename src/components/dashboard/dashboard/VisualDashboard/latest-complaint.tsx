@@ -20,7 +20,7 @@ interface LatestComplaintsProps {
 
 const LatestComplaints: React.FC<LatestComplaintsProps> = ({ complaints, loading }) => {
   return (
-    <Paper sx={{ p: 3, backgroundColor: '#E3FEF7', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)'}}>
+    <Paper sx={{ p: 3, backgroundColor: '#E3FEF7'}}>
       <Typography variant="h6" gutterBottom>
         Pengaduan Terbaru
       </Typography>

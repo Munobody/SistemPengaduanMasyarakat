@@ -32,6 +32,8 @@ export function SideNav(): React.JSX.Element {
     (item) => user?.userLevel?.name && item.userLevel.includes(user.userLevel.name)
   );
 
+  const [open, setOpen] = React.useState(false);
+
   return (
     <Box
       sx={{
@@ -48,7 +50,7 @@ export function SideNav(): React.JSX.Element {
         '--NavItem-icon-disabled-color': isDayTime ? 'rgba(19, 93, 102, 0.5)' : 'rgba(119, 176, 170, 0.5)',
         
         // Layout styles
-        bgcolor: 'var(--SideNav-background)',
+        bgcolor: { xs: '#E3FEF7', lg: 'var(--SideNav-background)' },
         color: 'var(--SideNav-color)',
         display: { xs: 'none', lg: 'flex' },
         flexDirection: 'column',
@@ -61,6 +63,9 @@ export function SideNav(): React.JSX.Element {
         width: 'var(--SideNav-width)',
         zIndex: 'var(--SideNav-zIndex)',
         '&::-webkit-scrollbar': { display: 'none' },
+        boxShadow: isDayTime
+          ? '4px 0px 10px rgba(0, 0, 0, 0.1)' // Light shadow for day
+          : '4px 0px 15px rgba(0, 0, 0, 0.3)', // Darker shadow for night
       }}
     >
       <Stack spacing={2} sx={{ p: 3, alignItems: 'left' }}>
@@ -145,7 +150,7 @@ function NavItem({
             bgcolor: 'var(--NavItem-hover-background)',
           },
           ...(disabled && {
-            bgcolor: 'transparent',
+            bgcolor: '#E3FEF7',
             color: 'var(--NavItem-disabled-color)',
             cursor: 'not-allowed',
           }),

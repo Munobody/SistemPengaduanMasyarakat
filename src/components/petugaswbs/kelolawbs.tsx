@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { Box, Button, CircularProgress, Container, Grid, MenuItem, Paper, TextField, Typography } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
+
 import 'react-toastify/dist/ReactToastify.css';
+
+import { useRouter } from 'next/navigation';
+
 import api from '@/lib/api/api'; // Asumsi token sudah dikelola di sini
 
 interface Pengaduan {
@@ -33,6 +37,7 @@ interface KelolaPengaduanWbsPageProps {
 }
 
 export default function KelolaPengaduanWbsPage({ id }: KelolaPengaduanWbsPageProps) {
+  const router = useRouter();
   const [complaint, setComplaint] = useState<Pengaduan | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('PENDING');
@@ -42,7 +47,6 @@ export default function KelolaPengaduanWbsPage({ id }: KelolaPengaduanWbsPagePro
 
   const statusOptions = ['PENDING', 'PROCESS', 'REJECTED', 'COMPLETED'];
 
-  // Format tanggal ke format yang lebih mudah dibaca
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', {
@@ -52,7 +56,6 @@ export default function KelolaPengaduanWbsPage({ id }: KelolaPengaduanWbsPagePro
     });
   };
 
-  // Ambil detail pengaduan
   useEffect(() => {
     const fetchComplaint = async () => {
       if (!id) return;
@@ -62,7 +65,6 @@ export default function KelolaPengaduanWbsPage({ id }: KelolaPengaduanWbsPagePro
         const response = await api.get(`PelaporanWbs/${id}`);
         const complaintData = response.data.content;
 
-        // Jika kategori tidak ada, ambil data kategori terpisah
         if (!complaintData.kategori) {
           const kategoriResponse = await api.get(`kategori/${complaintData.kategoriId}`);
           complaintData.kategori = kategoriResponse.data.content;
@@ -133,21 +135,8 @@ export default function KelolaPengaduanWbsPage({ id }: KelolaPengaduanWbsPagePro
       if (response.status === 200) {
         toast.success('Status dan tanggapan berhasil diperbarui!');
 
-        // Update state lokal dengan data terbaru
-        setComplaint((prev) =>
-          prev
-            ? {
-                ...prev,
-                status: selectedStatus,
-                response: responseText.trim(),
-                filePetugas: filePetugasUrl,
-              }
-            : null
-        );
-
-        // Reset form
-        setResponseText('');
-        setPetugasFile(null);
+        // Redirect ke dashboard setelah berhasil
+        router.push('/dashboard');
       }
     } catch (error: any) {
       console.error('Gagal memperbarui status dan tanggapan:', error.response?.data || error.message);

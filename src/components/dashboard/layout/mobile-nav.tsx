@@ -58,7 +58,7 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
           '--NavItem-icon-color': isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-common-white)',
           '--NavItem-icon-active-color': 'var(--mui-palette-primary-contrastText)',
           '--NavItem-icon-disabled-color': isDayTime ? 'var(--mui-palette-neutral-600)' : 'var(--mui-palette-white)',
-          bgcolor: 'var(--MobileNav-background)',
+          bgcolor: open ? '#E3FEF7' : 'var(--MobileNav-background)',
           color: 'var(--MobileNav-color)',
           display: 'flex',
           flexDirection: 'column',
@@ -91,8 +91,8 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
           <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
             <Logo 
               src={isDayTime ? "/assets/logo-usk.png" : "/assets/logo-usk-putih.png"}
-              height={80} 
-              width={127} 
+              height={70} 
+              width={140} 
             />
           </Box>
         </Stack>

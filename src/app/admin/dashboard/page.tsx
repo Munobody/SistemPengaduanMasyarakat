@@ -7,6 +7,7 @@ import { config } from '@/config';
 
 import { AuthGuard } from '@/components/auth/auth-guard'; // Import the AuthGuard
 import UserManagement from '@/components/admin/kelola/user-management';
+import DashboardVisualization from '@/components/admin/kelola/dashboard-visualization';
 
 export const metadata = { title: `Admin Management | Dashboard | ${config.site.name}` } satisfies Metadata;
 
@@ -14,8 +15,11 @@ export default function AdminManagementPage(): React.JSX.Element {
   return (
       <Grid container spacing={3}>
         <Grid xs={12}>
-         <UserManagement/>
+         <DashboardVisualization/>
         </Grid>
+        {/* <Grid xs={12}>
+         <UserManagement/>
+        </Grid> */}
       </Grid>
   );
 }
