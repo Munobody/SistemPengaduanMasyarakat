@@ -5,6 +5,10 @@ import { Navbar } from '@/components/landingpage/navbar';
 import ReportSummary from '@/components/landingpage/info-card';
 import ReportForm from '@/components/landingpage/report-form';
 import InformasiSection from '@/components/landingpage/information';
+import { config } from '@/config';
+import { Metadata } from 'next';
+
+export const metadata = { title: `Sistem Pengaduan Layanan` } satisfies Metadata;
 
 export default function LandingPage(): React.JSX.Element {
   return (

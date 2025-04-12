@@ -15,7 +15,7 @@ interface AuthGuardProps {
 }
 
 const rolePathMapping = {
-  ADMIN: [paths.dashboard.admin, paths.dashboard.adminkelola],
+  ADMIN: [paths.dashboard.admin, paths.dashboard.kelolakategori, paths.dashboard.kelolaunit, paths.dashboard.kelolawbs, paths.dashboard.usermanagement],
   PETUGAS: [paths.dashboard.petugas, paths.dashboard.kelola],
   PETUGAS_SUPER: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
   KEPALA_PETUGAS_UNIT: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],

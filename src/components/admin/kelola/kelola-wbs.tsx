@@ -3,13 +3,10 @@
 import { useEffect, useState } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Box,
   Button,
   Card,
-  CardHeader,
-  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -25,7 +22,11 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+
 import api from '@/lib/api/api';
 
 interface Category {
@@ -69,6 +70,9 @@ export function KelolaKategoriWbs() {
     message: '',
     isError: false,
   });
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const fetchCategories = async () => {
     try {
@@ -209,71 +213,146 @@ export function KelolaKategoriWbs() {
   };
 
   return (
-    <Card sx={{ backgroundColor: '#E3FEF7' }}>
-      <CardHeader
-        title="Kelola Kategori WBS"
-        titleTypographyProps={{ color: '#003C43', fontWeight: 'bold' }}
-        action={
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <IconButton onClick={() => setIsExpanded(!isExpanded)}>
-              <ExpandMoreIcon sx={{ color: '#003C43' }} />
-            </IconButton>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: '#135D66',
-                '&:hover': { backgroundColor: '#003C43' },
-              }}
-              onClick={() => setOpen(true)}
-            >
-              Tambah Kategori
-            </Button>
-          </Box>
-        }
-      />
+    <Card
+      sx={{
+        backgroundColor: '#E3FEF7',
+        p: 2,
+        borderRadius: 2,
+        boxShadow: 3,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          mb: 3,
+          gap: 2,
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{
+            color: '#003C43',
+            fontWeight: 'bold',
+            fontSize: isMobile ? '1.2rem' : '1.5rem',
+          }}
+        >
+          Kelola Kategori WBS
+        </Typography>
 
-      <Collapse in={isExpanded}>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ color: '#003C43', fontWeight: 'bold' }}>Nama Kategori</TableCell>
-                <TableCell align="right" sx={{ color: '#003C43', fontWeight: 'bold' }}>
-                  Aksi
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {categories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell sx={{ color: '#003C43' }}>{category.nama}</TableCell>
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: '#135D66',
+            '&:hover': { backgroundColor: '#003C43' },
+            width: isMobile ? '100%' : 'auto',
+          }}
+          onClick={() => setOpen(true)}
+        >
+          Tambah Kategori WBS
+        </Button>
+      </Box>
+
+      <TableContainer
+        component={Paper}
+        sx={{
+          backgroundColor: 'white',
+          borderRadius: 1,
+          overflow: 'hidden',
+        }}
+      >
+        <Table sx={{ minWidth: isMobile ? 300 : 650 }}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: '#E3FEF7' }}>
+              <TableCell
+                sx={{
+                  fontWeight: 'bold',
+                  color: '#003C43',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
+                }}
+              >
+                Nama Kategori WBS
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{
+                  fontWeight: 'bold',
+                  color: '#003C43',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
+                }}
+              >
+                Aksi
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <TableRow key={category.id} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
+                  <TableCell sx={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>{category.nama}</TableCell>
                   <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(category)}>
-                      <EditIcon sx={{ color: '#135D66' }} />
+                    <IconButton
+                      onClick={() => handleEdit(category)}
+                      sx={{
+                        color: '#135D66',
+                        '&:hover': { backgroundColor: 'rgba(19, 93, 102, 0.1)' },
+                      }}
+                      title="Edit kategori"
+                    >
+                      <EditIcon fontSize={isMobile ? 'small' : 'medium'} />
                     </IconButton>
-                    <IconButton onClick={() => handleDelete(category.id, category.nama)}>
-                      <DeleteIcon sx={{ color: '#B8001F' }} />
+                    <IconButton
+                      onClick={() => handleDelete(category.id, category.nama)}
+                      sx={{
+                        color: '#B8001F',
+                        '&:hover': { backgroundColor: 'rgba(184, 0, 31, 0.1)' },
+                      }}
+                      title="Hapus kategori"
+                    >
+                      <DeleteIcon fontSize={isMobile ? 'small' : 'medium'} />
                     </IconButton>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <TablePagination
-            rowsPerPageOptions={[10, 25]}
-            component="div"
-            count={totalData}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            onRowsPerPageChange={(e) => {
-              setRowsPerPage(parseInt(e.target.value, 10));
-              setPage(0);
-            }}
-            sx={{ color: '#003C43' }}
-          />
-        </TableContainer>
-      </Collapse>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={2} align="center" sx={{ py: 4 }}>
+                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                    Belum ada kategori WBS yang ditambahkan
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <TablePagination
+          rowsPerPageOptions={[10, 25]}
+          component="div"
+          count={totalData}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+          labelRowsPerPage="Baris per halaman"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`
+          }
+          sx={{
+            backgroundColor: '#E3FEF7',
+            '.MuiTablePagination-select': {
+              fontSize: isMobile ? '0.875rem' : '1rem',
+            },
+            '.MuiTablePagination-displayedRows': {
+              fontSize: isMobile ? '0.875rem' : '1rem',
+            },
+          }}
+        />
+      </TableContainer>
 
       {/* Dialog untuk tambah/edit kategori */}
       <Dialog open={open} onClose={handleClose}>
@@ -292,10 +371,7 @@ export function KelolaKategoriWbs() {
           />
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={handleClose}
-            sx={{ color: '#135D66', '&:hover': { color: '#003C43' } }}
-          >
+          <Button onClick={handleClose} sx={{ color: '#135D66', '&:hover': { color: '#003C43' } }}>
             Batal
           </Button>
           <Button
@@ -320,10 +396,7 @@ export function KelolaKategoriWbs() {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={handleCloseDeleteConfirmation}
-            sx={{ color: '#135D66', '&:hover': { color: '#003C43' } }}
-          >
+          <Button onClick={handleCloseDeleteConfirmation} sx={{ color: '#135D66', '&:hover': { color: '#003C43' } }}>
             Batal
           </Button>
           <Button

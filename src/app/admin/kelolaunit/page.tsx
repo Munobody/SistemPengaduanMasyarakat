@@ -15,17 +15,8 @@ export default function KelolaPage(): React.JSX.Element {
   return (
     <Grid container spacing={3}>
       <Grid xs={12}>
-        <KelolaKategori />
-      </Grid>
-      <Grid xs={12}>
         <KelolaUnit />
       </Grid>
-      <Grid xs={12}>
-        <KelolaKategoriWbs />
-      </Grid>
-      <Grid xs={12}>
-         <UserManagement/>
-        </Grid>
     </Grid>
   );
 }

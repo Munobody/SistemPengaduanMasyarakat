@@ -11,17 +11,15 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
-import { ArrowSquareUpRight as ArrowSquareUpRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowSquareUpRight';
-import { CaretUpDown as CaretUpDownIcon } from '@phosphor-icons/react/dist/ssr/CaretUpDown';
 
 import type { NavItemConfig } from '@/types/nav';
 import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
 import { Logo } from '@/components/core/logo';
+import { useUsers } from '@/hooks/use-user';
 
 import { navItems } from './config';
 import { navIcons } from './nav-icons';
-import { useUsers } from '@/hooks/use-user';
 
 export interface MobileNavProps {
   onClose?: () => void;
@@ -48,17 +46,18 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
     <Drawer
       PaperProps={{
         sx: {
-          '--MobileNav-background': isDayTime ? 'var(--mui-palette-white)' : '#27445D',
-          '--MobileNav-color': isDayTime ? 'var(--mui-palette-common-black)' : 'var(--mui-palette-common-white)',
-          '--NavItem-color': isDayTime ? 'var(--mui-palette-black)' : 'var(--mui-palette-common-white)',
-          '--NavItem-hover-background': isDayTime ? 'rgba(202, 190, 14, 0.04)' : 'rgba(255, 255, 255, 0.04)',
-          '--NavItem-active-background': '#116A7B',
-          '--NavItem-active-color': 'var(--mui-palette-primary-contrastText)',
-          '--NavItem-disabled-color': isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-white)',
-          '--NavItem-icon-color': isDayTime ? 'var(--mui-palette-neutral-400)' : 'var(--mui-palette-common-white)',
-          '--NavItem-icon-active-color': 'var(--mui-palette-primary-contrastText)',
-          '--NavItem-icon-disabled-color': isDayTime ? 'var(--mui-palette-neutral-600)' : 'var(--mui-palette-white)',
-          bgcolor: open ? '#E3FEF7' : 'var(--MobileNav-background)',
+          // Match SideNav colors
+          '--MobileNav-background': isDayTime ? '#E3FEF7' : '#003C43',
+          '--MobileNav-color': isDayTime ? '#003C43' : '#E3FEF7',
+          '--NavItem-color': isDayTime ? '#003C43' : '#E3FEF7',
+          '--NavItem-hover-background': isDayTime ? 'rgba(119, 176, 170, 0.2)' : 'rgba(19, 93, 102, 0.5)',
+          '--NavItem-active-background': isDayTime ? '#77B0AA' : '#135D66',
+          '--NavItem-active-color': isDayTime ? '#003C43' : '#E3FEF7',
+          '--NavItem-disabled-color': isDayTime ? 'rgba(0, 60, 67, 0.5)' : 'rgba(227, 254, 247, 0.5)',
+          '--NavItem-icon-color': isDayTime ? '#135D66' : '#77B0AA',
+          '--NavItem-icon-active-color': isDayTime ? '#003C43' : '#E3FEF7',
+          '--NavItem-icon-disabled-color': isDayTime ? 'rgba(19, 93, 102, 0.5)' : 'rgba(119, 176, 170, 0.5)',
+          bgcolor: 'var(--MobileNav-background)',
           color: 'var(--MobileNav-color)',
           display: 'flex',
           flexDirection: 'column',
@@ -79,9 +78,9 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
             position: 'absolute',
             right: 8,
             top: 8,
-            color: isDayTime ? 'var(--mui-palette-neutral-500)' : 'var(--mui-palette-common-white)',
+            color: isDayTime ? '#003C43' : '#E3FEF7',
             '&:hover': {
-              backgroundColor: isDayTime ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.08)',
+              backgroundColor: isDayTime ? 'rgba(119, 176, 170, 0.2)' : 'rgba(19, 93, 102, 0.5)',
             },
           }}
         >
@@ -98,7 +97,7 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
         </Stack>
       </Box>
       <Divider sx={{ 
-        borderColor: isDayTime ? 'var(--mui-palette-yellow-700)' : 'var(--mui-palette-common-white)',
+        borderColor: isDayTime ? '#77B0AA' : '#135D66',
         borderBottomWidth: 2 
       }} />
       <Box component="nav" sx={{ flex: '1 1 auto', p: '12px' }}>
@@ -108,16 +107,52 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
   );
 }
 
-function renderNavItems({ items = [], pathname, isDayTime }: { items?: NavItemConfig[]; pathname: string; isDayTime?: boolean }): React.JSX.Element {
-  const children = items.reduce((acc: React.ReactNode[], curr: NavItemConfig): React.ReactNode[] => {
-    const { key, ...item } = curr;
-    acc.push(<NavItem key={key} pathname={pathname} isDayTime={isDayTime} {...item} />);
+function renderNavItems({ 
+  items = [], 
+  pathname, 
+  isDayTime 
+}: { 
+  items?: NavItemConfig[]; 
+  pathname: string; 
+  isDayTime?: boolean 
+}): React.JSX.Element {
+  const groupedItems = items.reduce((acc: Record<string, NavItemConfig[]>, item) => {
+    const category = item.category || 'Menu';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
     return acc;
-  }, []);
+  }, {});
 
   return (
-    <Stack component="ul" spacing={1} sx={{ listStyle: 'none', m: 0, p: 0 }}>
-      {children}
+    <Stack component="ul" spacing={2} sx={{ listStyle: 'none', m: 0, p: 0 }}>
+      {Object.entries(groupedItems).map(([category, categoryItems]) => (
+        <React.Fragment key={category}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: 'var(--NavItem-color)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              px: 2,
+              opacity: 0.8,
+            }}
+          >
+            {category}
+          </Typography>
+          <Stack component="ul" spacing={1} sx={{ listStyle: 'none', m: 0, p: 0 }}>
+            {categoryItems.map((item) => (
+              <NavItem
+              pathname={pathname}
+              isDayTime={isDayTime}
+              {...item}
+            />
+            ))}
+          </Stack>
+        </React.Fragment>
+      ))}
     </Stack>
   );
 }
@@ -127,7 +162,16 @@ interface NavItemProps extends Omit<NavItemConfig, 'items'> {
   isDayTime?: boolean;
 }
 
-function NavItem({ disabled, external, href, icon, matcher, pathname, title, isDayTime }: NavItemProps): React.JSX.Element {
+function NavItem({ 
+  disabled, 
+  external, 
+  href, 
+  icon, 
+  matcher, 
+  pathname, 
+  title, 
+  isDayTime 
+}: NavItemProps): React.JSX.Element {
   const active = isNavItemActive({ disabled, external, href, matcher, pathname });
   const Icon = icon ? navIcons[icon] : null;
 
@@ -158,20 +202,26 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title, isD
             bgcolor: 'var(--NavItem-hover-background)',
           },
           ...(disabled && {
-            bgcolor: 'var(--NavItem-disabled-background)',
+            bgcolor: 'transparent',
             color: 'var(--NavItem-disabled-color)',
             cursor: 'not-allowed',
           }),
-          ...(active && { 
-            bgcolor: 'var(--NavItem-active-background)', 
-            color: 'var(--NavItem-active-color)' 
+          ...(active && {
+            bgcolor: 'var(--NavItem-active-background)',
+            color: 'var(--NavItem-active-color)',
           }),
         }}
       >
         <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>
           {Icon ? (
             <Icon
-              fill={active ? 'var(--NavItem-icon-active-color)' : 'var(--NavItem-icon-color)'}
+              fill={
+                active
+                  ? 'var(--NavItem-icon-active-color)'
+                  : disabled
+                  ? 'var(--NavItem-icon-disabled-color)'
+                  : 'var(--NavItem-icon-color)'
+              }
               fontSize="var(--icon-fontSize-md)"
               weight={active ? 'fill' : undefined}
             />
@@ -180,11 +230,11 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title, isD
         <Box sx={{ flex: '1 1 auto' }}>
           <Typography
             component="span"
-            sx={{ 
+            sx={{
               color: 'inherit',
-              fontSize: '0.875rem', 
-              fontWeight: 500, 
-              lineHeight: '28px'
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              lineHeight: '28px',
             }}
           >
             {title}

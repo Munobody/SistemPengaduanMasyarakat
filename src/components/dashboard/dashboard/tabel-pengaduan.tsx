@@ -173,7 +173,7 @@ export function LatestComplaints() {
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => <span>{params?.row?.nameUnit ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params?.row?.unit?.nama_unit ?? '-'}</span>,
     },
     {
       field: 'response',

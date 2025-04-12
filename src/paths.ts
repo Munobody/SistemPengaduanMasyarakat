@@ -1,3 +1,5 @@
+import { KelolaUnit } from "./components/admin/kelola/kelola-unit";
+
 export const paths = {
   home: '/',
   auth: { signIn: '/auth/sign-in', signUp: '/auth/sign-up', resetPassword: '/auth/reset-password' },
@@ -10,7 +12,10 @@ export const paths = {
     petugas: '/petugas/dashboard',
     kelola: '/petugas/kelola',
     admin: '/admin/dashboard',
-    adminkelola: '/admin/kelola',
+    kelolakategori: '/admin/kelolakategori',
+    kelolaunit: '/admin/kelolaunit',
+    kelolakategoriwbs: '/admin/kelolakategoriwbs',
+    usermanagement: '/admin/usermanagement',
     tambah: '/petugas/add',
     kelolawbs:'/petugaswbs/kelola',
     dashboardwbs:'/petugaswbs/dashboard',

@@ -11,5 +11,6 @@ export interface NavItemConfig {
   items?: NavItemConfig[];
   userLevel: string[];
   matcher?: { type: 'startsWith' | 'equals'; href: string };
+  category: string;
 }
 
