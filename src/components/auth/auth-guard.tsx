@@ -23,6 +23,7 @@ const rolePathMapping = {
   KEPALA_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.petugaswbs],
   MAHASISWA: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.account],
   DOSEN: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.wbs, paths.dashboard.account],
+  TENAGA_KEPENDIDIKAN: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.wbs, paths.dashboard.account],
 };
 
 const fallbackPaths = {
@@ -34,6 +35,7 @@ const fallbackPaths = {
   KEPALA_WBS: paths.dashboard.dashboardwbs,
   MAHASISWA: paths.dashboard.overview,
   DOSEN: paths.dashboard.overview,
+  TENAGA_KEPENDIDIKAN: paths.dashboard.overview,
 };
 
 export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): React.JSX.Element | null {
@@ -68,7 +70,7 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
       return;
     }
 
-    // Debug logs
+
     logger.debug('[AuthGuard] Checking access...', {
       user: user?.userLevel?.name,
       pathname,

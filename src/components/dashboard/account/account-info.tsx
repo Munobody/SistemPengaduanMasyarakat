@@ -13,7 +13,6 @@ import Typography from '@mui/material/Typography';
 export function AccountInfo(): React.JSX.Element {
   const [user, setUser] = React.useState({
     name: '',
-    avatar: '',
     programStudi: '',
     noIdentitas: '',
   });
@@ -24,7 +23,6 @@ export function AccountInfo(): React.JSX.Element {
       const userData = JSON.parse(storedUser);
       setUser({
         name: userData.name,
-        avatar: '/assets/avatar.png', // Ganti dengan path avatar yang sesuai
         programStudi: userData.program_studi,
         noIdentitas: userData.no_identitas,
       });
@@ -36,7 +34,7 @@ export function AccountInfo(): React.JSX.Element {
       <CardContent>
         <Stack spacing={2} sx={{ alignItems: 'center' }}>
           <div>
-            <Avatar src={user.avatar} sx={{ height: '80px', width: '80px' }} />
+            <Avatar sx={{ height: '80px', width: '80px' }} />
           </div>
           <Stack spacing={1} sx={{ textAlign: 'center' }}>
             <Typography variant="h5">{user.name}</Typography>

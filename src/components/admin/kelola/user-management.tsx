@@ -411,6 +411,85 @@ export const UserManagement: React.FC = () => {
             }}
           />
         </TableContainer>
+
+        <Dialog 
+          open={open} 
+          onClose={() => setOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ color: '#003C43' }}>Add New User</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+              <TextField
+                label="Email"
+                fullWidth
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+              <TextField
+                label="Password"
+                type="password"
+                fullWidth
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+              <TextField
+                label="Name"
+                fullWidth
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+              <TextField
+                label="ID Number"
+                fullWidth
+                value={formData.no_identitas}
+                onChange={(e) => setFormData({ ...formData, no_identitas: e.target.value })}
+              />
+              <FormControl fullWidth>
+                <InputLabel>Role</InputLabel>
+                <Select
+                  value={formData.userLevelName}
+                  label="Role"
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    userLevelName: e.target.value as UserLevelName 
+                  })}
+                >
+                  {USER_LEVEL_NAMES.map((level) => (
+                    <MenuItem key={level} value={level}>
+                      {level.replace(/_/g, ' ')}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button 
+              onClick={() => setOpen(false)}
+              variant="outlined"
+              sx={{ color: '#003C43', borderColor: '#003C43' }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={loading}
+              sx={{ 
+                bgcolor: '#135D66',
+                '&:hover': { bgcolor: '#003C43' }
+              }}
+            >
+              {loading ? 'Adding...' : 'Add User'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         {selectedUserForAcl && (
           <AclManagementModal
             open={aclModalOpen}
@@ -420,6 +499,7 @@ export const UserManagement: React.FC = () => {
           />
         )}
       </Card>
+      <ToastContainer />
     </ThemeProvider>
   );
 };
