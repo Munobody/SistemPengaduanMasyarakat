@@ -14,7 +14,6 @@ import Typography from '@mui/material/Typography';
 import { Eye as EyeIcon } from '@phosphor-icons/react/dist/ssr/Eye';
 import { EyeSlash as EyeSlashIcon } from '@phosphor-icons/react/dist/ssr/EyeSlash';
 import { Controller, useForm } from 'react-hook-form';
-import { z as zod } from 'zod';
 import Box from '@mui/material/Box';
 import { authClient } from '@/lib/auth/client';
 import { useUsers } from '@/hooks/use-user';

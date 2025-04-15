@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   CardHeader,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -16,6 +15,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -224,6 +224,11 @@ export const UserManagement: React.FC = () => {
     setAclModalOpen(true);
   };
 
+  const handleCloseAclModal = () => {
+    setAclModalOpen(false);
+    setSelectedUserForAcl(null);
+  };
+
   const filteredUsers =
     selectedUserLevelName === 'ALL' ? users : users.filter((user) => user.userLevel.name === selectedUserLevelName);
 
@@ -336,11 +341,13 @@ export const UserManagement: React.FC = () => {
             </TableHead>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={isMobile ? 3 : 5} align="center">
-                    <CircularProgress size={24} />
-                  </TableCell>
-                </TableRow>
+                Array.from({ length: rowsPerPage }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell colSpan={isMobile ? 3 : 5}>
+                      <Skeleton variant="text" width="100%" height={30} />
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : filteredUsers.length > 0 ? (
                 filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((user) => (
                   <TableRow key={user.id} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
@@ -404,8 +411,14 @@ export const UserManagement: React.FC = () => {
             }}
           />
         </TableContainer>
-
-        {/* Keep existing dialogs (Add User, ACL Management) ... */}
+        {selectedUserForAcl && (
+          <AclManagementModal
+            open={aclModalOpen}
+            onClose={handleCloseAclModal}
+            userLevelId={selectedUserForAcl.userLevelId}
+            userLevelName={selectedUserForAcl.userLevelName}
+          />
+        )}
       </Card>
     </ThemeProvider>
   );

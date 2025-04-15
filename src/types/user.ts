@@ -5,6 +5,7 @@ export interface User {
   program_studi?: string;
   email?: string;
   userLevel?: userLevel;
+  userLevelId?: string;
   unit_id?: string;
   [key: string]: unknown;
 }
@@ -12,3 +13,4 @@ export interface User {
 export interface userLevel {
   name: string;
 }
+

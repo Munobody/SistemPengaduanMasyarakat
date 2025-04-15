@@ -48,7 +48,6 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
     const userRole = user.userLevel?.name;
     if (!userRole) return false;
 
-    // Check against allowedRoles if specified
     if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
       logger.debug(`[AuthGuard] Role ${userRole} not in allowed roles:`, allowedRoles);
       return false;

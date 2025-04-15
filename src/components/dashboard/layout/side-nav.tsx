@@ -15,22 +15,28 @@ import { isNavItemActive } from '@/lib/is-nav-item-active';
 import { useUsers } from '@/hooks/use-user';
 import { Logo } from '@/components/core/logo';
 
-import { navItems } from './config';
+import { getFilteredNavItems } from './config';
 import { navIcons } from './nav-icons';
 
 export function SideNav(): React.JSX.Element {
   const pathname = usePathname();
   const { user } = useUsers();
   const [isDayTime, setIsDayTime] = React.useState(true);
+  const [filteredNavItems, setFilteredNavItems] = React.useState<NavItemConfig[]>([]);
 
   React.useEffect(() => {
     const hour = new Date().getHours();
     setIsDayTime(hour >= 6 && hour < 18);
   }, []);
 
-  const filteredNavItems = navItems.filter(
-    (item) => user?.userLevel?.name && item.userLevel.includes(user.userLevel.name)
-  );
+  React.useEffect(() => {
+    if (user?.userLevelId) {
+      // Panggil fungsi untuk mendapatkan navItems yang difilter berdasarkan ACL
+      getFilteredNavItems(user.userLevelId).then((items) => {
+        setFilteredNavItems(items);
+      });
+    }
+  }, [user?.userLevelId]);
 
   return (
     <Box

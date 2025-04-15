@@ -9,7 +9,7 @@ export interface NavItemConfig {
   icon?: string;
   href?: string;
   items?: NavItemConfig[];
-  userLevel: string[];
+  userLevel?: userLevel[];
   matcher?: { type: 'startsWith' | 'equals'; href: string };
   category: string;
 }
