@@ -10,7 +10,7 @@ import { Metadata } from 'next';
 
 
 export const metadata: Metadata = {
-  title: "Dashboard Pengaduan Layanan",
+  title: "Sistem Pengaduan Layanan",
 };
 
 interface LayoutProps {

@@ -1,11 +1,10 @@
 import React from 'react';
-import { Box, Paper, Typography, Stepper, Step, StepLabel, Grid } from '@mui/material';
+import { Box, Paper, Typography} from '@mui/material';
 
 const ComplaintInfo: React.FC = () => {
   const steps = [
     'Isi formulir pengaduan dengan lengkap dan benar.',
     'Lampirkan bukti pendukung yang relevan.',
-    'Submit formulir dan tunggu konfirmasi dari pihak terkait.',
     'Pantau status pengaduan melalui dashboard ini.'
   ];
 

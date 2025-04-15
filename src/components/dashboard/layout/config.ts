@@ -99,7 +99,7 @@ export const navItems: NavItemConfig[] = [
     key: 'kelolawbs',
     title: 'Kelola WBS',
     href: paths.dashboard.kelolawbs,
-    icon: 'shield',  // Updated icon
+    icon: 'shield-star', 
     userLevel: ['PETUGAS_WBS', 'KEPALA_WBS'],
     category: 'Kelola',
   },
@@ -123,4 +123,14 @@ export const navItems: NavItemConfig[] = [
     userLevel: ['MAHASISWA', 'DOSEN'],
     category: 'Akun',
   },
+
+  // {
+  //   key: 'addwbs',
+  //   title: 'Tambah Petugas WBS',
+  //   href: paths.dashboard.petugaswbs,
+  //   icon: 'users',
+  //   userLevel: ['PETUGAS_WBS', 'KEPALA_WBS'],
+  //   category: 'Tambah',
+  // },
+  
 ];

@@ -29,10 +29,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import axios from 'axios';
+import DeleteIcon from '@mui/icons-material/Delete';
 import api from '@/lib/api/api';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
+import { toast } from 'react-toastify';
 
 dayjs.locale('id');
 
@@ -139,14 +140,36 @@ export function TabelPetugasWbs() {
     switch (status.toUpperCase()) {
       case 'PENDING':
         return 'warning';
-      case 'PROSES':
+      case 'PROCESS':
         return 'info';
-      case 'SELESAI':
+      case 'COMPLETED':
         return 'success';
       default:
         return 'default';
     }
   };
+
+    const handleDeleteComplaint = async (id: string) => {
+      if (!id) return;
+    
+      try {
+      const response = await api.delete(`/PelaporanWbs?ids=["${id}"]`);
+    
+      if (response.status === 200) {
+        toast.success('Pengaduan berhasil dihapus');
+        fetchComplaints();
+      } else {
+        toast.error('Gagal menghapus pengaduan');
+      }
+      } catch (error: any) {
+      console.error('❌ Gagal menghapus pengaduan:', error.response?.data);
+      toast.error('Terjadi kesalahan saat menghapus pengaduan');
+      }
+    };
+    
+    if (error) {
+      return <Alert severity="error">{error}</Alert>;
+    }
 
   const handleViewComplaint = (complaint: Pengaduan, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -240,13 +263,23 @@ export function TabelPetugasWbs() {
                           >
                             <RemoveRedEyeIcon />
                           </IconButton>
-                          <IconButton
-                            onClick={(e) => handleManageComplaint(complaint.id, e)}
-                            color="primary"
-                            title="Kelola pengaduan"
-                          >
-                            <EditIcon />
-                          </IconButton>
+                          {complaint.status !== 'COMPLETED' ? (
+                            <IconButton
+                              onClick={(e) => handleManageComplaint(complaint.id, e)}
+                              color="primary"
+                              title="Kelola pengaduan"
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              onClick={() => handleDeleteComplaint(complaint.id)}
+                              color="error"
+                              title="Hapus pengaduan"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
@@ -312,13 +345,13 @@ export function TabelPetugasWbs() {
               </Box>
 
               <Box>
-  <Typography variant="subtitle2" color="text.secondary">
-    Tanggal kejadian
-  </Typography>
-  <Typography>
-    {dayjs(viewDialog.complaint.tanggalKejadian).format('DD MMMM YYYY')}
-  </Typography>
-</Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Tanggal kejadian
+                </Typography>
+                <Typography>
+                  {dayjs(viewDialog.complaint.tanggalKejadian).format('DD MMMM YYYY')}
+                </Typography>
+              </Box>
 
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">

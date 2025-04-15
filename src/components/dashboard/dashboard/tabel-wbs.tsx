@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import EditIcon from '@mui/icons-material/Edit';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -18,14 +17,15 @@ import {
   Menu,
   MenuItem,
   TextField,
+  useMediaQuery,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
+
 import 'react-toastify/dist/ReactToastify.css';
+
 import api from '@/lib/api/api';
-import { ViewComplaintModal } from './modal/ViewComplaintModal';
 import { ViewComplaintModalWbs } from './modal/ViewComplaintModalWbs';
 
 export interface ComplaintWbs {
@@ -53,6 +53,7 @@ export function TabelWbs() {
   const [editedComplaint, setEditedComplaint] = useState<ComplaintWbs | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const isMobile = useMediaQuery('(max-width:600px)'); // Detect mobile screen size
 
   const fetchComplaints = async () => {
     try {
@@ -95,7 +96,9 @@ export function TabelWbs() {
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => <span>{params?.row?.createdAt ?? '-'}</span>,
+      renderCell: (params: any) => (
+        <span>{params?.row?.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
+      ),
     },
     {
       field: 'category',
@@ -172,20 +175,20 @@ export function TabelWbs() {
       renderCell: (params: any) => {
         const textColor =
           params?.row?.status === 'PENDING'
-            ? '#F59E0B' // Kuning
+            ? '#F59E0B'
             : params?.row?.status === 'PROCESS'
-              ? '#3B82F6' // Biru
+              ? '#3B82F6'
               : params?.row?.status === 'COMPLETED'
-                ? '#10B981' // Hijau
-                : '#EF4444'; // Merah
+                ? '#10B981'
+                : '#EF4444';
 
         return (
           <Chip
             label={params.row?.status ?? '-'}
             sx={{
               color: textColor,
-              fontWeight: 'bold', // Opsional: agar lebih jelas
-              backgroundColor: 'transparent', // Pastikan tidak ada background
+              fontWeight: 'bold',
+              backgroundColor: 'transparent',
             }}
           />
         );
@@ -240,32 +243,134 @@ export function TabelWbs() {
     },
   ];
 
-const handleViewOpen = async (row: ComplaintWbs) => {
-  try {
-    const response = await api.get(`/PelaporanWbs/${row.id}`);
-    const data = response.data.content;
+  const mobileColumns: any = [
+    {
+      field: 'title',
+      headerName: 'Judul',
+      flex: 1.5,
+      headerAlign: 'center',
+      align: 'left',
+      renderCell: (params: any) => (
+        <Box sx={{ py: 1 }}>
+          <span>{params?.row?.judul ?? '-'}</span>
+        </Box>
+      ),
+    },
+    {
+      field: 'date',
+      headerName: 'Tanggal',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => (
+        <span>{params?.row?.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => {
+        const textColor =
+          params?.row?.status === 'PENDING'
+            ? '#F59E0B'
+            : params?.row?.status === 'PROCESS'
+              ? '#3B82F6'
+              : params?.row?.status === 'COMPLETED'
+                ? '#10B981'
+                : '#EF4444';
 
-    setSelectedRow({
-      id: data.id,
-      judul: data.judul,
-      deskripsi: data.deskripsi,
-      createdAt: dayjs(data.createdAt).format('MMM D, YYYY'),
-      kategori: data.kategori,
-      unit: data.unit,
-      status: data.status,
-      pihakTerlibat: data.pihakTerlibat,
-      response: data.response || '-',
-      filePendukung: data.filePendukung || '-',
-      filePetugas: data.filePetugas || '-',
-      lokasi: data.lokasi || '-',
-    });
+        return (
+          <Chip
+            label={params.row?.status ?? '-'}
+            sx={{
+              color: textColor,
+              fontWeight: 'bold',
+              backgroundColor: 'transparent',
+              fontSize: '0.75rem',
+            }}
+          />
+        );
+      },
+    },
+    {
+      field: 'actions',
+      headerName: 'Aksi',
+      flex: 0.8,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <IconButton
+            onClick={(event) => {
+              setMenuAnchor(event.currentTarget);
+              setSelectedRow(params.row);
+            }}
+            size="small"
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={() => setMenuAnchor(null)}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                selectedRow && handleViewOpen(selectedRow);
+                setMenuAnchor(null);
+              }}
+            >
+              <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+            </MenuItem>
+          </Menu>
+        </Box>
+      ),
+    },
+  ];
 
-    setViewOpen(true);
-  } catch (error: any) {
-    console.error('Error fetching complaint details:', error);
-    toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
-  }
-};
+  const activeColumns = isMobile ? mobileColumns : columns; // Use mobileColumns for mobile view
+
+  const handleViewOpen = async (row: ComplaintWbs) => {
+    try {
+      const response = await api.get(`/PelaporanWbs/${row.id}`);
+      const data = response.data.content;
+
+      setSelectedRow({
+        id: data.id,
+        judul: data.judul,
+        deskripsi: data.deskripsi,
+        createdAt: dayjs(data.createdAt).format('MMM D, YYYY'),
+        kategori: data.kategori,
+        unit: data.unit,
+        status: data.status,
+        pihakTerlibat: data.pihakTerlibat,
+        response: data.response || '-',
+        filePendukung: data.filePendukung || '-',
+        filePetugas: data.filePetugas || '-',
+        lokasi: data.lokasi || '-',
+      });
+
+      setViewOpen(true);
+    } catch (error: any) {
+      console.error('Error fetching complaint details:', error);
+      toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
+    }
+  };
+
+  const filteredComplaints = complaints?.entries?.filter((complaint: ComplaintWbs) =>
+    complaint.judul.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleViewClose = () => {
     setViewOpen(false);
@@ -331,14 +436,14 @@ const handleViewOpen = async (row: ComplaintWbs) => {
           <FileDownloadIcon />
         </IconButton>
       </Box>
-      <Box sx={{ p: 2, height: 500, width: '100%' }}>
+      <Box sx={{ p: 2, width: '100%' }}>
         <DataGrid
-          rows={complaints?.entries ?? []}
-          columns={columns}
+          rows={filteredComplaints ?? []}
+          columns={activeColumns}
           pageSizeOptions={[5, 10, 20]}
           pagination
           paginationMode="server"
-          rowCount={complaints?.totalData ?? 0}
+          rowCount={filteredComplaints?.length ?? 0}
           onPaginationModelChange={(model) => {
             setPage(model.page + 1);
             setPageSize(model.pageSize);
@@ -349,6 +454,7 @@ const handleViewOpen = async (row: ComplaintWbs) => {
           disableColumnSelector
           disableColumnResize
           disableColumnSorting
+          autoHeight={false}
           slotProps={{
             toolbar: {
               sx: {

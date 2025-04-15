@@ -200,13 +200,13 @@ const WBSReportForm = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ flexGrow: 1, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <Container maxWidth="xl" sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center", py: 4 }}>
-          <Paper elevation={3} sx={{ p: 6, borderRadius: 2, width: "80%" }}>
+        <Container maxWidth="lg" sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center", py: 4 }}>
+          <Paper elevation={3} sx={{ p: { xs: 2, sm: 4, md: 6 }, borderRadius: 2, width: "100%", maxWidth: "800px" }}>
             <Typography sx={{ pb: 4 }} variant="h5" gutterBottom textAlign="center">
               Form Pengaduan
             </Typography>
             <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-              <Grid container spacing={2} direction="column">
+              <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField 
                     fullWidth label="Judul Laporan" 
@@ -216,7 +216,7 @@ const WBSReportForm = () => {
                     onChange={handleChange}
                     sx={{
                       mb: 2,
-                      fontSize: '1.2rem',
+                      fontSize: '1rem',
                       '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
                       '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
                     }}
@@ -232,13 +232,13 @@ const WBSReportForm = () => {
                     onChange={handleChange} 
                     sx={{
                       mb: 2,
-                      fontSize: '1.2rem',
+                      fontSize: '1rem',
                       '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
                       '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
                     }}
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={6}>
                   <FormControl 
                     fullWidth 
                     required 
@@ -248,9 +248,7 @@ const WBSReportForm = () => {
                         "&:hover fieldset": { borderColor: "#16404D" },
                         "&.Mui-focused fieldset": { borderColor: "#16404D" },
                       },
-                      "& .MuiInputLabel-root": {
-                        color: "#16404D", 
-                      },
+                      "& .MuiInputLabel-root": { color: "#16404D" },
                       "& .MuiInputLabel-shrink": {
                         backgroundColor: "white",
                         paddingX: "4px",
@@ -266,7 +264,7 @@ const WBSReportForm = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={6}>
                   <FormControl 
                     fullWidth 
                     required 
@@ -276,9 +274,7 @@ const WBSReportForm = () => {
                         "&:hover fieldset": { borderColor: "#16404D" },
                         "&.Mui-focused fieldset": { borderColor: "#16404D" },
                       },
-                      "& .MuiInputLabel-root": {
-                        color: "#16404D", 
-                      },
+                      "& .MuiInputLabel-root": { color: "#16404D" },
                       "& .MuiInputLabel-shrink": {
                         backgroundColor: "white",
                         paddingX: "4px",
@@ -302,7 +298,7 @@ const WBSReportForm = () => {
                     onChange={handleChange}
                     sx={{
                       mb: 2,
-                      fontSize: '1.2rem',
+                      fontSize: '1rem',
                       '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
                       '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
                     }}
@@ -316,26 +312,26 @@ const WBSReportForm = () => {
                     onChange={handleChange} 
                     sx={{
                       mb: 2,
-                      fontSize: '1.2rem',
+                      fontSize: '1rem',
                       '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
                       '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
                     }}
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={6}>
                   <DatePicker 
                     label="Tanggal Kejadian" 
                     value={date} 
                     onChange={(newDate) => setDate(newDate)} 
                     sx={{
                       mb: 2,
-                      fontSize: '1.2rem',
+                      fontSize: '1rem',
                       '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
                       '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
                     }}
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={6}>
                   <Button variant="contained" component="label" startIcon={<CloudUploadIcon />} sx={{ bgcolor: '#006A67', '&:hover': { bgcolor: '#0F2B33' } }}>
                     Upload File
                     <input type="file" hidden onChange={handleFileChange} />
@@ -351,7 +347,7 @@ const WBSReportForm = () => {
                 </Grid>
               </Grid>
               <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                <Button type="submit" variant="contained" sx={{ width: "30%", py: 1.5, bgcolor: '#3A4F6A', '&:hover': { bgcolor: '#4A7EB0' } }} disabled={loading}>
+                <Button type="submit" variant="contained" sx={{ width: { xs: "100%", sm: "50%", md: "30%" }, py: 1.5, bgcolor: '#3A4F6A', '&:hover': { bgcolor: '#4A7EB0' } }} disabled={loading}>
                   {loading ? "Mengirim..." : "Kirim Laporan"}
                 </Button>
               </Box>

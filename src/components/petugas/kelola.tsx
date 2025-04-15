@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Box, Button, CircularProgress, Container, Grid, MenuItem, Paper, TextField, Typography } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import api from '@/lib/api/api'; // Asumsi api sudah mengelola interceptor dan token
+import api from '@/lib/api/api';
 
-// Update the Pengaduan interface
 interface Pengaduan {
   id: string;
   judul: string;
@@ -26,7 +24,6 @@ interface Pengaduan {
   };
 }
 
-// Update the component props to accept id
 interface KelolaPengaduanPageProps {
   id?: string;
 }
@@ -85,9 +82,7 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
         const response = await api.get(`/pelaporan/${id}`);
         const complaintData = response.data.content;
 
-        // Ensure kategori data exists
         if (!complaintData.kategori) {
-          // If kategori is missing, fetch it separately
           try {
             const kategoriResponse = await api.get(`/kategori/${complaintData.kategoriId}`);
             complaintData.kategori = kategoriResponse.data.content;
@@ -202,7 +197,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
         }
       }
 
-      // Then update the payload section:
       const payload = {
         status: selectedStatus === 'PROSES' ? 'PROCESS' : selectedStatus,
         response: responseText.trim(),
@@ -216,8 +210,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
       if (response.status === 200) {
         console.log('✅ Tanggapan berhasil diperbarui:', response.data);
         toast.success('Tanggapan berhasil diperbarui!');
-
-        // Update local state
         setComplaint((prev) =>
           prev
             ? {
@@ -229,7 +221,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
             : null
         );
 
-        // Reset form
         setResponseText('');
         setPetugasFile(null);
       }
@@ -249,7 +240,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
     <Box sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Container maxWidth="xl" sx={{ flexGrow: 1, py: 4 }}>
         <Grid container spacing={4}>
-          {/* Detail Pengaduan */}
           <Grid item xs={12} md={6}>
             <Paper elevation={3} sx={{ p: 6, borderRadius: 2 }}>
               <Typography variant="h5" gutterBottom textAlign="center" sx={{ pb: 4 }}>
@@ -346,8 +336,7 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
               )}
             </Paper>
           </Grid>
-
-          {/* Form Pengelolaan */}
+          
           <Grid item xs={12} md={6}>
             <Paper elevation={3} sx={{ p: 6, borderRadius: 2 }}>
               <Typography variant="h5" gutterBottom textAlign="center" sx={{ pb: 4 }}>

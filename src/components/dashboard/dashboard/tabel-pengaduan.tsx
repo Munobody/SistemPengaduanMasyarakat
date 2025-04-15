@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -12,18 +13,20 @@ import {
   Card,
   CardHeader,
   Chip,
-  CircularProgress,
+
   Divider,
   IconButton,
   Menu,
   MenuItem,
+  Skeleton,
   TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -69,9 +72,13 @@ export function LatestComplaints() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const fetchComplaints = async () => {
     try {
-      const response = await api.get(`/pelaporan?page=${page}&rows=${pageSize}`);
+      const adjustedPageSize = isMobile ? 5 : pageSize; // Adjust rows based on screen size
+      const response = await api.get(`/pelaporan?page=${page}&rows=${adjustedPageSize}`);
 
       const data = response.data;
       if (data?.content) {
@@ -85,9 +92,8 @@ export function LatestComplaints() {
 
   const handleDeleteComplaint = async (id: string) => {
     try {
-      const response = await api.delete(`/pelaporan?ids=["${id}"]`, {
-      });
-  
+      const response = await api.delete(`/pelaporan?ids=["${id}"]`, {});
+
       if (response.status === 200) {
         toast.success('Pengaduan berhasil dihapus!');
         fetchComplaints(); // Refresh data setelah penghapusan
@@ -97,8 +103,6 @@ export function LatestComplaints() {
       toast.error(error.response?.data?.message || 'Gagal menghapus pengaduan.');
     }
   };
-  
-  
 
   const handleEditOpen = async (row: Complaint) => {
     try {
@@ -121,7 +125,7 @@ export function LatestComplaints() {
         filePetugas: data.filePetugas || '',
         harapan_pelapor: data.harapan_pelapor || '-',
         kategori: data.kategori,
-        unit: data.unit
+        unit: data.unit,
       });
       setEditOpen(true);
     } catch (error: any) {
@@ -132,7 +136,7 @@ export function LatestComplaints() {
 
   useEffect(() => {
     fetchComplaints();
-  }, [page, pageSize]);
+  }, [page, pageSize, isMobile]);
 
   const columns: any = [
     {
@@ -157,7 +161,9 @@ export function LatestComplaints() {
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => <span>{params?.row?.createdAt ?? '-'}</span>,
+      renderCell: (params: any) => (
+        <span>{params?.row?.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
+      ),
     },
     {
       field: 'category',
@@ -234,20 +240,20 @@ export function LatestComplaints() {
       renderCell: (params: any) => {
         const textColor =
           params?.row?.status === 'PENDING'
-            ? '#F59E0B' // Kuning
+            ? '#F59E0B' 
             : params?.row?.status === 'PROCESS'
-              ? '#3B82F6' // Biru
+              ? '#3B82F6' 
               : params?.row?.status === 'COMPLETED'
-                ? '#10B981' // Hijau
-                : '#EF4444'; // Merah
+                ? '#10B981'
+                : '#EF4444'; 
 
         return (
           <Chip
             label={params.row?.status ?? '-'}
             sx={{
               color: textColor,
-              fontWeight: 'bold', // Opsional: agar lebih jelas
-              backgroundColor: 'transparent', // Pastikan tidak ada background
+              fontWeight: 'bold', 
+              backgroundColor: 'transparent', 
             }}
           />
         );
@@ -277,7 +283,7 @@ export function LatestComplaints() {
             <Menu
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
-              onClose={() => setMenuAnchor(null)}
+              onClose={handleMenuClose} 
               anchorOrigin={{
                 vertical: 'bottom',
                 horizontal: 'right',
@@ -289,8 +295,10 @@ export function LatestComplaints() {
             >
               <MenuItem
                 onClick={() => {
-                  selectedRow && handleViewOpen(selectedRow);
-                  setMenuAnchor(null);
+                  if (selectedRow) {
+                    handleViewOpen(selectedRow);
+                  }
+                  handleMenuClose(); 
                 }}
               >
                 <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
@@ -299,23 +307,27 @@ export function LatestComplaints() {
               {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
                 <MenuItem
                   onClick={() => {
-                    selectedRow && handleEditOpen(selectedRow);
-                    setMenuAnchor(null);
+                    if (selectedRow) {
+                      handleEditOpen(selectedRow);
+                    }
+                    handleMenuClose();
                   }}
                 >
                   <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
                 </MenuItem>
               )}
-             {(selectedRow?.status === 'COMPLETED' || selectedRow?.status === 'REJECTED') && (
-            <MenuItem
-              onClick={() => {
-                selectedRow && handleDeleteComplaint(selectedRow.id);
-                setMenuAnchor(null);
-              }}
-            >
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
-            </MenuItem>
-          )}
+              {(selectedRow?.status === 'COMPLETED' || selectedRow?.status === 'REJECTED') && (
+                <MenuItem
+                  onClick={() => {
+                    if (selectedRow) {
+                      handleDeleteComplaint(selectedRow.id);
+                    }
+                    handleMenuClose();
+                  }}
+                >
+                  <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
+                </MenuItem>
+              )}
             </Menu>
           </Box>
         );
@@ -323,10 +335,140 @@ export function LatestComplaints() {
     },
   ];
 
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, row: Complaint) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedRow(row); 
+  };
+
+  const mobileColumns = [
+    {
+      field: 'title',
+      headerName: 'Judul',
+      flex: 1.5,
+      headerAlign: 'center',
+      align: 'left',
+      renderCell: (params: any) => (
+        <Box sx={{ py: 1 }}>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {params?.row?.judul ?? '-'}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'date',
+      headerName: 'Tanggal',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => (
+        <span>{params?.row?.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => {
+        const textColor =
+          params?.row?.status === 'PENDING'
+            ? '#F59E0B'
+            : params?.row?.status === 'PROCESS'
+              ? '#3B82F6'
+              : params?.row?.status === 'COMPLETED'
+                ? '#10B981'
+                : '#EF4444';
+
+        return (
+          <Chip
+            label={params.row?.status ?? '-'}
+            sx={{
+              color: textColor,
+              fontWeight: 'bold',
+              backgroundColor: 'transparent',
+              fontSize: '0.75rem',
+            }}
+          />
+        );
+      },
+    },
+    {
+      field: 'actions',
+      headerName: 'Aksi',
+      flex: 0.8,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => {
+        return (
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <IconButton
+              onClick={(event) => handleMenuClick(event, params.row)}
+              size="small"
+            >
+              <MoreVertIcon />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={handleMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  if (selectedRow) {
+                    handleViewOpen(selectedRow);
+                  }
+                  handleMenuClose(); // Tutup menu setelah aksi
+                }}
+              >
+                <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+              </MenuItem>
+
+              {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
+                <MenuItem
+                  onClick={() => {
+                    if (selectedRow) {
+                      handleEditOpen(selectedRow);
+                    }
+                    handleMenuClose(); // Tutup menu setelah aksi
+                  }}
+                >
+                  <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
+                </MenuItem>
+              )}
+              {(selectedRow?.status === 'COMPLETED' || selectedRow?.status === 'REJECTED') && (
+                <MenuItem
+                  onClick={() => {
+                    if (selectedRow) {
+                      handleDeleteComplaint(selectedRow.id);
+                    }
+                    handleMenuClose(); // Tutup menu setelah aksi
+                  }}
+                >
+                  <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
+                </MenuItem>
+              )}
+            </Menu>
+          </Box>
+        );
+      },
+    },
+  ];
+
+  const activeColumns = isMobile ? mobileColumns : columns;
+
   const handleViewOpen = async (row: Complaint) => {
     try {
-      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {
-      });
+      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {});
 
       const data = response.data.content;
 
@@ -346,7 +488,7 @@ export function LatestComplaints() {
         filePetugas: data.filePetugas || '',
         harapan_pelapor: data.harapan_pelapor || '-',
         kategori: data.kategori,
-        unit: data.unit
+        unit: data.unit,
       });
 
       setViewOpen(true);
@@ -354,6 +496,11 @@ export function LatestComplaints() {
       console.error('Error fetching complaint details:', error);
       toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
     }
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setSelectedRow(null);
   };
 
   const handleViewClose = () => {
@@ -367,12 +514,12 @@ export function LatestComplaints() {
 
   const handleSaveChanges = async (field: keyof Complaint, value: any) => {
     if (!selectedRow?.id) return;
-  
+
     try {
       const response = await api.patch(`/pelaporan/${selectedRow.id}`, {
-        [field]: value
+        [field]: value,
       });
-  
+
       if (response.status === 200) {
         toast.success('Pengaduan berhasil diperbarui!');
         fetchComplaints(); // Refresh data after update
@@ -382,8 +529,11 @@ export function LatestComplaints() {
       toast.error(error.response?.data?.message || 'Gagal memperbarui pengaduan.');
     }
   };
-  
 
+  const filteredComplaints = complaints?.entries?.filter((complaint: Complaint) =>
+    complaint.judul.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
   const handleExportCSV = () => {
     const csvContent = [
       [
@@ -427,62 +577,115 @@ export function LatestComplaints() {
     <Card>
       <CardHeader title="Tabel Pengaduan Layanan" sx={{ textAlign: 'center' }} />
       <Divider />
-      <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between' }}>
+      <Box
+        sx={{
+          p: isMobile ? 1 : 2,
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: 1,
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <TextField
           label="Cari Judul Laporan"
           variant="outlined"
           size="small"
-          fullWidth
+          fullWidth={isMobile}
+          sx={{ width: isMobile ? '100%' : '300px' }}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <IconButton onClick={handleExportCSV} sx={{ ml: 2 }}>
+        <IconButton
+          onClick={handleExportCSV}
+          sx={{
+            alignSelf: isMobile ? 'flex-end' : 'center',
+            mt: isMobile ? 1 : 0,
+          }}
+        >
           <FileDownloadIcon />
         </IconButton>
       </Box>
-      <Box sx={{ p: 2, height: 500, width: '100%' }}>
-        <DataGrid
-          rows={complaints?.entries ?? []}
-          columns={columns}
-          pageSizeOptions={[5, 10, 20]}
-          pagination
-          paginationMode="server"
-          rowCount={complaints?.totalData ?? 0}
-          onPaginationModelChange={(model) => {
-            setPage(model.page + 1);
-            setPageSize(model.pageSize);
-          }}
-          disableColumnMenu
-          disableRowSelectionOnClick
-          disableColumnFilter
-          disableColumnSelector
-          disableColumnResize
-          disableColumnSorting
-          slotProps={{
-            toolbar: {
-              sx: {
-                '& .MuiButtonBase-root': {
-                  color: '#16404D',
-                },
-                '& .MuiIconButton-root': {
-                  color: '#16404D',
+  
+      <Box
+        sx={{
+          p: isMobile ? 1 : 2,
+          width: '100%',
+          minHeight: isMobile ? '300px' : '400px',
+          '& .MuiDataGrid-root': {
+            border: 'none',
+            '& .MuiDataGrid-cell': {
+              borderBottom: '1px solid rgba(224, 224, 224, 0.4)',
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: '#E3FEF7',
+              borderBottom: 'none',
+            },
+            '& .MuiDataGrid-virtualScroller': {
+              backgroundColor: '#ffffff',
+            },
+          },
+        }}
+      >
+        {complaints ? (
+          <DataGrid
+            rows={filteredComplaints ?? []}
+            columns={activeColumns}
+            pageSizeOptions={[5, 10, 20]}
+            pagination
+            paginationMode="server"
+            rowCount={filteredComplaints?.length ?? 0}
+            onPaginationModelChange={(model) => {
+              setPage(model.page + 1);
+              setPageSize(model.pageSize);
+            }}
+            disableColumnMenu
+            disableRowSelectionOnClick
+            disableColumnFilter
+            disableColumnSelector
+            disableColumnResize
+            disableColumnSorting
+            autoHeight={false}
+            slotProps={{
+              toolbar: {
+                sx: {
+                  '& .MuiButtonBase-root': {
+                    color: '#16404D',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: '#16404D',
+                  },
                 },
               },
-            },
-          }}
-        />
+            }}
+          />
+        ) : (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              width: '100%',
+              minHeight: isMobile ? '300px' : '400px',
+            }}
+          >
+            <Skeleton variant="rectangular" height={40} width="100%" />
+            {[...Array(5)].map((_, index) => (
+              <Skeleton key={index} variant="rectangular" height={52} width="100%" />
+            ))}
+          </Box>
+        )}
       </Box>
+  
       <ViewComplaintModal open={viewOpen} onClose={handleViewClose} complaint={selectedRow} />
       <EditComplaintModal
         open={editOpen}
         onClose={handleEditClose}
-        complaint={editedComplaint} // Ensure editedComplaint contains the correct ID
-        onSave={(field, value) => {
-          console.log(`Field ${field} updated with value:`, value);
-        }}
+        complaint={editedComplaint}
+        onSave={handleSaveChanges}
       />
-
-      <ToastContainer position="top-right" autoClose={3000} />
+  
+      <ToastContainer position="top-right" autoClose={3000} style={{ fontSize: isMobile ? '14px' : '16px' }} />
     </Card>
   );
 }

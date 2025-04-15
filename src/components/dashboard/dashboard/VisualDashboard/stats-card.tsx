@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Card, CardContent, Skeleton, CircularProgress } from '@mui/material';
+import { Box, Typography, Skeleton } from '@mui/material';
 
 interface StatsCardProps {
   title: string;
@@ -22,9 +22,8 @@ const StatsCard: React.FC<StatsCardProps> = ({
   return (
     <Box
       sx={{
-        p: 5,
+        p: 3, // Kurangi padding untuk efisiensi
         borderRadius: 2,
-        // boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
         display: 'flex',
         alignItems: 'center',
         backgroundColor,
@@ -37,7 +36,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
           {title}
         </Typography>
         {loading ? (
-          <CircularProgress size={24} />
+          <Skeleton variant="text" width={80} height={32} /> // Gunakan Skeleton
         ) : (
           <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
             {value}
@@ -48,4 +47,4 @@ const StatsCard: React.FC<StatsCardProps> = ({
   );
 };
 
-export default StatsCard;
+export default React.memo(StatsCard); // Gunakan memoization untuk mencegah rendering ulang

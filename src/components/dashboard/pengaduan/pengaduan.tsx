@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
@@ -67,8 +66,6 @@ export default function PengaduanPage() {
 
         setUnits(unitList);
         setCategories(categoryList);
-
-        // Set default values if data exists
         if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
         if (unitList.length > 0) setSelectedUnit(unitList[0].id);
       } catch (error: any) {
@@ -83,7 +80,7 @@ export default function PengaduanPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const fileSize = file.size / 1024 / 1024; // Convert to MB
+      const fileSize = file.size / 1024 / 1024;
       if (fileSize > 1) {
         setFileError('Ukuran file tidak boleh lebih dari 1MB');
         setSelectedFile(null);
@@ -127,7 +124,7 @@ export default function PengaduanPage() {
       judul: formData.get('title') as string,
       deskripsi: formData.get('description') as string,
       status: 'PENDING',
-      unitId: selectedUnit, // Send unitId instead of nameUnit
+      unitId: selectedUnit,
       kategoriId: selectedCategory,
       harapan_pelapor: formData.get('expectation') as string,
       filePendukung: fileUrl,
@@ -144,7 +141,6 @@ export default function PengaduanPage() {
         console.log('✅ Laporan berhasil dikirim:', response.data);
         toast.success('Laporan berhasil dikirim!');
 
-        // Reset form
         formRef.current!.reset();
         setSelectedFile(null);
         setSelectedCategory(categories[0]?.id || '');
@@ -403,7 +399,7 @@ export default function PengaduanPage() {
                   width: isMobile ? '100%' : '30%',
                   py: isMobile ? 1 : 1.5,
                   bgcolor: '#79D7BE',
-                  color: '#000000', // Set text color to black
+                  color: '#000000',
                   '&:hover': { bgcolor: '#B9E5E8' },
                 }}
                 disabled={loading}

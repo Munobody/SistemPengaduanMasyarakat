@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { Box, Card, CardContent, Grid, Typography, CircularProgress } from '@mui/material';
 import { Bar } from 'react-chartjs-2';
 import {
@@ -17,7 +17,7 @@ import api from '@/lib/api/api'; // Asumsi API sudah diatur
 // Registrasi ChartJS
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const DashboardVisualization: React.FC = () => {
+const DashboardVisualization: React.FC = memo(() => {
   const [units, setUnits] = useState<{ id: string; nama_unit: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +98,7 @@ const DashboardVisualization: React.FC = () => {
       <Grid container spacing={3}>
         {/* Total Unit */}
         <Grid item xs={12} md={6}>
-          <Card elevation={3} sx={{ bgcolor: '#77B0AA', color: '#E3FEF7' }}>
+          <Card elevation={3} sx={{ bgcolor: '#77B0AA', color: '#E3FEF7', minHeight: 150 }}>
             <CardContent>
               <Typography variant="h5" align="center" gutterBottom>
                 Total Unit
@@ -112,7 +112,7 @@ const DashboardVisualization: React.FC = () => {
 
         {/* Total Kategori */}
         <Grid item xs={12} md={6}>
-          <Card elevation={3} sx={{ bgcolor: '#135D66', color: '#E3FEF7' }}>
+          <Card elevation={3} sx={{ bgcolor: '#135D66', color: '#E3FEF7', minHeight: 150 }}>
             <CardContent>
               <Typography variant="h5" align="center" gutterBottom>
                 Total Kategori
@@ -126,7 +126,7 @@ const DashboardVisualization: React.FC = () => {
 
         {/* Grafik Perbandingan */}
         <Grid item xs={12}>
-          <Card elevation={3} sx={{ bgcolor: '#E3FEF7' }}>
+          <Card elevation={3} sx={{ bgcolor: '#E3FEF7', minHeight: 300 }}>
             <CardContent>
               <Typography
                 variant="h5"
@@ -143,6 +143,6 @@ const DashboardVisualization: React.FC = () => {
       </Grid>
     </Box>
   );
-};
+});
 
 export default DashboardVisualization;

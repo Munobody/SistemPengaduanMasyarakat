@@ -1,19 +1,19 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PendingIcon from '@mui/icons-material/Pending';
-import { Badge, Box, CircularProgress, Grid, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, Grid, Skeleton, Typography } from '@mui/material';
 
 import api from '@/lib/api/api';
-import NotificationMenu from '@/components/dashboard/dashboard/VisualDashboard/notifcation-menu';
 
-import PieChart from './VisualDashboard/chart';
-import ComplaintInfo from './complaint-info';
-import LatestComplaints from './VisualDashboard/latest-complaint';
-import StatsCard from './VisualDashboard/stats-card';
+// Lazy load components
+const ComplaintInfo = lazy(() => import('./complaint-info'));
+const PieChart = lazy(() => import('./VisualDashboard/chart'));
+const LatestComplaints = lazy(() => import('./VisualDashboard/latest-complaint'));
+const StatsCard = lazy(() => import('./VisualDashboard/stats-card'));
 
 const COLORS = ['#3f51b5', '#f50057', '#00acc1', '#ff9800', '#4caf50', '#9c27b0'];
 
@@ -68,12 +68,16 @@ export interface NotificationResponse {
   errors: string[];
 }
 
+const WelcomeMessage = React.memo(({ userName }: { userName: string }) => (
+  <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', pt: 0, mt: 0 }}>
+    Selamat Datang {userName || 'Mahasiswa'} !
+  </Typography>
+));
+
 const ComplaintsVisual: React.FC = () => {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const [userName, setUserName] = useState<string>('');
 
   useEffect(() => {
@@ -95,31 +99,17 @@ const ComplaintsVisual: React.FC = () => {
       }
     };
 
-    const fetchWbs = async () => {
-      try {
-        const response = await api.get<ApiResponse>('/PelaporanWbs');
-        if (isMounted) {
-          setData(response.data);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError('Failed to fetch data');
-          console.error('Error fetching data:', err);
-          setLoading(false);
-        }
-      }
-    };
-    
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
-    if (userData && userData.name) {
-      setUserName(userData.name); // Set nama pengguna ke state
+    if (userData && userData.name && userData.name !== userName) {
+      setUserName(userData.name);
     }
-
 
     fetchData();
 
-  }, []);
+    return () => {
+      isMounted = false;
+    };
+  }, [userName]);
 
   const processedData = useMemo(() => {
     if (!data || !data.content || !data.content.entries) {
@@ -169,8 +159,17 @@ const ComplaintsVisual: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box sx={{ p: 3 }}>
+        <Grid container spacing={3}>
+          {[...Array(4)].map((_, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Skeleton variant="rectangular" height={120} width="100%" />
+            </Grid>
+          ))}
+        </Grid>
+        <Box sx={{ mt: 3 }}>
+          <Skeleton variant="rectangular" height={300} width="100%" />
+        </Box>
       </Box>
     );
   }
@@ -184,65 +183,75 @@ const ComplaintsVisual: React.FC = () => {
   }
 
   return (
-<Box sx={{ flexGrow: 1, p: 3, pt: 0 }}>
-  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, pt: 0, }}>
-    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', paddingTop: '0', marginTop: '0' }}>
-      Selamat Datang {userName || 'Mahasiswa'} 👋
-    </h2>
-  </Box>
+    <Box sx={{ flexGrow: 1, p: 3, pt: 0 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, pt: 0 }}>
+        <WelcomeMessage userName={userName} />
+      </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatsCard
-            title="Total Pengaduan"
-            value={processedData.totalCount}
-            loading={loading}
-            icon={<DescriptionIcon fontSize="large" color="primary" />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatsCard
-            title="Diselesaikan"
-            value={processedData.completedCount}
-            loading={loading}
-            icon={<CheckCircleIcon fontSize="large" color="success" />}
-            color="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatsCard
-            title="Tertunda"
-            value={processedData.pendingCount}
-            loading={loading}
-            icon={<PendingIcon fontSize="large" color="warning" />}
-            color="warning.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatsCard
-            title="Tingkat Penyelesaian"
-            value={`${processedData.completionRate}%`}
-            loading={loading}
-            icon={<AssessmentIcon fontSize="large" color="primary" />}
-            color="primary.main"
-          />
-        </Grid>
+        {[...Array(4)].map((_, index) => (
+          <Grid item xs={12} sm={6} md={3} key={index} sx={{ minHeight: 150 }}>
+            <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+              {index === 0 && (
+                <StatsCard
+                  title="Total Pengaduan"
+                  value={processedData.totalCount}
+                  loading={loading}
+                  icon={<DescriptionIcon fontSize="large" color="primary" />}
+                />
+              )}
+              {index === 1 && (
+                <StatsCard
+                  title="Diselesaikan"
+                  value={processedData.completedCount}
+                  loading={loading}
+                  icon={<CheckCircleIcon fontSize="large" color="success" />}
+                  color="success.main"
+                />
+              )}
+              {index === 2 && (
+                <StatsCard
+                  title="Tertunda"
+                  value={processedData.pendingCount}
+                  loading={loading}
+                  icon={<PendingIcon fontSize="large" color="warning" />}
+                  color="warning.main"
+                />
+              )}
+              {index === 3 && (
+                <StatsCard
+                  title="Tingkat Penyelesaian"
+                  value={`${processedData.completionRate}%`}
+                  loading={loading}
+                  icon={<AssessmentIcon fontSize="large" color="primary" />}
+                  color="primary.main"
+                />
+              )}
+            </Suspense>
+          </Grid>
+        ))}
       </Grid>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={6} sx={{ minHeight: 600 }}>
           <Box sx={{ height: 600, overflow: 'auto' }}>
-            <PieChart data={processedData.pieChartData} loading={loading} />
+            <Suspense fallback={<Skeleton variant="rectangular" height={300} width="100%" />}>
+              <PieChart data={processedData.pieChartData} loading={loading} />
+            </Suspense>
           </Box>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <ComplaintInfo />
+        <Grid item xs={12} md={6} sx={{ minHeight: 600 }}>
+          <Suspense fallback={<Skeleton variant="rectangular" height={300} width="100%" />}>
+            <ComplaintInfo />
+          </Suspense>
         </Grid>
       </Grid>
 
       <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12}>
-          <LatestComplaints complaints={data.content.entries} loading={loading} />
+        <Grid item xs={12} sx={{ minHeight: 300 }}>
+          <Suspense fallback={<Skeleton variant="rectangular" height={300} width="100%" />}>
+            <LatestComplaints complaints={data.content.entries} loading={loading} />
+          </Suspense>
         </Grid>
       </Grid>
     </Box>

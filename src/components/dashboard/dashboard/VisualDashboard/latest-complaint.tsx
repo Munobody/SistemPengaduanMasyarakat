@@ -19,8 +19,21 @@ interface LatestComplaintsProps {
 }
 
 const LatestComplaints: React.FC<LatestComplaintsProps> = ({ complaints, loading }) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'success.main';
+      case 'PROCESS':
+        return 'info.main';
+      case 'REJECTED':
+        return 'error.main'; 
+      default:
+        return 'grey.500'; 
+    }
+  };
+
   return (
-    <Paper sx={{ p: 3, backgroundColor: '#E3FEF7'}}>
+    <Paper sx={{ p: 3, backgroundColor: '#E3FEF7' }}>
       <Typography variant="h6" gutterBottom>
         Pengaduan Terbaru
       </Typography>
@@ -58,27 +71,38 @@ const LatestComplaints: React.FC<LatestComplaintsProps> = ({ complaints, loading
                   <Typography variant="h6" component="h2" noWrap>
                     {entry.judul}
                   </Typography>
-                  <Typography variant="body2" component="p" sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                  }}>
+                  <Typography
+                    variant="body2"
+                    component="p"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                  >
                     {entry.deskripsi}
                   </Typography>
-                  <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box
+                    sx={{
+                      mt: 1,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
                     <Typography variant="caption" color="textSecondary">
                       {new Date(entry.createdAt).toLocaleDateString()}
                     </Typography>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        bgcolor: entry.status === 'COMPLETED' ? 'success.main' : 'warning.main',
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        bgcolor: getStatusColor(entry.status),
                         color: 'white',
                         px: 1,
                         py: 0.5,
-                        borderRadius: 1
+                        borderRadius: 1,
                       }}
                     >
                       {entry.status}

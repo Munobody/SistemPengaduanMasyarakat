@@ -4,12 +4,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import PendingIcon from '@mui/icons-material/Pending';
-import { Badge, Box, CircularProgress, Grid, IconButton, Tooltip, Typography } from '@mui/material';
+import { Badge, Box, CircularProgress, Grid, Typography } from '@mui/material';
 
 import api from '@/lib/api/api';
-import NotificationMenu from '@/components/dashboard/dashboard/VisualDashboard/notifcation-menu';
 import ComplaintInfo from '../dashboard/dashboard/complaint-info';
 import LatestComplaints from '../dashboard/dashboard/VisualDashboard/latest-complaint';
 import PieChart from '../dashboard/dashboard/VisualDashboard/chart';
@@ -224,22 +222,7 @@ const ComplaintsVisualWbs: React.FC = () => {
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', paddingTop: '0', marginTop: '0' }}>
           Selamat Datang {userName || 'Mahasiswa'} 👋
         </h2>
-        <Tooltip title="Notifikasi">
-          <IconButton color="inherit" onClick={handleNotificationClick}>
-            <Badge badgeContent={unreadCount} color="error">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
-        </Tooltip>
       </Box>
-
-      <NotificationMenu
-        anchorEl={notificationAnchorEl}
-        handleClose={handleNotificationClose}
-        notifications={notifications}
-        markNotificationAsRead={markNotificationAsRead}
-        unreadCount={unreadCount}
-      />
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>

@@ -1,7 +1,7 @@
-import React from 'react';
-import { Box, Typography, Paper, Skeleton, Grid } from '@mui/material';
+import React, { useMemo } from 'react';
+import { Box, Paper, Skeleton, Typography } from '@mui/material';
+import { ArcElement, Chart as ChartJS, Tooltip as ChartTooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js';
 
 ChartJS.register(ArcElement, ChartTooltip, Legend);
 
@@ -18,33 +18,68 @@ interface ChartProps {
 }
 
 const Chart: React.FC<ChartProps> = ({ data, loading }) => {
-  const statusCounts = data.labels.reduce((acc, label, index) => {
-    acc[label] = data.datasets[0].data[index];
-    return acc;
-  }, {} as Record<string, number>);
+
+  const statusCounts = useMemo(() => {
+    return data.labels.reduce(
+      (acc, label, index) => {
+        acc[label] = data.datasets[0].data[index];
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+  }, [data]);
+
+  const totalCount = useMemo(() => {
+    return data.datasets[0].data.reduce((sum, value) => sum + value, 0);
+  }, [data]);
+
+  const centerTextPlugin = {
+    id: 'centerText',
+    beforeDraw: (chart: any) => {
+      const { width } = chart;
+      const { height } = chart;
+      const ctx = chart.ctx;
+      ctx.restore();
+      const fontSize = (height / 100).toFixed(2);
+      ctx.font = `${fontSize}em sans-serif`;
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#666';
+
+      // const text = `Total: ${totalCount}`;
+      // const textX = Math.round((width - ctx.measureText(text).width) / 2);
+      // const textY = height / 2;
+
+      // ctx.fillText(text, textX, textY);
+      // ctx.save();
+    },
+  };
 
   return (
-    <Paper sx={{ p: 3, height: '100%', backgroundColor: '#E3FEF7', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)' }}>
+    <Paper sx={{ p: 3, backgroundColor: '#E3FEF7' }}>
       <Typography variant="h6" gutterBottom>
         Status Pengaduan
       </Typography>
       {loading ? (
-        <Skeleton variant="rectangular" width="100%" height={400} />
+        <Skeleton variant="rectangular" width="100%" height={250} />
       ) : (
         <>
-          <Box sx={{ width: '100%', height: 400, display: 'flex', justifyContent: 'center' }}>
-            <Pie data={data} />
+          <Box
+            sx={{
+              width: '100%',
+              height: 300,
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <Pie
+              data={data}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+              }}
+              plugins={[centerTextPlugin]} 
+            />
           </Box>
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            {Object.entries(statusCounts).map(([status, count]) => (
-              <Grid item xs={6} md={3} key={status}>
-                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                  {status}:
-                </Typography>
-                <Typography variant="body2">{count}</Typography>
-              </Grid>
-            ))}
-          </Grid>
         </>
       )}
     </Paper>
