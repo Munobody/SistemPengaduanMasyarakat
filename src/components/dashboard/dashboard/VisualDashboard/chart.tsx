@@ -44,13 +44,6 @@ const Chart: React.FC<ChartProps> = ({ data, loading }) => {
       ctx.font = `${fontSize}em sans-serif`;
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#666';
-
-      // const text = `Total: ${totalCount}`;
-      // const textX = Math.round((width - ctx.measureText(text).width) / 2);
-      // const textY = height / 2;
-
-      // ctx.fillText(text, textX, textY);
-      // ctx.save();
     },
   };
 

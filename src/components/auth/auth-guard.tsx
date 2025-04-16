@@ -15,12 +15,12 @@ interface AuthGuardProps {
 }
 
 const rolePathMapping = {
-  ADMIN: [paths.dashboard.admin, paths.dashboard.kelolakategori, paths.dashboard.kelolaunit, paths.dashboard.kelolawbs, paths.dashboard.usermanagement],
-  PETUGAS: [paths.dashboard.petugas, paths.dashboard.kelola],
-  PETUGAS_SUPER: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
-  KEPALA_PETUGAS_UNIT: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah],
-  PETUGAS_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs],
-  KEPALA_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.petugaswbs],
+  ADMIN: [paths.dashboard.admin, paths.dashboard.kelolakategori, paths.dashboard.kelolaunit, paths.dashboard.kelolawbs, paths.dashboard.usermanagement, paths.dashboard.account],
+  PETUGAS: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.account],
+  PETUGAS_SUPER: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah, paths.dashboard.account],
+  KEPALA_PETUGAS_UNIT: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah,paths.dashboard.account],
+  PETUGAS_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.account],
+  KEPALA_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.petugaswbs, paths.dashboard.account],
   MAHASISWA: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.account],
   DOSEN: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.wbs, paths.dashboard.account],
   TENAGA_KEPENDIDIKAN: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.wbs, paths.dashboard.account],

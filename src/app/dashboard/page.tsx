@@ -33,13 +33,9 @@ export default function Page(): React.JSX.Element {
         if (userData) {
           const parsedUser = JSON.parse(userData);
           setUserLevel(parsedUser?.userLevel?.name || null);
-
-          // Check WBS permissions
           if (parsedUser?.userLevelId) {
             const response = await api.get<AclResponse>(`/acl/${parsedUser.userLevelId}`);
-            const permissions = response.data.content.permissions;
-            
-            // Check if user has WBS read permission
+            const permissions = response.data.content.permissions;  
             const wbsPermission = permissions.find(p => p.subject === 'PENGADUAN_WBS');
             setHasWbsPermission(!!wbsPermission && wbsPermission.actions.includes('read'));
           }

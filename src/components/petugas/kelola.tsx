@@ -4,6 +4,7 @@ import { Box, Button, CircularProgress, Container, Grid, MenuItem, Paper, TextFi
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '@/lib/api/api';
+import { useRouter } from 'next/navigation';
 
 interface Pengaduan {
   id: string;
@@ -29,6 +30,7 @@ interface KelolaPengaduanPageProps {
 }
 
 export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
+  const router = useRouter();
   const [complaint, setComplaint] = useState<Pengaduan | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -223,6 +225,8 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
 
         setResponseText('');
         setPetugasFile(null);
+
+        router.push('/dashboard');
       }
     } catch (error: any) {
       console.error('❌ Gagal memperbarui tanggapan:', error);

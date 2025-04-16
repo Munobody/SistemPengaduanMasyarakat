@@ -118,7 +118,6 @@ const WBSReportForm = () => {
   
     let fileUrl = "";
   
-    // Upload file terlebih dahulu jika ada
     if (file) {
       const formData = new FormData();
       formData.append("file", file);
@@ -142,7 +141,6 @@ const WBSReportForm = () => {
       }
     }
   
-    // Siapkan data laporan
     const requestBody = {
       judul: formData.judul.trim(),
       deskripsi: formData.deskripsi.trim(),
@@ -151,7 +149,7 @@ const WBSReportForm = () => {
       kategoriId: category,
       tanggalKejadian: date?.format('YYYY-MM-DD'),
       unit: unit,
-      filePendukung: fileUrl, // URL file yang sudah diunggah
+      filePendukung: fileUrl, 
     };
   
     console.log("📝 Data yang akan dikirim:", JSON.stringify(requestBody, null, 2));
@@ -183,7 +181,6 @@ const WBSReportForm = () => {
     } catch (error: any) {
       console.error('❌ Error submitting form:', error.response?.data || error.message);
       
-      // Tampilkan pesan error dari server jika ada
       if (error.response?.data?.message) {
         toast.error(`Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {

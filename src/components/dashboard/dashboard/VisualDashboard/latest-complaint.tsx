@@ -16,6 +16,7 @@ interface Complaint {
 interface LatestComplaintsProps {
   complaints: Complaint[];
   loading?: boolean;
+  showWBS?: boolean;
 }
 
 const LatestComplaints: React.FC<LatestComplaintsProps> = ({ complaints, loading }) => {
