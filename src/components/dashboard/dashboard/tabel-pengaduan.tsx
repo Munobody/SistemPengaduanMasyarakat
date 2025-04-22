@@ -61,6 +61,8 @@ export interface Complaint {
   };
 }
 
+const STATUS_ORDER = ['PENDING', 'PROCESS', 'COMPLETED', 'REJECTED'];
+
 export function LatestComplaints() {
   const [complaints, setComplaints] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,12 +79,26 @@ export function LatestComplaints() {
 
   const fetchComplaints = async () => {
     try {
-      const adjustedPageSize = isMobile ? 5 : pageSize; // Adjust rows based on screen size
+      const adjustedPageSize = isMobile ? 5 : pageSize;
       const response = await api.get(`/pelaporan?page=${page}&rows=${adjustedPageSize}`);
 
       const data = response.data;
       if (data?.content) {
-        setComplaints(data?.content);
+        const sortedEntries = data.content.entries.sort((a: Complaint, b: Complaint) => {
+          const statusA = STATUS_ORDER.indexOf(a.status);
+          const statusB = STATUS_ORDER.indexOf(b.status);
+          
+          if (statusA !== statusB) {
+            return statusA - statusB;
+          }
+          
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+        
+        setComplaints({
+          ...data.content,
+          entries: sortedEntries
+        });
       }
     } catch (error: any) {
       console.error('Error fetching complaints:', error);
@@ -530,7 +546,8 @@ export function LatestComplaints() {
     }
   };
 
-  const filteredComplaints = complaints?.entries?.filter((complaint: Complaint) =>
+  const filteredComplaints = complaints?.entries
+  ?.filter((complaint: Complaint) =>
     complaint.judul.toLowerCase().includes(searchQuery.toLowerCase())
   );
   

@@ -10,7 +10,6 @@ import {
   useMediaQuery,
   Theme
 } from '@mui/material';
-import Image from 'next/image';
 
 interface CardProps {
   title: string;
@@ -60,7 +59,7 @@ const ReportSummary: React.FC = () => {
   const [displayKategori, setDisplayKategori] = useState<number>(0);
   const [totalUnit, setTotalUnit] = useState<number | null>(null);
   const [displayUnit, setDisplayUnit] = useState<number>(0);
-  const [countdown, setCountdown] = useState(86400); // 24 jam dalam detik
+  const [countdown, setCountdown] = useState(86400);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,15 +67,19 @@ const ReportSummary: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch laporan count
-        const laporanResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/count`);
-        const laporanData = await laporanResponse.json();
-        if (laporanData.content) {
-          const total = laporanData.content.totalCount + (laporanData.content.totalCountMasyarakat || 0);
-          setTotalLaporan(total);
-        }
+        // Fetch data from both endpoints
+        const  [pelaporanResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/count`)
+        ]);
 
-        // Fetch kategori
+        const [pelaporanData] = await Promise.all([
+          pelaporanResponse.json()
+        ]);
+
+        // Calculate total from both endpoints
+        const totalPelaporan = pelaporanData.content?.totalCount || 0;
+        setTotalLaporan(totalPelaporan);
+
         const kategoriResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/kategori`);
         const kategoriData = await kategoriResponse.json();
         if (kategoriData.content?.totalData !== undefined) {
@@ -140,7 +143,6 @@ const ReportSummary: React.FC = () => {
       width="100%"
       position="relative"
     >
-      
       <Typography 
         variant={isSmallScreen ? "h5" : "h4"} 
         fontWeight="bold" 

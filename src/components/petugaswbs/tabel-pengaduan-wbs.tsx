@@ -273,12 +273,12 @@ export function TabelPetugasWbs() {
                             </IconButton>
                           ) : (
                             <IconButton
-                              onClick={() => handleDeleteComplaint(complaint.id)}
-                              color="error"
-                              title="Hapus pengaduan"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
+                            onClick={() => handleDeleteComplaint(complaint.id)}
+                            color="error"
+                            title="Hapus pengaduan"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
                           )}
                         </TableCell>
                       </TableRow>

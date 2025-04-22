@@ -49,36 +49,54 @@ const NotificationMenu: React.FC<NotificationMenuProps> = ({
       <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
         {notifications.length > 0 ? (
           notifications
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) // Sort by newest first
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .map(notification => (
               <Accordion
                 key={notification.id}
                 expanded={expanded === notification.id}
                 onChange={handleChange(notification.id)}
-                sx={{ boxShadow: 'none', borderBottom: '1px solid #e0e0e0' }}
+                sx={{ 
+                  boxShadow: 'none', 
+                  borderBottom: '1px solid #e0e0e0',
+                  backgroundColor: notification.isRead ? '#77B0AA' : '#E3FEF7',
+                  '&:hover': {
+                    backgroundColor: notification.isRead ? '#77B0AA' : '#E3FEF7',
+                    opacity: 0.9
+                  }
+                }}
               >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls={`panel-${notification.id}-content`}
                   id={`panel-${notification.id}-header`}
                   onClick={() => markNotificationAsRead(notification.id)}
+                  sx={{
+                    '& .MuiAccordionSummary-content': {
+                      alignItems: 'center'
+                    }
+                  }}
                 >
-                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                     <Typography
                       variant="body2"
                       sx={{
                         fontWeight: notification.isRead ? 'normal' : 'bold',
-                        color: notification.isRead ? 'textSecondary' : 'textPrimary'
+                        color: notification.isRead ? '#E3F2FD' : '#003366'
                       }}
                     >
                       {notification.title}
                     </Typography>
-                    <Typography variant="caption" color="textSecondary">
+                    <Typography 
+                      variant="caption"
+                      sx={{
+                        color: notification.isRead ? '#E3F2FD' : '#003366'
+                      }}
+                    >
                       {new Date(notification.createdAt).toLocaleString()}
                     </Typography>
                   </Box>
                 </AccordionSummary>
-                <AccordionDetails>
+                <AccordionDetails sx={{ backgroundColor: '#FFFFFF' }}>
                   <Typography variant="body2" color="textSecondary">
                     {notification.message}
                   </Typography>

@@ -7,7 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { useRouter } from 'next/navigation';
 
-import api from '@/lib/api/api'; // Asumsi token sudah dikelola di sini
+import api from '@/lib/api/api'; 
 
 interface Pengaduan {
   id: string;

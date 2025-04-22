@@ -86,6 +86,13 @@ const DASHBOARD_BY_LEVEL: { [key: string]: NavItemConfig } = {
     icon: 'chart-line',
     category: 'Dashboard',
   },
+  'PETUGAS_SUPER': {
+    key: 'dashboardpetugas',
+    title: 'Dashboard Petugas',
+    href: paths.dashboard.petugas,
+    icon: 'graph',
+    category: 'Dashboard',
+  },
 };
 
 function hasFullActions(permission: Permission): boolean {

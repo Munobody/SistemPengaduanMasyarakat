@@ -26,7 +26,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import api from '@/lib/api/api'; // Gunakan api yang sudah dikonfigurasi
+import api from '@/lib/api/api';
 
 interface FeedbackModal {
   open: boolean;

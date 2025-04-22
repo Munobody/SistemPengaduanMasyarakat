@@ -7,6 +7,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import PendingIcon from '@mui/icons-material/Pending';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SecurityIcon from '@mui/icons-material/Security';
+import PeopleIcon from '@mui/icons-material/People';
 import { Box, Grid, Skeleton, Typography } from '@mui/material';
 import api from '@/lib/api/api';
 
@@ -33,6 +34,7 @@ interface PengaduanEntry {
   response: string;
   filePetugas: string;
   isWBS?: boolean;
+  isPublic?: boolean;
 }
 
 interface ApiResponse {
@@ -69,6 +71,7 @@ const ComplaintsVisual: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [hasWBSAccess, setHasWBSAccess] = useState<boolean>(false);
+  const [hasPublicAccess, setHasPublicAccess] = useState<boolean>(false);
   const [userLevelId, setUserLevelId] = useState<string>('');
 
   useEffect(() => {
@@ -100,19 +103,25 @@ const ComplaintsVisual: React.FC = () => {
         const permissions = aclRes.data.content.permissions;
         
         // Check WBS access based on permissions
-        const hasAccess = permissions.some(p => 
+        const wbsAccess = permissions.some(p => 
           (p.subject === 'PENGADUAN_WBS' || p.subject === 'WBS') && 
           p.actions.includes('read')
         );
         
+        // Check Public Complaint access
+        const publicAccess = permissions.some(p => 
+          p.subject === 'PENGADUAN_MASYARAKAT' && 
+          p.actions.includes('read')
+        );
+        
         if (!isMounted) return;
-        setHasWBSAccess(hasAccess);
+        setHasWBSAccess(wbsAccess);
+        setHasPublicAccess(publicAccess);
 
-        // 2. Fetch complaint data based on permissions
         const regularRes = await api.get<ApiResponse>('/pelaporan');
         
         let wbsEntries: PengaduanEntry[] = [];
-        if (hasAccess) {
+        if (wbsAccess) {
           try {
             const wbsRes = await api.get<ApiResponse>('/PelaporanWbs?page=0&rows=1000');
             wbsEntries = (wbsRes.data.content.entries || []).map(entry => ({
@@ -124,10 +133,29 @@ const ComplaintsVisual: React.FC = () => {
           }
         }
 
-        // Merge data
-        const allEntries = [...regularRes.data.content.entries, ...wbsEntries];
+        let publicEntries: PengaduanEntry[] = [];
+        if (publicAccess) {
+          try {
+            const publicRes = await api.get<ApiResponse>('/pengaduan');
+            publicEntries = (publicRes.data.content.entries || []).map(entry => ({
+              ...entry,
+              isPublic: true,
+            }));
+          } catch (publicError) {
+            console.error('Error fetching public complaints:', publicError);
+          }
+        }
+
+        // Merge all data
+        const allEntries = [
+          ...regularRes.data.content.entries, 
+          ...wbsEntries,
+          ...publicEntries
+        ];
+        
         const regularCount = regularRes.data.content.entries.length;
         const wbsCount = wbsEntries.length;
+        const publicCount = publicEntries.length;
 
         if (isMounted) {
           setData({
@@ -135,7 +163,7 @@ const ComplaintsVisual: React.FC = () => {
             content: {
               ...regularRes.data.content,
               entries: allEntries,
-              totalData: hasAccess ? regularCount + wbsCount : regularCount,
+              totalData: regularCount + (wbsAccess ? wbsCount : 0) + (publicAccess ? publicCount : 0),
             },
           });
           setLoading(false);
@@ -165,6 +193,7 @@ const ComplaintsVisual: React.FC = () => {
         pendingCount: 0,
         processCount: 0,
         wbsCount: 0,
+        publicCount: 0,
         regularCount: 0,
         totalCount: 0,
         completionRate: '0',
@@ -172,42 +201,31 @@ const ComplaintsVisual: React.FC = () => {
     }
 
     const entries = data.content.entries;
-    const regularEntries = entries.filter(entry => !entry.isWBS);
+    const regularEntries = entries.filter(entry => !entry.isWBS && !entry.isPublic);
     const wbsEntries = entries.filter(entry => entry.isWBS);
+    const publicEntries = entries.filter(entry => entry.isPublic);
 
-    // Count status for regular complaints
-    const regularStatusCounts: Record<string, number> = {};
-    regularEntries.forEach(entry => {
-      regularStatusCounts[entry.status] = (regularStatusCounts[entry.status] || 0) + 1;
+    // Count status for all complaint types
+    const statusCounts: Record<string, number> = {};
+    entries.forEach(entry => {
+      statusCounts[entry.status] = (statusCounts[entry.status] || 0) + 1;
     });
 
-    // Count status for WBS complaints
-    const wbsStatusCounts: Record<string, number> = {};
-    if (hasWBSAccess) {
-      wbsEntries.forEach(entry => {
-        wbsStatusCounts[entry.status] = (wbsStatusCounts[entry.status] || 0) + 1;
-      });
-    }
-
-    const completedCount = (regularStatusCounts['COMPLETED'] || 0) + (wbsStatusCounts['COMPLETED'] || 0);
-    const pendingCount = (regularStatusCounts['PENDING'] || 0) + (wbsStatusCounts['PENDING'] || 0);
-    const processCount = (regularStatusCounts['PROCESS'] || 0) + (wbsStatusCounts['PROCESS'] || 0);
+    const completedCount = statusCounts['COMPLETED'] || 0;
+    const pendingCount = statusCounts['PENDING'] || 0;
+    const processCount = statusCounts['PROCESS'] || 0;
     const wbsCount = wbsEntries.length;
+    const publicCount = publicEntries.length;
     const regularCount = regularEntries.length;
-    const totalCount = regularCount + (hasWBSAccess ? wbsCount : 0);
+    const totalCount = entries.length;
     const completionRate = totalCount > 0 ? ((completedCount / totalCount) * 100).toFixed(1) : '0';
 
-    const allLabels = Object.keys(regularStatusCounts)
-      .concat(hasWBSAccess ? Object.keys(wbsStatusCounts) : []);
-    const statusLabels = allLabels.filter((label, index) => allLabels.indexOf(label) === index);
-
+    const statusLabels = Object.keys(statusCounts);
     const pieChartData = {
       labels: statusLabels,
       datasets: [
         {
-          data: statusLabels.map(key => 
-            (regularStatusCounts[key] || 0) + (hasWBSAccess ? (wbsStatusCounts[key] || 0) : 0)
-          ),
+          data: statusLabels.map(key => statusCounts[key]),
           backgroundColor: COLORS.slice(0, statusLabels.length),
           borderWidth: 1,
         },
@@ -215,23 +233,24 @@ const ComplaintsVisual: React.FC = () => {
     };
 
     return {
-      statusCounts: regularStatusCounts,
+      statusCounts,
       pieChartData,
       completedCount,
       pendingCount,
       processCount,
       wbsCount,
+      publicCount,
       regularCount,
       totalCount,
       completionRate,
     };
-  }, [data, hasWBSAccess]);
+  }, [data, hasWBSAccess, hasPublicAccess]);
 
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
         <Grid container spacing={3}>
-          {[...Array(4)].map((_, index) => (
+          {[...Array(6)].map((_, index) => (
             <Grid item xs={12} sm={6} md={3} key={index}>
               <Skeleton variant="rectangular" height={120} width="100%" />
             </Grid>
@@ -259,8 +278,8 @@ const ComplaintsVisual: React.FC = () => {
       </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Total Pengaduan (Reguler + WBS) */}
-        <Grid item xs={12} sm={6} md={hasWBSAccess ? 3 : 4} sx={{ minHeight: 150 }}>
+        {/* Total Pengaduan (All types) */}
+        <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
           <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
             <StatsCard
               title="Total Pengaduan"
@@ -269,6 +288,20 @@ const ComplaintsVisual: React.FC = () => {
               icon={<DescriptionIcon fontSize="large" />}
               color="primary.main"
               backgroundColor="#E3FEF7"
+            />
+          </Suspense>
+        </Grid>
+
+        {/* Total Pengaduan Internal */}
+        <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
+          <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+            <StatsCard
+              title="Pengaduan Layanan"
+              value={processedData.regularCount}
+              loading={loading}
+              icon={<DescriptionIcon fontSize="large" />}
+              color="info.main"
+              backgroundColor="#E8F4FD"
             />
           </Suspense>
         </Grid>
@@ -289,8 +322,24 @@ const ComplaintsVisual: React.FC = () => {
           </Grid>
         )}
 
+        {/* Total Pengaduan Masyarakat (only shown if has access) */}
+        {hasPublicAccess && (
+          <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
+            <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+              <StatsCard
+                title="Pengaduan Masyarakat"
+                value={processedData.publicCount}
+                loading={loading}
+                icon={<PeopleIcon fontSize="large" />}
+                color="warning.main"
+                backgroundColor="#FFF4E5"
+              />
+            </Suspense>
+          </Grid>
+        )}
+
         {/* Diselesaikan */}
-        <Grid item xs={12} sm={6} md={hasWBSAccess ? 3 : 4} sx={{ minHeight: 150 }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
           <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
             <StatsCard
               title="Diselesaikan"
@@ -304,7 +353,7 @@ const ComplaintsVisual: React.FC = () => {
         </Grid>
 
         {/* Tertunda */}
-        <Grid item xs={12} sm={6} md={hasWBSAccess ? 3 : 4} sx={{ minHeight: 150 }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
           <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
             <StatsCard
               title="Tertunda"
@@ -318,7 +367,7 @@ const ComplaintsVisual: React.FC = () => {
         </Grid>
 
         {/* Dalam Proses */}
-        <Grid item xs={12} sm={6} md={hasWBSAccess ? 3 : 4} sx={{ minHeight: 150 }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
           <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
             <StatsCard
               title="Dalam Proses"
@@ -332,7 +381,7 @@ const ComplaintsVisual: React.FC = () => {
         </Grid>
 
         {/* Tingkat Penyelesaian */}
-        <Grid item xs={12} sm={6} md={hasWBSAccess ? 3 : 4} sx={{ minHeight: 150 }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
           <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
             <StatsCard
               title="Tingkat Penyelesaian"
@@ -347,41 +396,38 @@ const ComplaintsVisual: React.FC = () => {
       </Grid>
 
       <Grid container spacing={3}>
-  <Grid item xs={12} md={6}>
-    {/* Hilangkan minHeight dan sesuaikan height responsif */}
-    <Box sx={{ 
-      height: { xs: '400px', md: '600px' }, // Lebih pendek di mobile
-      overflow: 'auto' 
-    }}>
-      <Suspense fallback={<Skeleton variant="rectangular" height="100%" width="100%" />}>
-        <PieChart data={processedData.pieChartData} loading={loading} />
-      </Suspense>
-    </Box>
-  </Grid>
-  
-  <Grid item xs={12} md={6} sx={{ 
-    mt: { xs: 2, md: 0 } // Margin top hanya di mobile
-  }}>
-    {/* Sesuaikan height untuk mobile */}
-    <Box sx={{ height: { xs: 'auto', md: '600px' } }}>
-      <Suspense fallback={<Skeleton variant="rectangular" height="100%" width="100%" />}>
-        <ComplaintInfo />
-      </Suspense>
-    </Box>
-  </Grid>
-</Grid>
+        <Grid item xs={12} md={6}>
+          <Box sx={{ 
+            height: { xs: '400px', md: '600px' },
+            overflow: 'auto' 
+          }}>
+            <Suspense fallback={<Skeleton variant="rectangular" height="100%" width="100%" />}>
+              <PieChart data={processedData.pieChartData} loading={loading} />
+            </Suspense>
+          </Box>
+        </Grid>
+        
+        <Grid item xs={12} md={6} sx={{ 
+          mt: { xs: 2, md: 0 }
+        }}>
+          <Box sx={{ height: { xs: 'auto', md: '600px' } }}>
+            <Suspense fallback={<Skeleton variant="rectangular" height="100%" width="100%" />}>
+              <ComplaintInfo />
+            </Suspense>
+          </Box>
+        </Grid>
+      </Grid>
 
-{/* Latest Complaints dengan margin top yang lebih kecil di mobile */}
-<Grid container spacing={3} sx={{ mt: { xs: 2, md: 3 } }}>
-  <Grid item xs={12}>
-    <Suspense fallback={<Skeleton variant="rectangular" height={300} width="100%" />}>
-      <LatestComplaints 
-        complaints={hasWBSAccess ? data.content.entries : data.content.entries.filter(e => !e.isWBS)} 
-        loading={loading}
-      />
-    </Suspense>
-  </Grid>
-</Grid>
+      <Grid container spacing={3} sx={{ mt: { xs: 2, md: 3 } }}>
+        <Grid item xs={12}>
+          <Suspense fallback={<Skeleton variant="rectangular" height={300} width="100%" />}>
+            <LatestComplaints 
+              complaints={data.content.entries} 
+              loading={loading}
+            />
+          </Suspense>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
