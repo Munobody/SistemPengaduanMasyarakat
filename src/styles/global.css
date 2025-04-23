@@ -20,3 +20,13 @@ body {
   height: 100%;
 }
 
+.usk-logo {
+  height: 40px;
+}
+
+@media (min-width: 768px) {
+  .usk-logo {
+    height: 60px;
+  }
+}
+

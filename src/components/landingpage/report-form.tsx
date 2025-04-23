@@ -3,15 +3,13 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { AttachFile, Delete } from '@mui/icons-material';
-import { Box, Button, CircularProgress, IconButton, MenuItem, Paper, TextField, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, IconButton, MenuItem, Paper, TextField, Typography, useTheme, useMediaQuery } from '@mui/material';
 import axios from 'axios';
 import { useFormik } from 'formik';
 import { toast, ToastContainer } from 'react-toastify';
 import * as Yup from 'yup';
-
 import 'react-toastify/dist/ReactToastify.css';
 import api from '@/lib/api/api';
-
 
 interface Category {
   id: string;
@@ -24,13 +22,18 @@ interface Unit {
 }
 
 const ReportForm: React.FC = (): React.JSX.Element => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  
   const [loading, setLoading] = useState(false);
   const [units, setUnits] = useState<Unit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [fileName, setFileName] = useState('');
-  const [rowsPerPage] = useState(100); // Set high to get all categories
+  const [rowsPerPage] = useState(100);
   const [page] = useState(0);
 
+  // Memoize data fetching to prevent unnecessary re-renders
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -54,19 +57,15 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         const sortedCategories = response.data.content.entries.sort((a: Category, b: Category) =>
           a.nama.localeCompare(b.nama)
         );
-
         setCategories(sortedCategories);
-        console.log('📋 Daftar kategori:', sortedCategories);
       } else {
         setCategories([]);
-        console.log('❕ Tidak ada kategori');
       }
     } catch (error: any) {
-      console.error('❌ Gagal memuat kategori:', error.response?.data);
+      console.error('Gagal memuat kategori:', error.response?.data);
       toast.error('Gagal memuat data kategori');
     }
   };
-
 
   const fetchUnits = async () => {
     try {
@@ -80,13 +79,11 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           nama_unit: unit.nama_unit,
         }));
         setUnits(unitList);
-        console.log('📋 Daftar unit:', unitList);
       } else {
         setUnits([]);
-        console.log('❕ Tidak ada unit');
       }
     } catch (error: any) {
-      console.error('❌ Gagal memuat unit:', error.response?.data || error.message);
+      console.error('Gagal memuat unit:', error.response?.data || error.message);
       toast.error('Gagal memuat data unit');
     }
   };
@@ -130,11 +127,11 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 
           if (uploadResponse.status === 200) {
             fileUrl = uploadResponse.data.content.secure_url;
-            console.log('File URL:', fileUrl);
           } else {
             throw new Error('Gagal mengunggah file.');
           }
         }
+
         const dataToSend = {
           judul: values.judul.trim(),
           deskripsi: values.deskripsi.trim(),
@@ -148,13 +145,11 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           filePendukung: fileUrl,
           filePetugas: '',
         };
-    
-        console.log('Payload being sent:', dataToSend);
-    
+
         const response = await axios.post(apiUrl, dataToSend, {
           headers: { 'Content-Type': 'application/json' },
         });
-    
+
         if (response.status === 200) {
           toast.success('Laporan berhasil dikirim!');
           resetForm();
@@ -171,20 +166,51 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     },
   });
 
+  // Responsive text sizes
+  const getResponsiveFontSize = () => {
+    if (isMobile) return '1rem';
+    if (isTablet) return '1.1rem';
+    return '1.2rem';
+  };
+
+  const responsiveFontSize = getResponsiveFontSize();
+
   return (
-    <Box className="flex flex-col items-center justify-center min-h-screen">
-      <ToastContainer position="top-right" autoClose={3000} />
+    <Box className="flex flex-col items-center justify-center min-h-screen p-4">
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000}
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+      />
 
       <Paper
         elevation={3}
-        className="p-6 rounded-lg w-full"
-        sx={{ maxWidth: { xs: '100%', md: '800px' }, p: { xs: 4, md: 6 }, borderRadius: 2 }}
+        sx={{ 
+          width: '100%',
+          maxWidth: '800px',
+          p: isMobile ? 2 : 4,
+          borderRadius: 2,
+          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)'
+        }}
       >
-        <Typography variant="h5" className="font-bold text-center pb-4 text-black">
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            fontWeight: 'bold', 
+            textAlign: 'center', 
+            pb: 3,
+            color: 'text.primary',
+            fontSize: isMobile ? '1.5rem' : '2rem'
+          }}
+        >
           LAPORKAN!
         </Typography>
 
         <form onSubmit={formik.handleSubmit}>
+          {/* Nama Field */}
           <TextField
             id="nama"
             fullWidth
@@ -193,12 +219,23 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             variant="outlined"
             sx={{
               mb: 2,
-              fontSize: '1.2rem',
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#135D66' },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#135D66' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#135D66' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#135D66' 
+              },
             }}
-            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
-            InputProps={{ style: { fontSize: '1.2rem' } }}
+            InputLabelProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
+            InputProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
             value={formik.values.nama}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -206,6 +243,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             helperText={formik.touched.nama && formik.errors.nama}
           />
 
+          {/* Judul Laporan Field */}
           <TextField
             id="judul"
             fullWidth
@@ -214,12 +252,23 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             variant="outlined"
             sx={{
               mb: 2,
-              fontSize: '1.2rem',
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#16404D' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#16404D' 
+              },
             }}
-            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
-            InputProps={{ style: { fontSize: '1.2rem' } }}
+            InputLabelProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
+            InputProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
             value={formik.values.judul}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -227,6 +276,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             helperText={formik.touched.judul && formik.errors.judul}
           />
 
+          {/* Deskripsi Field */}
           <TextField
             id="deskripsi"
             fullWidth
@@ -234,15 +284,26 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             name="deskripsi"
             variant="outlined"
             multiline
-            rows={4}
+            rows={isMobile ? 3 : 4}
             sx={{
               mb: 2,
-              fontSize: '1.2rem',
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#16404D' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#16404D' 
+              },
             }}
-            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
-            InputProps={{ style: { fontSize: '1.2rem' } }}
+            InputLabelProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
+            InputProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
             value={formik.values.deskripsi}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -250,6 +311,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             helperText={formik.touched.deskripsi && formik.errors.deskripsi}
           />
 
+          {/* Harapan Pelapor Field */}
           <TextField
             id="harapan_pelapor"
             fullWidth
@@ -257,15 +319,26 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             name="harapan_pelapor"
             variant="outlined"
             multiline
-            rows={2}
+            rows={isMobile ? 2 : 2}
             sx={{
               mb: 2,
-              fontSize: '1.2rem',
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#16404D' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#16404D' 
+              },
             }}
-            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
-            InputProps={{ style: { fontSize: '1.2rem' } }}
+            InputLabelProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
+            InputProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
             value={formik.values.harapan_pelapor}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -273,6 +346,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             helperText={formik.touched.harapan_pelapor && formik.errors.harapan_pelapor}
           />
 
+          {/* Nomor WhatsApp Field */}
           <TextField
             id="no_telphone"
             fullWidth
@@ -281,12 +355,23 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             variant="outlined"
             sx={{
               mb: 2,
-              fontSize: '1.2rem',
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#16404D' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#16404D' 
+              },
             }}
-            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
-            InputProps={{ style: { fontSize: '1.2rem' } }}
+            InputLabelProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
+            InputProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
             value={formik.values.no_telphone}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -294,6 +379,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             helperText={formik.touched.no_telphone && formik.errors.no_telphone}
           />
 
+          {/* Kategori Field */}
           <TextField
             id="kategoriId"
             fullWidth
@@ -307,20 +393,45 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             helperText={formik.touched.kategoriId && formik.errors.kategoriId}
             sx={{
               mb: 2,
-              fontSize: '1.2rem',
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#16404D' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#16404D' 
+              },
             }}
-            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
-            InputProps={{ style: { fontSize: '1.2rem' } }}
+            InputLabelProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
+            SelectProps={{
+              MenuProps: {
+                PaperProps: {
+                  style: {
+                    maxHeight: isMobile ? 200 : 300,
+                  },
+                },
+              },
+            }}
+            InputProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
           >
             {categories.map((category) => (
-              <MenuItem key={category.id} value={category.id}>
+              <MenuItem 
+                key={category.id} 
+                value={category.id}
+                sx={{ fontSize: responsiveFontSize }}
+              >
                 {category.nama}
               </MenuItem>
             ))}
           </TextField>
 
+          {/* Unit Field */}
           <TextField
             id="unitId"
             fullWidth
@@ -334,22 +445,54 @@ const ReportForm: React.FC = (): React.JSX.Element => {
             helperText={formik.touched.unitId && formik.errors.unitId}
             sx={{
               mb: 2,
-              fontSize: '1.2rem',
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#16404D' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#16404D' 
+              },
             }}
-            InputLabelProps={{ style: { fontSize: '1.2rem' } }}
-            InputProps={{ style: { fontSize: '1.2rem' } }}
+            InputLabelProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
+            SelectProps={{
+              MenuProps: {
+                PaperProps: {
+                  style: {
+                    maxHeight: isMobile ? 200 : 300,
+                  },
+                },
+              },
+            }}
+            InputProps={{ 
+              style: { 
+                fontSize: responsiveFontSize 
+              } 
+            }}
           >
             {units.map((unit) => (
-              <MenuItem key={unit.id} value={unit.id}>
+              <MenuItem 
+                key={unit.id} 
+                value={unit.id}
+                sx={{ fontSize: responsiveFontSize }}
+              >
                 {unit.nama_unit}
               </MenuItem>
             ))}
           </TextField>
 
-          <Box sx={{ mt: 2, mb: 2 }}>
-            <Typography variant="body2" className="text-gray-600 mb-1">
+          {/* File Upload Section */}
+          <Box sx={{ mt: 2, mb: 3 }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: 'text.secondary', 
+                mb: 1,
+                fontSize: responsiveFontSize
+              }}
+            >
               Upload File
             </Typography>
             <TextField
@@ -359,25 +502,26 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               placeholder="Belum ada file yang dipilih"
               InputProps={{
                 readOnly: true,
-                startAdornment: fileName && <AttachFile sx={{ color: '#FBBF24' }} />,
+                startAdornment: fileName && <AttachFile sx={{ color: '#FBBF24', mr: 1 }} />,
                 endAdornment: fileName && (
                   <IconButton
                     onClick={() => {
                       formik.setFieldValue('filePendukung', null);
                       setFileName('');
                     }}
+                    size={isMobile ? 'small' : 'medium'}
                   >
                     <Delete color="error" />
                   </IconButton>
                 ),
+                style: { fontSize: responsiveFontSize }
               }}
               sx={{
                 mb: 2,
-                fontSize: '1.2rem',
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#16404D' },
-                '& .MuiInputLabel-root.Mui-focused': { color: '#16404D' },
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#16404D' 
+                },
               }}
-              InputLabelProps={{ style: { fontSize: '1.2rem' } }}
             />
             <Button
               variant="contained"
@@ -387,10 +531,11 @@ const ReportForm: React.FC = (): React.JSX.Element => {
                 color: 'white',
                 fontWeight: 'bold',
                 '&:hover': { backgroundColor: '#135D66' },
-                px: 4,
+                px: isMobile ? 2 : 4,
                 py: 1,
                 textTransform: 'none',
-                fontSize: '1.2rem',
+                fontSize: responsiveFontSize,
+                width: isMobile ? '100%' : 'auto'
               }}
             >
               Pilih File
@@ -406,8 +551,10 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               />
             </Button>
           </Box>
-          <Box className="flex justify-end">
-          <Button
+
+          {/* Submit Button */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
               type="submit"
               variant="contained"
               disabled={loading}
@@ -415,14 +562,24 @@ const ReportForm: React.FC = (): React.JSX.Element => {
                 backgroundColor: '#003C43',
                 color: 'white',
                 fontWeight: 'bold',
-                px: 4,
+                px: isMobile ? 3 : 4,
                 py: 1,
                 textTransform: 'none',
                 '&:hover': { backgroundColor: '#135D66' },
-                fontSize: '1.2rem',
+                fontSize: responsiveFontSize,
+                width: isMobile ? '100%' : 'auto'
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'LAPOR!'}
+              {loading ? (
+                <CircularProgress 
+                  size={24} 
+                  color="inherit" 
+                  sx={{ 
+                    mr: isMobile ? 1 : 2 
+                  }} 
+                />
+              ) : null}
+              {loading ? (isMobile ? 'Mengirim...' : 'Sedang Mengirim...') : 'LAPOR!'}
             </Button>
           </Box>
         </form>

@@ -478,7 +478,7 @@ export function TabelPetugasMasyarakat() {
                             <RemoveRedEyeIcon />
                           </IconButton>
 
-                          {isSuperOfficer && complaint.status !== 'COMPLETED' && (
+                          {isSuperOfficer && !['COMPLETED', 'REJECTED'].includes(complaint.status) && (
                             <Tooltip title="Ingatkan petugas unit">
                               <IconButton
                                 onClick={() => handleOpenAlertDialog(complaint.id)}

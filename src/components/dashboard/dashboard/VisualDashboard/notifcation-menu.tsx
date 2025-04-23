@@ -1,4 +1,3 @@
-// src/components/dashboard/dashboard/NotificationMenu.tsx
 import React, { useState } from 'react';
 import { Menu, MenuItem, Typography, Divider, Badge, Box, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -57,10 +56,10 @@ const NotificationMenu: React.FC<NotificationMenuProps> = ({
                 onChange={handleChange(notification.id)}
                 sx={{ 
                   boxShadow: 'none', 
-                  borderBottom: '1px solid #e0e0e0',
-                  backgroundColor: notification.isRead ? '#77B0AA' : '#E3FEF7',
+                  borderBottom: '1px solidrgb(0, 0, 0)',
+                  backgroundColor: notification.isRead ? '#F1EFEC' : '#E3FEF7',
                   '&:hover': {
-                    backgroundColor: notification.isRead ? '#77B0AA' : '#E3FEF7',
+                    backgroundColor: notification.isRead ? '#F1EFEC' : '#E3FEF7',
                     opacity: 0.9
                   }
                 }}
@@ -81,7 +80,7 @@ const NotificationMenu: React.FC<NotificationMenuProps> = ({
                       variant="body2"
                       sx={{
                         fontWeight: notification.isRead ? 'normal' : 'bold',
-                        color: notification.isRead ? '#E3F2FD' : '#003366'
+                        color: notification.isRead ? '#030303' : '#003366'
                       }}
                     >
                       {notification.title}
@@ -89,7 +88,7 @@ const NotificationMenu: React.FC<NotificationMenuProps> = ({
                     <Typography 
                       variant="caption"
                       sx={{
-                        color: notification.isRead ? '#E3F2FD' : '#003366'
+                        color: notification.isRead ? '#030303' : '#003366'
                       }}
                     >
                       {new Date(notification.createdAt).toLocaleString()}

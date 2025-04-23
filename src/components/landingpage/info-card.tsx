@@ -8,7 +8,8 @@ import {
   Grid, 
   CircularProgress,
   useMediaQuery,
-  Theme
+  Theme,
+  Skeleton
 } from '@mui/material';
 
 interface CardProps {
@@ -22,6 +23,7 @@ const InfoCard: React.FC<CardProps> = ({ title, subtitle, loading }) => {
     <Card sx={{ 
       width: '100%', 
       height: '100%',
+      minHeight: 120,
       textAlign: 'center', 
       border: '2px solid #4A628A', 
       boxShadow: 3, 
@@ -29,11 +31,28 @@ const InfoCard: React.FC<CardProps> = ({ title, subtitle, loading }) => {
       backgroundColor: '#E0F7FA',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      transition: 'transform 0.3s ease-in-out',
+      '&:hover': {
+        transform: 'scale(1.02)'
+      }
     }}>
       <CardContent>
         {loading ? (
-          <CircularProgress size={24} />
+          <>
+            <Skeleton 
+              variant="text" 
+              width="60%" 
+              height={32} 
+              sx={{ mx: 'auto', bgcolor: 'grey.300' }} 
+            />
+            <Skeleton 
+              variant="text" 
+              width="40%" 
+              height={24} 
+              sx={{ mx: 'auto', mt: 1, bgcolor: 'grey.300' }} 
+            />
+          </>
         ) : (
           <>
             <Typography variant="h5" color="primary" fontWeight="bold">
@@ -54,12 +73,12 @@ const ReportSummary: React.FC = () => {
   const isMediumScreen = useMediaQuery((theme: Theme) => theme.breakpoints.between('sm', 'md'));
   
   const [totalLaporan, setTotalLaporan] = useState<number | null>(null);
-  const [displayLaporan, setDisplayLaporan] = useState<number>(0);
+  const [totalLaporanMasyarakat, setTotalLaporanMasyarakat] = useState<number | null>(null);
+  const [displayTotalLaporan, setDisplayTotalLaporan] = useState<number>(0);
   const [totalKategori, setTotalKategori] = useState<number | null>(null);
   const [displayKategori, setDisplayKategori] = useState<number>(0);
   const [totalUnit, setTotalUnit] = useState<number | null>(null);
   const [displayUnit, setDisplayUnit] = useState<number>(0);
-  const [countdown, setCountdown] = useState(86400);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,31 +86,29 @@ const ReportSummary: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch data from both endpoints
-        const  [pelaporanResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/count`)
+        // Fetch data from all endpoints
+        const [pelaporanResponse, kategoriResponse, unitResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/count`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/kategori`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/units`)
         ]);
 
-        const [pelaporanData] = await Promise.all([
-          pelaporanResponse.json()
+        const [pelaporanData, kategoriData, unitData] = await Promise.all([
+          pelaporanResponse.json(),
+          kategoriResponse.json(),
+          unitResponse.json()
         ]);
 
-        // Calculate total from both endpoints
-        const totalPelaporan = pelaporanData.content?.totalCount || 0;
-        setTotalLaporan(totalPelaporan);
-
-        const kategoriResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/kategori`);
-        const kategoriData = await kategoriResponse.json();
-        if (kategoriData.content?.totalData !== undefined) {
-          setTotalKategori(kategoriData.content.totalData);
-        }
-
-        // Fetch units
-        const unitResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/units`);
-        const unitData = await unitResponse.json();
-        if (unitData.content?.totalData !== undefined) {
-          setTotalUnit(unitData.content.totalData);
-        }
+        // Set data from pelaporan endpoint
+        const internalCount = pelaporanData.content?.totalCount || 0;
+        const masyarakatCount = pelaporanData.content?.totalCountMasyarakat || 0;
+        
+        setTotalLaporan(internalCount);
+        setTotalLaporanMasyarakat(masyarakatCount);
+        
+        // Set other data
+        setTotalKategori(kategoriData.content?.totalData || 0);
+        setTotalUnit(unitData.content?.totalData || 0);
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -104,20 +121,25 @@ const ReportSummary: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && totalLaporan !== null && totalLaporanMasyarakat !== null) {
+      const combinedTotal = totalLaporan + totalLaporanMasyarakat;
+      
       const interval = setInterval(() => {
-        if (totalLaporan !== null) {
-          setDisplayLaporan((prev) => 
-            prev < totalLaporan ? prev + Math.max(1, Math.ceil(totalLaporan / 100)) : totalLaporan
-          );
-        }
+        // Animasi penambahan angka untuk total gabungan
+        setDisplayTotalLaporan(prev => 
+          prev < combinedTotal ? prev + Math.max(1, Math.ceil(combinedTotal / 100)) : combinedTotal
+        );
+        
+        // Animasi untuk kategori
         if (totalKategori !== null) {
-          setDisplayKategori((prev) => 
+          setDisplayKategori(prev => 
             prev < totalKategori ? prev + Math.max(1, Math.ceil(totalKategori / 100)) : totalKategori
           );
         }
+        
+        // Animasi untuk unit
         if (totalUnit !== null) {
-          setDisplayUnit((prev) => 
+          setDisplayUnit(prev => 
             prev < totalUnit ? prev + Math.max(1, Math.ceil(totalUnit / 100)) : totalUnit
           );
         }
@@ -125,14 +147,7 @@ const ReportSummary: React.FC = () => {
 
       return () => clearInterval(interval);
     }
-  }, [loading, totalLaporan, totalKategori, totalUnit]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  }, [loading, totalLaporan, totalLaporanMasyarakat, totalKategori, totalUnit]);
 
   return (
     <Box 
@@ -143,45 +158,81 @@ const ReportSummary: React.FC = () => {
       width="100%"
       position="relative"
     >
-      <Typography 
-        variant={isSmallScreen ? "h5" : "h4"} 
-        fontWeight="bold" 
-        color="black" 
-        sx={{ textAlign: 'center' }} 
-        mb={isSmallScreen ? 2 : 4}
-      >
-        JUMLAH LAPORAN PENGADUAN LAYANAN USK
-      </Typography>
+      {loading ? (
+        <Skeleton 
+          variant="text" 
+          width={isSmallScreen ? '80%' : '60%'} 
+          height={isSmallScreen ? 40 : 48} 
+          sx={{ mb: isSmallScreen ? 2 : 4, bgcolor: 'grey.300' }} 
+        />
+      ) : (
+        <Typography 
+          variant={isSmallScreen ? "h5" : "h4"} 
+          fontWeight="bold" 
+          color="black" 
+          sx={{ textAlign: 'center' }} 
+          mb={isSmallScreen ? 2 : 4}
+        >
+          JUMLAH LAPORAN PENGADUAN LAYANAN USK
+        </Typography>
+      )}
       
+      {/* Single Total Card (Combined Internal and Masyarakat) */}
       <Card sx={{ 
         textAlign: 'center', 
         border: '2px solid #4A628A', 
         boxShadow: 3, 
         borderRadius: 2, 
-        p: isSmallScreen ? 2 : 4, 
-        mb: isSmallScreen ? 3 : 6, 
-        width: '100%', 
-        maxWidth: 400, 
-        backgroundColor: '#E0F7FA' 
+        p: isSmallScreen ? 2 : 3,
+        mb: isSmallScreen ? 3 : 4,
+        width: '100%',
+        maxWidth: '600px',
+        backgroundColor: '#E0F7FA',
+        minHeight: isSmallScreen ? 160 : 200
       }}>
         <CardContent>
-          <Typography variant={isSmallScreen ? "subtitle1" : "h6"} fontWeight="600" color="black">
-            JUMLAH LAPORAN SEKARANG
-          </Typography>
-          <Typography variant={isSmallScreen ? "h4" : "h3"} fontWeight="bold" mt={2} color="black">
-            {loading ? <CircularProgress size={isSmallScreen ? 32 : 48} /> : displayLaporan}
-          </Typography>
+          {loading ? (
+            <>
+              <Skeleton 
+                variant="text" 
+                width="70%" 
+                height={28} 
+                sx={{ mx: 'auto', bgcolor: 'grey.300' }} 
+              />
+              <Skeleton 
+                variant="text" 
+                width="50%" 
+                height={isSmallScreen ? 48 : 64} 
+                sx={{ mx: 'auto', mt: 2, bgcolor: 'grey.300' }} 
+              />
+              <Skeleton 
+                variant="text" 
+                width="80%" 
+                height={20} 
+                sx={{ mx: 'auto', mt: 2, bgcolor: 'grey.300' }} 
+              />
+            </>
+          ) : (
+            <>
+              <Typography variant={isSmallScreen ? "h6" : "h5"} fontWeight="600" color="black">
+                TOTAL LAPORAN
+              </Typography>
+              <Typography variant={isSmallScreen ? "h3" : "h2"} fontWeight="bold" mt={2} color="primary">
+                {displayTotalLaporan}
+              </Typography>
+            </>
+          )}
         </CardContent>
       </Card>
 
       <Grid 
         container 
-        spacing={isSmallScreen ? 1 : 2} 
+        spacing={isSmallScreen ? 2 : 3} 
         justifyContent="center"
         width="100%"
         maxWidth="1200px"
       >
-        <Grid item xs={12} sm={6} md={4} width="100%">
+        <Grid item xs={12} sm={6} md={4}>
           <InfoCard 
             title={displayKategori.toString()} 
             subtitle="Kategori" 
@@ -189,7 +240,7 @@ const ReportSummary: React.FC = () => {
           />
         </Grid>
         
-        <Grid item xs={12} sm={6} md={4} width="100%">
+        <Grid item xs={12} sm={6} md={4}>
           <InfoCard 
             title={displayUnit.toString()} 
             subtitle="Unit Pelayan Terpadu" 
@@ -197,7 +248,7 @@ const ReportSummary: React.FC = () => {
           />
         </Grid>
         
-        <Grid item xs={12} sm={6} md={4} width="100%">
+        <Grid item xs={12} sm={6} md={4}>
           <InfoCard 
             title="XXX" 
             subtitle="Lembaga" 
