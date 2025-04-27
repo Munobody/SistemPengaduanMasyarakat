@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Card,
-  CardHeader,
   Dialog,
   DialogActions,
   DialogContent,
@@ -104,13 +103,9 @@ const theme = createTheme({
 
 interface User {
   id: string;
-  email: string;
   name: string;
-  no_identitas: string;
-  userLevelId: string;
-  userLevel: {
-    name: string;
-  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 const USER_LEVEL_NAMES = [
@@ -151,7 +146,7 @@ export const UserManagement: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/users?page=1&rows=50`);
+      const response = await api.get(`/user-level`);
       if (response.data?.content?.entries) {
         setUsers(response.data.content.entries);
       }
@@ -178,48 +173,12 @@ export const UserManagement: React.FC = () => {
       });
       return;
     }
-
-    try {
-      setLoading(true);
-      await api.post(`/register`, {
-        email: formData.email,
-        password: formData.password,
-        name: formData.name,
-        no_identitas: formData.no_identitas,
-        userLevelName: formData.userLevelName,
-      });
-
-      toast.success('User added successfully!', {
-        position: isMobile ? 'top-center' : 'top-right',
-        theme: 'colored',
-      });
-
-      setOpen(false);
-      fetchUsers();
-
-      setFormData({
-        email: '',
-        password: '',
-        name: '',
-        no_identitas: '',
-        userLevelName: 'MAHASISWA',
-      });
-    } catch (error: any) {
-      console.error('Failed to register user:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to add user';
-      toast.error(errorMessage, {
-        position: isMobile ? 'top-center' : 'top-right',
-        theme: 'colored',
-      });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleOpenAclModal = (user: User) => {
     setSelectedUserForAcl({
-      userLevelId: user.userLevelId,
-      userLevelName: user.userLevel.name,
+      userLevelId: user.id,
+      userLevelName: user.name,
     });
     setAclModalOpen(true);
   };
@@ -228,9 +187,6 @@ export const UserManagement: React.FC = () => {
     setAclModalOpen(false);
     setSelectedUserForAcl(null);
   };
-
-  const filteredUsers =
-    selectedUserLevelName === 'ALL' ? users : users.filter((user) => user.userLevel.name === selectedUserLevelName);
 
   return (
     <ThemeProvider theme={theme}>
@@ -279,33 +235,7 @@ export const UserManagement: React.FC = () => {
                 borderRadius: 1,
               }}
             >
-              <InputLabel>Filter Role</InputLabel>
-              <Select
-                value={selectedUserLevelName}
-                label="Filter Role"
-                onChange={(e) => setSelectedUserLevelName(e.target.value)}
-              >
-                <MenuItem value="ALL">All Roles</MenuItem>
-                {USER_LEVEL_NAMES.map((level) => (
-                  <MenuItem key={level} value={level}>
-                    {level.replace(/_/g, ' ')}
-                  </MenuItem>
-                ))}
-              </Select>
             </FormControl>
-
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setOpen(true)}
-              sx={{
-                backgroundColor: '#135D66',
-                '&:hover': { backgroundColor: '#003C43' },
-                width: isMobile ? '100%' : 'auto',
-              }}
-            >
-              Add User
-            </Button>
           </Box>
         </Box>
 
@@ -327,61 +257,51 @@ export const UserManagement: React.FC = () => {
                     fontSize: isMobile ? '0.875rem' : '1rem',
                   }}
                 >
-                  Name
+                  Role
                 </TableCell>
-                {!isMobile && (
-                  <>
-                    <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Email</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>ID Number</TableCell>
-                  </>
-                )}
-                <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Access</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Manage Access</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 Array.from({ length: rowsPerPage }).map((_, index) => (
                   <TableRow key={index}>
-                    <TableCell colSpan={isMobile ? 3 : 5}>
+                    <TableCell colSpan={2}>
                       <Skeleton variant="text" width="100%" height={30} />
                     </TableCell>
                   </TableRow>
                 ))
-              ) : filteredUsers.length > 0 ? (
-                filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((user) => (
-                  <TableRow key={user.id} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
-                    <TableCell sx={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>{user.name || '-'}</TableCell>
-                    {!isMobile && (
-                      <>
-                        <TableCell>{user.email || '-'}</TableCell>
-                        <TableCell>{user.no_identitas || '-'}</TableCell>
-                      </>
-                    )}
-                    <TableCell>{user.userLevel.name.replace(/_/g, ' ')}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outlined"
-                        size={isMobile ? 'small' : 'medium'}
-                        onClick={() => handleOpenAclModal(user)}
-                        startIcon={<SettingsIcon />}
-                        sx={{
-                          color: '#135D66',
-                          borderColor: '#135D66',
-                          '&:hover': {
-                            borderColor: '#003C43',
-                            backgroundColor: 'rgba(19, 93, 102, 0.1)',
-                          },
-                        }}
-                      >
-                        {isMobile ? '' : 'Manage Access'}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+              ) : users.length > 0 ? (
+                users
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((user) => (
+                    <TableRow key={user.id} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
+                      <TableCell sx={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                        {user.name.replace(/_/g, ' ')}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outlined"
+                          size={isMobile ? 'small' : 'medium'}
+                          onClick={() => handleOpenAclModal(user)}
+                          startIcon={<SettingsIcon />}
+                          sx={{
+                            color: '#135D66',
+                            borderColor: '#135D66',
+                            '&:hover': {
+                              borderColor: '#003C43',
+                              backgroundColor: 'rgba(19, 93, 102, 0.1)',
+                            },
+                          }}
+                        >
+                          {isMobile ? '' : 'Manage Access'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={isMobile ? 3 : 5} align="center">
+                  <TableCell colSpan={2} align="center">
                     <Typography sx={{ color: 'text.secondary' }}>No users found</Typography>
                   </TableCell>
                 </TableRow>
@@ -391,7 +311,7 @@ export const UserManagement: React.FC = () => {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={filteredUsers.length}
+            count={users.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={(_, newPage) => setPage(newPage)}
@@ -411,84 +331,6 @@ export const UserManagement: React.FC = () => {
             }}
           />
         </TableContainer>
-
-        <Dialog 
-          open={open} 
-          onClose={() => setOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle sx={{ color: '#003C43' }}>Add New User</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-              <TextField
-                label="Email"
-                fullWidth
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-              <TextField
-                label="Password"
-                type="password"
-                fullWidth
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-              />
-              <TextField
-                label="Name"
-                fullWidth
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-              <TextField
-                label="ID Number"
-                fullWidth
-                value={formData.no_identitas}
-                onChange={(e) => setFormData({ ...formData, no_identitas: e.target.value })}
-              />
-              <FormControl fullWidth>
-                <InputLabel>Role</InputLabel>
-                <Select
-                  value={formData.userLevelName}
-                  label="Role"
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    userLevelName: e.target.value as UserLevelName 
-                  })}
-                >
-                  {USER_LEVEL_NAMES.map((level) => (
-                    <MenuItem key={level} value={level}>
-                      {level.replace(/_/g, ' ')}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button 
-              onClick={() => setOpen(false)}
-              variant="outlined"
-              sx={{ color: '#003C43', borderColor: '#003C43' }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit}
-              variant="contained"
-              disabled={loading}
-              sx={{ 
-                bgcolor: '#135D66',
-                '&:hover': { bgcolor: '#003C43' }
-              }}
-            >
-              {loading ? 'Adding...' : 'Add User'}
-            </Button>
-          </DialogActions>
-        </Dialog>
 
         {selectedUserForAcl && (
           <AclManagementModal

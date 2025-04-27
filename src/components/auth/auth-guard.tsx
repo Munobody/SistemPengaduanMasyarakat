@@ -15,15 +15,43 @@ interface AuthGuardProps {
 }
 
 const rolePathMapping = {
-  ADMIN: [paths.dashboard.admin, paths.dashboard.kelolakategori, paths.dashboard.kelolaunit, paths.dashboard.kelolawbs, paths.dashboard.usermanagement, paths.dashboard.account],
+  ADMIN: [
+    paths.dashboard.admin,
+    paths.dashboard.kelolakategori,
+    paths.dashboard.kelolaunit,
+    paths.dashboard.kelolawbs,
+    paths.dashboard.usermanagement,
+    paths.dashboard.account,
+    paths.dashboard.updateduser,
+  ],
   PETUGAS: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.account],
-  PETUGAS_SUPER: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah, paths.dashboard.account],
-  KEPALA_PETUGAS_UNIT: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.tambah,paths.dashboard.account],
+  PETUGAS_SUPER: [
+    paths.dashboard.petugas,
+    paths.dashboard.kelola,
+    paths.dashboard.tambah,
+    paths.dashboard.account,
+  ],
+  KEPALA_PETUGAS_UNIT: [
+    paths.dashboard.petugas,
+    paths.dashboard.kelola,
+    paths.dashboard.tambah,
+    paths.dashboard.account,
+  ],
   PETUGAS_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.account],
-  KEPALA_WBS: [paths.dashboard.dashboardwbs, paths.dashboard.kelolawbs, paths.dashboard.petugaswbs, paths.dashboard.account],
+  KEPALA_WBS: [
+    paths.dashboard.dashboardwbs,
+    paths.dashboard.kelolawbs,
+    paths.dashboard.petugaswbs,
+    paths.dashboard.account,
+  ],
   MAHASISWA: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.account],
   DOSEN: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.wbs, paths.dashboard.account],
-  TENAGA_KEPENDIDIKAN: [paths.dashboard.overview, paths.dashboard.pengaduan, paths.dashboard.wbs, paths.dashboard.account],
+  TENAGA_KEPENDIDIKAN: [
+    paths.dashboard.overview,
+    paths.dashboard.pengaduan,
+    paths.dashboard.wbs,
+    paths.dashboard.account,
+  ],
 };
 
 const fallbackPaths = {
@@ -57,7 +85,7 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
 
     const allowedPaths = rolePathMapping[userRole as keyof typeof rolePathMapping] || [];
     const isAllowed = allowedPaths.some((path) => pathname.startsWith(path));
-    
+
     if (!isAllowed) {
       logger.debug(`[AuthGuard] Path ${pathname} not allowed for role ${userRole}`);
     }
@@ -70,12 +98,11 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
       return;
     }
 
-
     logger.debug('[AuthGuard] Checking access...', {
       user: user?.userLevel?.name,
       pathname,
       allowedRoles,
-      isLoading
+      isLoading,
     });
 
     if (!user) {
@@ -95,9 +122,9 @@ export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): Reac
       logger.debug('[AuthGuard] Access denied', {
         userRole,
         pathname,
-        allowedRoles
+        allowedRoles,
       });
-      
+
       toast.error('Anda tidak memiliki akses ke halaman ini');
       router.replace(fallbackPaths[userRole as keyof typeof fallbackPaths] || paths.home);
       return;

@@ -20,6 +20,7 @@ export const paths = {
     kelolawbs:'/petugaswbs/kelola',
     dashboardwbs:'/petugaswbs/dashboard',
     petugaswbs: '/petugaswbs/add',
+    updateduser: '/admin/updateuser',
   },
   errors: { notFound: '/errors/not-found' },
 } as const;

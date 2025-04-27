@@ -13,6 +13,7 @@ import { usePopover } from '@/hooks/use-popover';
 import { MobileNav } from './mobile-nav';
 import { UserPopover } from './user-popover';
 import api from '@/lib/api/api';
+import { Alert } from '@mui/material';
 import NotificationMenu from '../dashboard/VisualDashboard/notifcation-menu';
 
 interface Notification {
@@ -36,45 +37,99 @@ export function MainNav(): React.JSX.Element {
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = React.useState<number>(0);
   const [notificationAnchorEl, setNotificationAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
+  const [totalNotifications, setTotalNotifications] = React.useState<number>(0);
+  const rowsPerPage = 5;
 
-  // Fungsi untuk mengambil notifikasi
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (currentPage: number = page) => {
     try {
-      const response = await api.get('/notification');
+      const response = await api.get(
+        `/notification?orderKey=createdAt&orderRule=desc&page=${currentPage}&rows=${rowsPerPage}`
+      );
       setNotifications(response.data.content.entries);
       setUnreadCount(response.data.content.notRead);
+      setTotalNotifications(response.data.content.total || response.data.content.entries.length);
+      setError(null);
     } catch (err) {
       console.error('Error fetching notifications:', err);
+      setError('Failed to load notifications');
     }
   };
 
-  // Fungsi untuk menandai notifikasi sebagai sudah dibaca
   const markNotificationAsRead = async (notificationId: string) => {
     try {
       await api.put(`/notification/${notificationId}`, { isRead: true });
-      setNotifications(prevNotifications =>
-        prevNotifications.map(notification =>
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notification) =>
           notification.id === notificationId ? { ...notification, isRead: true } : notification
         )
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      setError(null);
     } catch (err) {
       console.error('Error marking notification as read:', err);
+      setError('Failed to mark notification as read');
     }
   };
 
-  // Gunakan useEffect untuk mengambil notifikasi secara berkala
+  const handleDeleteAllNotifications = async () => {
+    try {
+      const allIds = notifications.map((notification) => notification.id);
+      if (allIds.length === 0) return;
+      const response = await api.delete(`/notification?ids=[${allIds.map((id) => `"${id}"`).join(',')}]`);
+      if (response.status === 200) {
+        setNotifications([]);
+        setUnreadCount(0);
+        setTotalNotifications(0);
+        setError(null);
+      }
+    } catch (error: any) {
+      console.error('❌ Gagal menghapus semua notifikasi:', error.response?.data);
+      const errorMessage =
+        error.response?.data?.message || 'Terjadi kesalahan saat menghapus semua notifikasi';
+      setError(errorMessage);
+    }
+  };
+
+  const handleDeleteSelectedNotifications = async (selectedIds: string[]) => {
+    try {
+      const response = await api.delete(`/notification?ids=[${selectedIds.map((id) => `"${id}"`).join(',')}]`);
+      if (response.status === 200) {
+        setNotifications((prevNotifications) =>
+          prevNotifications.filter((notification) => !selectedIds.includes(notification.id))
+        );
+        const deletedUnreadCount = notifications.filter(
+          (n) => selectedIds.includes(n.id) && !n.isRead
+        ).length;
+        setUnreadCount((prev) => Math.max(0, prev - deletedUnreadCount));
+        setTotalNotifications((prev) => Math.max(0, prev - selectedIds.length));
+        setError(null);
+      }
+    } catch (error: any) {
+      console.error('❌ Gagal menghapus notifikasi terpilih:', error.response?.data);
+      const errorMessage =
+        error.response?.data?.message || 'Terjadi kesalahan saat menghapus notifikasi terpilih';
+      setError(errorMessage);
+    }
+  };
+
+  const handlePageChange = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+    setPage(newPage + 1);
+    fetchNotifications(newPage + 1);
+  };
+
   React.useEffect(() => {
     const hour = new Date().getHours();
     setIsDayTime(hour >= 6 && hour < 18);
-    
+
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 300000);
-    
+    const interval = setInterval(() => fetchNotifications(page), 300000);
+
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [page]);
 
   const handleNotificationClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setNotificationAnchorEl(event.currentTarget);
@@ -112,7 +167,6 @@ export function MainNav(): React.JSX.Element {
             </IconButton>
           </Stack>
           <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-            {/* Tambahkan tombol notifikasi di sini */}
             <Tooltip title="Notifikasi">
               <IconButton color="inherit" onClick={handleNotificationClick}>
                 <Badge badgeContent={unreadCount} color="error">
@@ -128,7 +182,11 @@ export function MainNav(): React.JSX.Element {
           </Stack>
         </Stack>
       </Box>
-      <UserPopover anchorEl={userPopover.anchorRef.current} onClose={userPopover.handleClose} open={userPopover.open} />
+      <UserPopover
+        anchorEl={userPopover.anchorRef.current}
+        onClose={userPopover.handleClose}
+        open={userPopover.open}
+      />
       <MobileNav
         onClose={() => {
           setOpenNav(false);
@@ -140,7 +198,14 @@ export function MainNav(): React.JSX.Element {
         handleClose={handleNotificationClose}
         notifications={notifications}
         markNotificationAsRead={markNotificationAsRead}
+        handleDeleteAllNotifications={handleDeleteAllNotifications}
+        handleDeleteSelectedNotifications={handleDeleteSelectedNotifications}
         unreadCount={unreadCount}
+        page={page - 1}
+        rowsPerPage={rowsPerPage}
+        totalNotifications={totalNotifications}
+        onPageChange={handlePageChange}
+        error={error}
       />
     </React.Fragment>
   );

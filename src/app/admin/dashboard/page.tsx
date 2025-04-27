@@ -1,12 +1,8 @@
 import * as React from 'react';
 import type { Metadata } from 'next';
 import Grid from '@mui/material/Unstable_Grid2';
-import dayjs from 'dayjs';
 
 import { config } from '@/config';
-
-import { AuthGuard } from '@/components/auth/auth-guard'; // Import the AuthGuard
-import UserManagement from '@/components/admin/kelola/user-management';
 import DashboardVisualization from '@/components/admin/kelola/dashboard-visualization';
 
 export const metadata = { title: `Admin Management | Dashboard | ${config.site.name}` } satisfies Metadata;
@@ -17,9 +13,6 @@ export default function AdminManagementPage(): React.JSX.Element {
         <Grid xs={12}>
          <DashboardVisualization/>
         </Grid>
-        {/* <Grid xs={12}>
-         <UserManagement/>
-        </Grid> */}
       </Grid>
   );
 }
