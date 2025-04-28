@@ -572,7 +572,7 @@ export function LatestComplaints() {
           <DataGrid
             rows={filteredComplaints ?? []}
             columns={activeColumns}
-            pageSizeOptions={[5, 10, 20]}
+            pageSizeOptions={[5, 10, 20,100]}
             pagination
             paginationMode="server"
             rowCount={filteredComplaints?.length ?? 0}
