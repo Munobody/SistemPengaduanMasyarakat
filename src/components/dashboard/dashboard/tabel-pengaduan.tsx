@@ -13,7 +13,6 @@ import {
   Card,
   CardHeader,
   Chip,
-
   Divider,
   IconButton,
   Menu,
@@ -27,14 +26,13 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
-
 import 'react-toastify/dist/ReactToastify.css';
 
 import api from '@/lib/api/api';
-
 import { EditComplaintModal } from './modal/EditComplaintModal';
 import { ViewComplaintModal } from './modal/ViewComplaintModal';
 
+// Define the Complaint interface
 export interface Complaint {
   kategoriId: string;
   id: string;
@@ -51,14 +49,8 @@ export interface Complaint {
   filePendukung: string;
   filePetugas: string;
   harapan_pelapor: string;
-  kategori?: {
-    id: string;
-    nama: string;
-  };
-  unit?: {
-    id: string;
-    nama_unit: string;
-  };
+  kategori?: { id: string; nama: string };
+  unit?: { id: string; nama_unit: string };
 }
 
 const STATUS_ORDER = ['PENDING', 'PROCESS', 'COMPLETED', 'REJECTED'];
@@ -81,24 +73,17 @@ export function LatestComplaints() {
     try {
       const adjustedPageSize = isMobile ? 5 : pageSize;
       const response = await api.get(`/pelaporan?page=${page}&rows=${adjustedPageSize}`);
-
       const data = response.data;
       if (data?.content) {
         const sortedEntries = data.content.entries.sort((a: Complaint, b: Complaint) => {
           const statusA = STATUS_ORDER.indexOf(a.status);
           const statusB = STATUS_ORDER.indexOf(b.status);
-          
           if (statusA !== statusB) {
             return statusA - statusB;
           }
-          
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
-        
-        setComplaints({
-          ...data.content,
-          entries: sortedEntries
-        });
+        setComplaints({ ...data.content, entries: sortedEntries });
       }
     } catch (error: any) {
       console.error('Error fetching complaints:', error);
@@ -109,10 +94,9 @@ export function LatestComplaints() {
   const handleDeleteComplaint = async (id: string) => {
     try {
       const response = await api.delete(`/pelaporan?ids=["${id}"]`, {});
-
       if (response.status === 200) {
-        toast.success('Pengaduan berhasil dihapus!');
-        fetchComplaints(); // Refresh data setelah penghapusan
+        toast.success('Pengaduan berhasil dihapus!'); // Use toast for success message
+        fetchComplaints(); // Refresh data after deletion
       }
     } catch (error: any) {
       console.error('Error deleting complaint:', error);
@@ -124,7 +108,6 @@ export function LatestComplaints() {
     try {
       const response = await api.get(`/pelaporan/${row.id}`);
       const data = response.data.content;
-
       setEditedComplaint({
         id: data.id,
         judul: data.judul || 'Tidak Ada Judul',
@@ -192,7 +175,7 @@ export function LatestComplaints() {
     {
       field: 'targetUnit',
       headerName: 'Unit Tertuju',
-      flex: 1,
+      FLEX: 1,
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) => <span>{params?.row?.unit?.nama_unit ?? '-'}</span>,
@@ -256,21 +239,16 @@ export function LatestComplaints() {
       renderCell: (params: any) => {
         const textColor =
           params?.row?.status === 'PENDING'
-            ? '#F59E0B' 
+            ? '#F59E0B'
             : params?.row?.status === 'PROCESS'
-              ? '#3B82F6' 
-              : params?.row?.status === 'COMPLETED'
-                ? '#10B981'
-                : '#EF4444'; 
-
+            ? '#3B82F6'
+            : params?.row?.status === 'COMPLETED'
+            ? '#10B981'
+            : '#EF4444';
         return (
           <Chip
             label={params.row?.status ?? '-'}
-            sx={{
-              color: textColor,
-              fontWeight: 'bold', 
-              backgroundColor: 'transparent', 
-            }}
+            sx={{ color: textColor, fontWeight: 'bold', backgroundColor: 'transparent' }}
           />
         );
       },
@@ -284,76 +262,63 @@ export function LatestComplaints() {
       hideable: false,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => {
-        return (
-          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <IconButton
-              onClick={(event) => {
-                setMenuAnchor(event.currentTarget);
-                setSelectedRow(params.row);
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <IconButton
+            onClick={(event) => {
+              setMenuAnchor(event.currentTarget);
+              setSelectedRow(params.row);
+            }}
+            size="small"
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={handleMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem
+              onClick={() => {
+                if (selectedRow) handleViewOpen(selectedRow);
+                handleMenuClose();
               }}
-              size="small"
             >
-              <MoreVertIcon />
-            </IconButton>
-            <Menu
-              anchorEl={menuAnchor}
-              open={Boolean(menuAnchor)}
-              onClose={handleMenuClose} 
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-            >
+              <VisibilityIcon fontSize="small" sx={{ mr: 
+
+ 1 }} /> Lihat
+            </MenuItem>
+            {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
               <MenuItem
                 onClick={() => {
-                  if (selectedRow) {
-                    handleViewOpen(selectedRow);
-                  }
-                  handleMenuClose(); 
+                  if (selectedRow) handleEditOpen(selectedRow);
+                  handleMenuClose();
                 }}
               >
-                <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+                <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
               </MenuItem>
-
-              {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
-                <MenuItem
-                  onClick={() => {
-                    if (selectedRow) {
-                      handleEditOpen(selectedRow);
-                    }
-                    handleMenuClose();
-                  }}
-                >
-                  <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
-                </MenuItem>
-              )}
-              {(selectedRow?.status === 'COMPLETED' || selectedRow?.status === 'REJECTED') && (
-                <MenuItem
-                  onClick={() => {
-                    if (selectedRow) {
-                      handleDeleteComplaint(selectedRow.id);
-                    }
-                    handleMenuClose();
-                  }}
-                >
-                  <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
-                </MenuItem>
-              )}
-            </Menu>
-          </Box>
-        );
-      },
+            )}
+            {(selectedRow?.status === 'COMPLETED' || selectedRow?.status === 'REJECTED') && (
+              <MenuItem
+                onClick={() => {
+                  if (selectedRow) handleDeleteComplaint(selectedRow.id);
+                  handleMenuClose();
+                }}
+              >
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
+              </MenuItem>
+            )}
+          </Menu>
+        </Box>
+      ),
     },
   ];
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>, row: Complaint) => {
     setMenuAnchor(event.currentTarget);
-    setSelectedRow(row); 
+    setSelectedRow(row);
   };
 
   const mobileColumns = [
@@ -392,20 +357,14 @@ export function LatestComplaints() {
           params?.row?.status === 'PENDING'
             ? '#F59E0B'
             : params?.row?.status === 'PROCESS'
-              ? '#3B82F6'
-              : params?.row?.status === 'COMPLETED'
-                ? '#10B981'
-                : '#EF4444';
-
+            ? '#3B82F6'
+            : params?.row?.status === 'COMPLETED'
+            ? '#10B981'
+            : '#EF4444';
         return (
           <Chip
             label={params.row?.status ?? '-'}
-            sx={{
-              color: textColor,
-              fontWeight: 'bold',
-              backgroundColor: 'transparent',
-              fontSize: '0.75rem',
-            }}
+            sx={{ color: textColor, fontWeight: 'bold', backgroundColor: 'transparent', fontSize: '0.75rem' }}
           />
         );
       },
@@ -416,67 +375,49 @@ export function LatestComplaints() {
       flex: 0.8,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => {
-        return (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <IconButton
-              onClick={(event) => handleMenuClick(event, params.row)}
-              size="small"
-            >
-              <MoreVertIcon />
-            </IconButton>
-            <Menu
-              anchorEl={menuAnchor}
-              open={Boolean(menuAnchor)}
-              onClose={handleMenuClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <IconButton onClick={(event) => handleMenuClick(event, params.row)} size="small">
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={handleMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem
+              onClick={() => {
+                if (selectedRow) handleViewOpen(selectedRow);
+                handleMenuClose();
               }}
             >
+              <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+            </MenuItem>
+            {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
               <MenuItem
                 onClick={() => {
-                  if (selectedRow) {
-                    handleViewOpen(selectedRow);
-                  }
-                  handleMenuClose(); // Tutup menu setelah aksi
+                  if (selectedRow) handleEditOpen(selectedRow);
+                  handleMenuClose();
                 }}
               >
-                <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+                <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
               </MenuItem>
-
-              {!['PROCESS', 'REJECTED', 'COMPLETED'].includes(selectedRow?.status ?? '-') && (
-                <MenuItem
-                  onClick={() => {
-                    if (selectedRow) {
-                      handleEditOpen(selectedRow);
-                    }
-                    handleMenuClose(); // Tutup menu setelah aksi
-                  }}
-                >
-                  <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
-                </MenuItem>
-              )}
-              {(selectedRow?.status === 'COMPLETED' || selectedRow?.status === 'REJECTED') && (
-                <MenuItem
-                  onClick={() => {
-                    if (selectedRow) {
-                      handleDeleteComplaint(selectedRow.id);
-                    }
-                    handleMenuClose(); // Tutup menu setelah aksi
-                  }}
-                >
-                  <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
-                </MenuItem>
-              )}
-            </Menu>
-          </Box>
-        );
-      },
+            )}
+            {(selectedRow?.status === 'COMPLETED' || selectedRow?.status === 'REJECTED') && (
+              <MenuItem
+                onClick={() => {
+                  if (selectedRow) handleDeleteComplaint(selectedRow.id);
+                  handleMenuClose();
+                }}
+              >
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
+              </MenuItem>
+            )}
+          </Menu>
+        </Box>
+      ),
     },
   ];
 
@@ -485,9 +426,7 @@ export function LatestComplaints() {
   const handleViewOpen = async (row: Complaint) => {
     try {
       const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/pelaporan/${row.id}`, {});
-
       const data = response.data.content;
-
       setSelectedRow({
         id: data.id,
         judul: data.judul || 'Tidak Ada Judul',
@@ -506,7 +445,6 @@ export function LatestComplaints() {
         kategori: data.kategori,
         unit: data.unit,
       });
-
       setViewOpen(true);
     } catch (error: any) {
       console.error('Error fetching complaint details:', error);
@@ -523,6 +461,7 @@ export function LatestComplaints() {
     setViewOpen(false);
     setSelectedRow(null);
   };
+
   const handleEditClose = () => {
     setEditOpen(false);
     setEditedComplaint(null);
@@ -530,15 +469,11 @@ export function LatestComplaints() {
 
   const handleSaveChanges = async (field: keyof Complaint, value: any) => {
     if (!selectedRow?.id) return;
-
     try {
-      const response = await api.patch(`/pelaporan/${selectedRow.id}`, {
-        [field]: value,
-      });
-
+      const response = await api.patch(`/pelaporan/${selectedRow.id}`, { [field]: value });
       if (response.status === 200) {
         toast.success('Pengaduan berhasil diperbarui!');
-        fetchComplaints(); // Refresh data after update
+        fetchComplaints();
       }
     } catch (error: any) {
       console.error('Error updating complaint:', error);
@@ -546,11 +481,10 @@ export function LatestComplaints() {
     }
   };
 
-  const filteredComplaints = complaints?.entries
-  ?.filter((complaint: Complaint) =>
+  const filteredComplaints = complaints?.entries?.filter((complaint: Complaint) =>
     complaint.judul.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
+
   const handleExportCSV = () => {
     const csvContent = [
       [
@@ -565,17 +499,17 @@ export function LatestComplaints() {
         'File Petugas',
         'Harapan Pelapor',
       ],
-      ...complaints.map((c: any) => [
-        c.title,
-        c.content,
-        c.date,
-        c.category,
-        c.targetUnit,
+      ...complaints.entries.map((c: Complaint) => [
+        c.judul,
+        c.deskripsi,
+        dayjs(c.createdAt).format('DD/MM/YYYY'),
+        c.kategori?.nama || '-',
+        c.unit?.nama_unit || '-',
         c.status,
-        c.response,
+        c.response || '-',
         c.filePendukung || '-',
         c.filePetugas || '-',
-        c.harapan_pelapor,
+        c.harapan_pelapor || '-',
       ]),
     ]
       .map((e) => e.map((x: any) => `"${(x || '').toString().replace(/"/g, '""')}"`).join(','))
@@ -615,15 +549,12 @@ export function LatestComplaints() {
         />
         <IconButton
           onClick={handleExportCSV}
-          sx={{
-            alignSelf: isMobile ? 'flex-end' : 'center',
-            mt: isMobile ? 1 : 0,
-          }}
+          sx={{ alignSelf: isMobile ? 'flex-end' : 'center', mt: isMobile ? 1 : 0 }}
         >
           <FileDownloadIcon />
         </IconButton>
       </Box>
-  
+
       <Box
         sx={{
           p: isMobile ? 1 : 2,
@@ -631,16 +562,9 @@ export function LatestComplaints() {
           minHeight: isMobile ? '300px' : '400px',
           '& .MuiDataGrid-root': {
             border: 'none',
-            '& .MuiDataGrid-cell': {
-              borderBottom: '1px solid rgba(224, 224, 224, 0.4)',
-            },
-            '& .MuiDataGrid-columnHeaders': {
-              backgroundColor: '#E3FEF7',
-              borderBottom: 'none',
-            },
-            '& .MuiDataGrid-virtualScroller': {
-              backgroundColor: '#ffffff',
-            },
+            '& .MuiDataGrid-cell': { borderBottom: '1px solid rgba(224, 224, 224, 0.4)' },
+            '& .MuiDataGrid-columnHeaders': { backgroundColor: '#E3FEF7', borderBottom: 'none' },
+            '& .MuiDataGrid-virtualScroller': { backgroundColor: '#ffffff' },
           },
         }}
       >
@@ -666,26 +590,14 @@ export function LatestComplaints() {
             slotProps={{
               toolbar: {
                 sx: {
-                  '& .MuiButtonBase-root': {
-                    color: '#16404D',
-                  },
-                  '& .MuiIconButton-root': {
-                    color: '#16404D',
-                  },
+                  '& .MuiButtonBase-root': { color: '#16404D' },
+                  '& .MuiIconButton-root': { color: '#16404D' },
                 },
               },
             }}
           />
         ) : (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-              width: '100%',
-              minHeight: isMobile ? '300px' : '400px',
-            }}
-          >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', minHeight: isMobile ? '300px' : '400px' }}>
             <Skeleton variant="rectangular" height={40} width="100%" />
             {[...Array(5)].map((_, index) => (
               <Skeleton key={index} variant="rectangular" height={52} width="100%" />
@@ -693,15 +605,9 @@ export function LatestComplaints() {
           </Box>
         )}
       </Box>
-  
+
       <ViewComplaintModal open={viewOpen} onClose={handleViewClose} complaint={selectedRow} />
-      <EditComplaintModal
-        open={editOpen}
-        onClose={handleEditClose}
-        complaint={editedComplaint}
-        onSave={handleSaveChanges}
-      />
-  
+      <EditComplaintModal open={editOpen} onClose={handleEditClose} complaint={editedComplaint} onSave={handleSaveChanges} />
       <ToastContainer position="top-right" autoClose={3000} style={{ fontSize: isMobile ? '14px' : '16px' }} />
     </Card>
   );

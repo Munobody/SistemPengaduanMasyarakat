@@ -26,6 +26,8 @@ const LatestComplaints: React.FC<LatestComplaintsProps> = ({ complaints, loading
         return 'success.main';
       case 'PROCESS':
         return 'info.main';
+        case 'PENDING':
+          return 'warning.main';
       case 'REJECTED':
         return 'error.main'; 
       default:

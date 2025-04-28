@@ -6,6 +6,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Box,
   Card,
@@ -22,7 +23,6 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
-
 import 'react-toastify/dist/ReactToastify.css';
 
 import api from '@/lib/api/api';
@@ -44,77 +44,110 @@ export interface ComplaintWbs {
 }
 
 export function TabelWbs() {
-  const [complaints, setComplaints] = useState<any>(null);
+  const [complaints, setComplaints] = useState<ComplaintWbs[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedRow, setSelectedRow] = useState<ComplaintWbs | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
-  const [editedComplaint, setEditedComplaint] = useState<ComplaintWbs | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const isMobile = useMediaQuery('(max-width:600px)'); // Detect mobile screen size
+  const [loading, setLoading] = useState(false);
+  const [totalRows, setTotalRows] = useState(0);
+  const isMobile = useMediaQuery('(max-width:600px)');
+
+  const statusOrder: { [key: string]: number } = {
+    PENDING: 1,
+    PROCESS: 2,
+    COMPLETED: 3,
+    REJECTED: 4,
+  };
 
   const fetchComplaints = async () => {
+    setLoading(true);
     try {
-      const response = await api.get(`/PelaporanWbs?page=${page}&rows=${pageSize}`);
-
+      const response = await api.get(`/PelaporanWbs?page=${page}&rows=${pageSize}&search=${searchQuery}`);
       const data = response.data;
       if (data?.content) {
-        setComplaints(data?.content);
+        const sortedComplaints = data.content.entries.sort((a: ComplaintWbs, b: ComplaintWbs) => {
+          const statusComparison = statusOrder[a.status] - statusOrder[b.status];
+          if (statusComparison !== 0) return statusComparison;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        setComplaints(sortedComplaints);
+        setTotalRows(data.content.totalRows || sortedComplaints.length);
       }
     } catch (error: any) {
       console.error('Error fetching complaints:', error);
       toast.error(error.response?.data?.message || 'Gagal memuat data pengaduan.');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchComplaints();
-  }, [page, pageSize]);
+  }, [page, pageSize, searchQuery]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(1);
+  };
+
+  const handleDelete = async (row: ComplaintWbs) => {
+    try {
+      await api.delete(`/PelaporanWbs?ids=["${row.id}"]`);
+      toast.success('Pengaduan berhasil dihapus.');
+      fetchComplaints(); // Refresh the list after deletion
+    } catch (error: any) {
+      console.error('Error deleting complaint:', error);
+      toast.error(error.response?.data?.message || 'Gagal menghapus pengaduan.');
+    } finally {
+      setMenuAnchor(null);
+    }
+  };
 
   const columns: any = [
     {
-      field: 'title',
+      field: 'judul',
       headerName: 'Judul Laporan',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => <span>{params?.row?.judul ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params.row.judul ?? '-'}</span>,
     },
     {
-      field: 'content',
+      field: 'deskripsi',
       headerName: 'Isi Laporan',
       flex: 2,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => <span>{params?.row?.deskripsi ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params.row.deskripsi ?? '-'}</span>,
     },
     {
-      field: 'date',
+      field: 'createdAt',
       headerName: 'Tanggal',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) => (
-        <span>{params?.row?.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
+        <span>{params.row.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
       ),
     },
     {
-      field: 'category',
+      field: 'kategori',
       headerName: 'Kategori',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => <span>{params?.row?.kategori?.nama ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params.row.kategori?.nama ?? '-'}</span>,
     },
     {
-      field: 'targetUnit',
+      field: 'unit',
       headerName: 'Unit Tertuju',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => <span>{params?.row?.unit ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params.row.unit ?? '-'}</span>,
     },
     {
       field: 'response',
@@ -132,7 +165,7 @@ export function TabelWbs() {
             padding: '8px',
           }}
         >
-          {params?.row?.response ?? '-'}
+          {params.row.response ?? '-'}
         </span>
       ),
     },
@@ -143,8 +176,8 @@ export function TabelWbs() {
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) =>
-        params?.row?.filePendukung ? (
-          <IconButton size="small" href={params.value} target="_blank" title="Lihat File Pendukung">
+        params.row.filePendukung ? (
+          <IconButton size="small" href={params.row.filePendukung} target="_blank" title="Lihat File Pendukung">
             <AttachFileIcon />
           </IconButton>
         ) : (
@@ -158,8 +191,8 @@ export function TabelWbs() {
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) =>
-        params?.row?.filePetugas ? (
-          <IconButton size="small" href={params.value} target="_blank" title="Lihat File Petugas">
+        params.row.filePetugas ? (
+          <IconButton size="small" href={params.row.filePetugas} target="_blank" title="Lihat File Petugas">
             <AttachFileIcon />
           </IconButton>
         ) : (
@@ -174,17 +207,16 @@ export function TabelWbs() {
       align: 'center',
       renderCell: (params: any) => {
         const textColor =
-          params?.row?.status === 'PENDING'
+          params.row.status === 'PENDING'
             ? '#F59E0B'
-            : params?.row?.status === 'PROCESS'
+            : params.row.status === 'PROCESS'
               ? '#3B82F6'
-              : params?.row?.status === 'COMPLETED'
+              : params.row.status === 'COMPLETED'
                 ? '#10B981'
                 : '#EF4444';
-
         return (
           <Chip
-            label={params.row?.status ?? '-'}
+            label={params.row.status ?? '-'}
             sx={{
               color: textColor,
               fontWeight: 'bold',
@@ -203,67 +235,74 @@ export function TabelWbs() {
       hideable: false,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params: any) => {
-        return (
-          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <IconButton
-              onClick={(event) => {
-                setMenuAnchor(event.currentTarget);
-                setSelectedRow(params.row);
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <IconButton
+            onClick={(event) => {
+              setMenuAnchor(event.currentTarget);
+              setSelectedRow(params.row);
+            }}
+            size="small"
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={() => setMenuAnchor(null)}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                selectedRow && handleViewOpen(selectedRow);
+                setMenuAnchor(null);
               }}
-              size="small"
             >
-              <MoreVertIcon />
-            </IconButton>
-            <Menu
-              anchorEl={menuAnchor}
-              open={Boolean(menuAnchor)}
-              onClose={() => setMenuAnchor(null)}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-            >
+              <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+            </MenuItem>
+            {selectedRow?.status === 'COMPLETED' && (
               <MenuItem
                 onClick={() => {
-                  selectedRow && handleViewOpen(selectedRow);
-                  setMenuAnchor(null);
+                  selectedRow && handleDelete(selectedRow);
                 }}
               >
-                <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
               </MenuItem>
-            </Menu>
-          </Box>
-        );
-      },
+            )}
+          </Menu>
+        </Box>
+      ),
     },
   ];
 
   const mobileColumns: any = [
     {
-      field: 'title',
+      field: 'judul',
       headerName: 'Judul',
       flex: 1.5,
       headerAlign: 'center',
       align: 'left',
       renderCell: (params: any) => (
         <Box sx={{ py: 1 }}>
-          <span>{params?.row?.judul ?? '-'}</span>
+          <span>{params.row.judul ?? '-'}</span>
         </Box>
       ),
     },
     {
-      field: 'date',
+      field: 'createdAt',
       headerName: 'Tanggal',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: any) => (
-        <span>{params?.row?.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
+        <span>{params.row.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
       ),
     },
     {
@@ -274,17 +313,16 @@ export function TabelWbs() {
       align: 'center',
       renderCell: (params: any) => {
         const textColor =
-          params?.row?.status === 'PENDING'
+          params.row.status === 'PENDING'
             ? '#F59E0B'
-            : params?.row?.status === 'PROCESS'
+            : params.row.status === 'PROCESS'
               ? '#3B82F6'
-              : params?.row?.status === 'COMPLETED'
+              : params.row.status === 'COMPLETED'
                 ? '#10B981'
                 : '#EF4444';
-
         return (
           <Chip
-            label={params.row?.status ?? '-'}
+            label={params.row.status ?? '-'}
             sx={{
               color: textColor,
               fontWeight: 'bold',
@@ -333,34 +371,35 @@ export function TabelWbs() {
             >
               <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
             </MenuItem>
+            {selectedRow?.status === 'COMPLETED' && (
+              <MenuItem
+                onClick={() => {
+                  selectedRow && handleDelete(selectedRow);
+                }}
+              >
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
+              </MenuItem>
+            )}
           </Menu>
         </Box>
       ),
     },
   ];
 
-  const activeColumns = isMobile ? mobileColumns : columns; // Use mobileColumns for mobile view
+  const activeColumns = isMobile ? mobileColumns : columns;
 
   const handleViewOpen = async (row: ComplaintWbs) => {
     try {
       const response = await api.get(`/PelaporanWbs/${row.id}`);
       const data = response.data.content;
-
       setSelectedRow({
-        id: data.id,
-        judul: data.judul,
-        deskripsi: data.deskripsi,
+        ...data,
         createdAt: dayjs(data.createdAt).format('MMM D, YYYY'),
-        kategori: data.kategori,
-        unit: data.unit,
-        status: data.status,
-        pihakTerlibat: data.pihakTerlibat,
         response: data.response || '-',
         filePendukung: data.filePendukung || '-',
         filePetugas: data.filePetugas || '-',
         lokasi: data.lokasi || '-',
       });
-
       setViewOpen(true);
     } catch (error: any) {
       console.error('Error fetching complaint details:', error);
@@ -368,18 +407,11 @@ export function TabelWbs() {
     }
   };
 
-  const filteredComplaints = complaints?.entries?.filter((complaint: ComplaintWbs) =>
-    complaint.judul.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const handleViewClose = () => {
     setViewOpen(false);
     setSelectedRow(null);
   };
-  const handleEditClose = () => {
-    setEditOpen(false);
-    setEditedComplaint(null);
-  };
+
   const handleExportCSV = () => {
     const csvContent = [
       [
@@ -392,19 +424,17 @@ export function TabelWbs() {
         'Tanggapan Petugas',
         'File Pendukung',
         'File Petugas',
-        'Harapan Pelapor',
       ],
-      ...complaints.map((c: any) => [
-        c.title,
-        c.content,
-        c.date,
-        c.category,
-        c.targetUnit,
+      ...complaints.map((c: ComplaintWbs) => [
+        c.judul,
+        c.deskripsi,
+        c.createdAt ? dayjs(c.createdAt).format('DD/MM/YYYY') : '-',
+        c.kategori?.nama,
+        c.unit,
         c.status,
-        c.response,
+        c.response || '-',
         c.filePendukung || '-',
         c.filePetugas || '-',
-        c.harapan_pelapor,
       ]),
     ]
       .map((e) => e.map((x: any) => `"${(x || '').toString().replace(/"/g, '""')}"`).join(','))
@@ -423,51 +453,57 @@ export function TabelWbs() {
     <Card>
       <CardHeader title="Tabel Pengaduan WBS" sx={{ textAlign: 'center' }} />
       <Divider />
-      <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between' }}>
+      <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <TextField
           label="Cari Judul Laporan"
           variant="outlined"
           size="small"
-          fullWidth
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
+          sx={{ width: isMobile ? '70%' : '300px' }}
         />
-        <IconButton onClick={handleExportCSV} sx={{ ml: 2 }}>
+        <IconButton onClick={handleExportCSV} title="Export CSV">
           <FileDownloadIcon />
         </IconButton>
       </Box>
       <Box sx={{ p: 2, width: '100%' }}>
-        <DataGrid
-          rows={filteredComplaints ?? []}
-          columns={activeColumns}
-          pageSizeOptions={[5, 10, 20]}
-          pagination
-          paginationMode="server"
-          rowCount={filteredComplaints?.length ?? 0}
-          onPaginationModelChange={(model) => {
-            setPage(model.page + 1);
-            setPageSize(model.pageSize);
-          }}
-          disableColumnMenu
-          disableRowSelectionOnClick
-          disableColumnFilter
-          disableColumnSelector
-          disableColumnResize
-          disableColumnSorting
-          autoHeight={false}
-          slotProps={{
-            toolbar: {
-              sx: {
-                '& .MuiButtonBase-root': {
-                  color: '#16404D',
-                },
-                '& .MuiIconButton-root': {
-                  color: '#16404D',
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <DataGrid
+            rows={complaints}
+            columns={activeColumns}
+            pageSizeOptions={[5, 10, 20]}
+            pagination
+            paginationMode="server"
+            rowCount={totalRows}
+            onPaginationModelChange={(model) => {
+              setPage(model.page + 1);
+              setPageSize(model.pageSize);
+            }}
+            disableColumnMenu
+            disableRowSelectionOnClick
+            disableColumnFilter
+            disableColumnSelector
+            disableColumnResize
+            disableColumnSorting
+            autoHeight
+            slotProps={{
+              toolbar: {
+                sx: {
+                  '& .MuiButtonBase-root': {
+                    color: '#16404D',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: '#16404D',
+                  },
                 },
               },
-            },
-          }}
-        />
+            }}
+          />
+        )}
       </Box>
       <ViewComplaintModalWbs open={viewOpen} onClose={handleViewClose} complaint={selectedRow} />
       <ToastContainer position="top-right" autoClose={3000} />

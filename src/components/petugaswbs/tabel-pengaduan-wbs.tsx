@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EditIcon from '@mui/icons-material/Edit';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
@@ -19,7 +19,7 @@ import {
   IconButton,
   Paper,
   Table,
-  TableBody,
+ TableBody,
   TableCell,
   TableContainer,
   TableHead,
@@ -28,9 +28,6 @@ import {
   TextField,
   Typography,
   MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -56,9 +53,6 @@ interface Pengaduan {
   filePetugas: string;
   tanggalKejadian: string;
   createdAt: string;
-  units: {
-    nama_unit: string;
-  };
   kategori: {
     nama: string;
   };
@@ -69,31 +63,24 @@ interface ViewComplaintDialog {
   complaint: Pengaduan | null;
 }
 
+const STATUS_ORDER = ['PENDING', 'PROCESS', 'COMPLETED', 'REJECTED'];
+
 export function TabelPetugasWbs() {
   const router = useRouter();
   const [complaints, setComplaints] = useState<Pengaduan[]>([]);
+  const [filteredComplaints, setFilteredComplaints] = useState<Pengaduan[]>([]);
+  const [unitList, setUnitList] = useState<string[]>([]);
+  const [selectedUnit, setSelectedUnit] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(12);
   const [totalData, setTotalData] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUnit, setSelectedUnit] = useState('');
-  const [units, setUnits] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewDialog, setViewDialog] = useState<ViewComplaintDialog>({
     open: false,
     complaint: null,
   });
-
-  const fetchUnits = async () => {
-    try {
-      const response = await api.get('/units'); // Adjust endpoint as needed
-      const unitList = response.data.map((unit: any) => unit.nama_unit);
-      setUnits(['All', ...unitList]);
-    } catch (error) {
-      console.error('❌ Failed to fetch units:', error);
-    }
-  };
 
   const fetchComplaints = async () => {
     setLoading(true);
@@ -119,6 +106,9 @@ export function TabelPetugasWbs() {
           const statusOrder = ['PENDING', 'PROCESS', 'COMPLETED', 'REJECTED'];
           const statusA = statusOrder.indexOf(a.status.toUpperCase());
           const statusB = statusOrder.indexOf(b.status.toUpperCase());
+          const entries: Pengaduan[] = response.data.content.entries;
+          const uniqueUnits = Array.from(new Set(entries.map((e) => e.unit)));
+          setUnitList(uniqueUnits);
 
           if (statusA !== statusB) {
             return statusA - statusB;
@@ -142,16 +132,18 @@ export function TabelPetugasWbs() {
   };
 
   useEffect(() => {
-    fetchUnits();
-  }, []);
+    fetchComplaints();
+  }, [page, rowsPerPage, searchQuery]);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchComplaints();
-    }, 500);
+    let result = complaints;
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [page, rowsPerPage, searchQuery, selectedUnit]);
+    if (selectedUnit) {
+      result = result.filter((c) => c.unit === selectedUnit);
+    }
+
+    setFilteredComplaints(result);
+  }, [selectedUnit, complaints]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -167,7 +159,7 @@ export function TabelPetugasWbs() {
     setPage(0);
   };
 
-  const handleUnitChange = (event: any) => {
+  const handleUnitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedUnit(event.target.value);
     setPage(0);
   };
@@ -237,20 +229,21 @@ export function TabelPetugasWbs() {
           title="Daftar Pengaduan Whistle Blowing System"
           action={
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl sx={{ minWidth: 150 }} size="small">
-                <InputLabel>Filter Unit</InputLabel>
-                <Select
-                  value={selectedUnit}
-                  onChange={handleUnitChange}
-                  label="Filter Unit"
-                >
-                  {units.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <TextField
+                select
+                size="small"
+                value={selectedUnit}
+                onChange={handleUnitChange}
+                SelectProps={{ displayEmpty: true }}
+                sx={{ width: 200 }}
+              >
+                <MenuItem value="">Semua Unit</MenuItem>
+                {unitList.map((unit) => (
+                  <MenuItem key={unit} value={unit}>
+                    {unit}
+                  </MenuItem>
+                ))}
+              </TextField>
               <TextField
                 placeholder="Cari berdasarkan judul..."
                 value={searchQuery}
@@ -302,14 +295,14 @@ export function TabelPetugasWbs() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {complaints.length === 0 ? (
+                  {filteredComplaints.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} align="center">
                         Tidak ada pengaduan
                       </TableCell>
                     </TableRow>
                   ) : (
-                    complaints.map((complaint) => (
+                    filteredComplaints.map((complaint) => (
                       <TableRow key={complaint.id} hover>
                         <TableCell>{complaint.judul}</TableCell>
                         <TableCell>

@@ -148,13 +148,17 @@ function renderNavItems({
             {category}
           </Typography>
           <Stack component="ul" spacing={1} sx={{ listStyle: 'none', m: 0, p: 0 }}>
-            {categoryItems.map((item) => (
-              <NavItem
-              pathname={pathname}
-              isDayTime={isDayTime}
-              {...item}
-            />
-            ))}
+            {categoryItems.map((item) => {
+              const { key, ...otherProps } = item;
+              return (
+                <NavItem
+                  key={''}
+                  // key={key || item.href || item.title} // Use key if provided, else fallback to href or title
+                  pathname={pathname}
+                  isDayTime={isDayTime}
+                  {...otherProps}                />
+              );
+            })}
           </Stack>
         </React.Fragment>
       ))}

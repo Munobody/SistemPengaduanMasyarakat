@@ -55,7 +55,6 @@ const Chart: React.FC<ChartProps> = ({ data, loading }) => {
       {loading ? (
         <Skeleton variant="rectangular" width="100%" height={250} />
       ) : (
-        <>
           <Box
             sx={{
               width: '100%',
@@ -73,7 +72,6 @@ const Chart: React.FC<ChartProps> = ({ data, loading }) => {
               plugins={[centerTextPlugin]} 
             />
           </Box>
-        </>
       )}
     </Paper>
   );

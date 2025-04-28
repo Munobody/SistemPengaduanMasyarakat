@@ -7,7 +7,6 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { CaretUpDown as CaretUpDownIcon } from '@phosphor-icons/react/dist/ssr/CaretUpDown';
 
 import type { NavItemConfig } from '@/types/nav';
 import { paths } from '@/paths';
@@ -41,7 +40,6 @@ export function SideNav(): React.JSX.Element {
   return (
     <Box
       sx={{
-        // Day/Night theme variables
         '--SideNav-background': isDayTime ? '#E3FEF7' : '#003C43',
         '--SideNav-color': isDayTime ? '#003C43' : '#E3FEF7',
         '--NavItem-color': isDayTime ? '#003C43' : '#E3FEF7',
@@ -91,7 +89,6 @@ function renderNavItems({
   pathname: string;
   isDayTime: boolean;
 }): React.JSX.Element {
-  // Group items by category
   const groupedItems = items.reduce((acc: Record<string, NavItemConfig[]>, item) => {
     const category = item.category || 'Menu';
     if (!acc[category]) {
@@ -105,7 +102,6 @@ function renderNavItems({
     <Stack component="ul" spacing={2} sx={{ listStyle: 'none', m: 0, p: 0 }}>
       {Object.entries(groupedItems).map(([category, categoryItems]) => (
         <React.Fragment key={category}>
-          {/* Category Title */}
           <Typography
             variant="subtitle2"
             sx={{
@@ -119,16 +115,18 @@ function renderNavItems({
           >
             {category}
           </Typography>
-          
-          {/* Category Items */}
           <Stack component="ul" spacing={1} sx={{ listStyle: 'none', m: 0, p: 0 }}>
-            {categoryItems.map((item) => (
-              <NavItem
-                pathname={pathname}
-                isDayTime={isDayTime}
-                {...item}
-              />
-            ))}
+            {categoryItems.map((item) => {
+              const { key, ...otherProps } = item;
+              return (
+                <NavItem
+                  key={''}
+                  // key={key || item.href || item.title} // Use key if provided, else fallback to href or title
+                  pathname={pathname}
+                  isDayTime={isDayTime}
+                  {...otherProps}                />
+              );
+            })}
           </Stack>
         </React.Fragment>
       ))}
