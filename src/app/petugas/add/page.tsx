@@ -10,11 +10,7 @@ export default function KelolaPage() {
       <Typography variant="h4" sx={{ mb: 2 }}>
         Kelola Petugas
       </Typography>
-
-      {/* Form to add petugas */}
       <AddPetugasPage unitId={""} />
-
-      {/* Table to display petugas */}
       <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
         Daftar Petugas
       </Typography>

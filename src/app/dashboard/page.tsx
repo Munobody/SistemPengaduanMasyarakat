@@ -49,11 +49,6 @@ export default function Page(): React.JSX.Element {
 
     checkPermissions();
   }, []);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <Grid container spacing={3}>
       <Grid lg={12} md={12} xs={12}>

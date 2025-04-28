@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import EditIcon from '@mui/icons-material/Edit';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Alert,
   Box,
@@ -12,7 +12,6 @@ import {
   Card,
   CardHeader,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -24,12 +23,17 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
+  TablePagination,
   TextField,
   Typography,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 import api from '@/lib/api/api';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -51,6 +55,7 @@ interface Pengaduan {
   response: string;
   filePetugas: string;
   tanggalKejadian: string;
+  createdAt: string;
   units: {
     nama_unit: string;
   };
@@ -58,8 +63,6 @@ interface Pengaduan {
     nama: string;
   };
 }
-
-
 
 interface ViewComplaintDialog {
   open: boolean;
@@ -73,6 +76,8 @@ export function TabelPetugasWbs() {
   const [rowsPerPage, setRowsPerPage] = useState(12);
   const [totalData, setTotalData] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUnit, setSelectedUnit] = useState('');
+  const [units, setUnits] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewDialog, setViewDialog] = useState<ViewComplaintDialog>({
@@ -80,28 +85,50 @@ export function TabelPetugasWbs() {
     complaint: null,
   });
 
+  const fetchUnits = async () => {
+    try {
+      const response = await api.get('/units'); // Adjust endpoint as needed
+      const unitList = response.data.map((unit: any) => unit.nama_unit);
+      setUnits(['All', ...unitList]);
+    } catch (error) {
+      console.error('❌ Failed to fetch units:', error);
+    }
+  };
+
   const fetchComplaints = async () => {
     setLoading(true);
     setError(null);
 
     try {
-
-      const searchFilters = searchQuery ? { judul: searchQuery } : {};
+      const filters: any = {};
+      if (searchQuery) filters.judul = searchQuery;
+      if (selectedUnit && selectedUnit !== 'All') filters.unit = selectedUnit;
 
       const response = await api.get(`/PelaporanWbs`, {
         params: {
           page: page + 1,
           rows: rowsPerPage,
-          searchFilters: JSON.stringify(searchFilters),
-          orderKey: 'judul',
-          orderRule: 'asc',
+          searchFilters: JSON.stringify(filters),
+          orderKey: 'createdAt',
+          orderRule: 'desc', // We'll handle status sorting client-side
         },
       });
 
       if (response.data.content?.entries) {
-        setComplaints(response.data.content.entries);
+        const sortedComplaints = response.data.content.entries.sort((a: Pengaduan, b: Pengaduan) => {
+          const statusOrder = ['PENDING', 'PROCESS', 'COMPLETED', 'REJECTED'];
+          const statusA = statusOrder.indexOf(a.status.toUpperCase());
+          const statusB = statusOrder.indexOf(b.status.toUpperCase());
+
+          if (statusA !== statusB) {
+            return statusA - statusB;
+          }
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+
+        setComplaints(sortedComplaints);
         setTotalData(response.data.content.totalData);
-        console.log('📋 Daftar pengaduan Internal:', response.data.content.entries);
+        console.log('📋 Daftar pengaduan Internal:', sortedComplaints);
       } else {
         setComplaints([]);
         setTotalData(0);
@@ -115,12 +142,16 @@ export function TabelPetugasWbs() {
   };
 
   useEffect(() => {
+    fetchUnits();
+  }, []);
+
+  useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchComplaints();
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [page, rowsPerPage, searchQuery]);
+  }, [page, rowsPerPage, searchQuery, selectedUnit]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -136,6 +167,11 @@ export function TabelPetugasWbs() {
     setPage(0);
   };
 
+  const handleUnitChange = (event: any) => {
+    setSelectedUnit(event.target.value);
+    setPage(0);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status.toUpperCase()) {
       case 'PENDING':
@@ -144,32 +180,30 @@ export function TabelPetugasWbs() {
         return 'info';
       case 'COMPLETED':
         return 'success';
+      case 'REJECTED':
+        return 'error';
       default:
         return 'default';
     }
   };
 
-    const handleDeleteComplaint = async (id: string) => {
-      if (!id) return;
-    
-      try {
+  const handleDeleteComplaint = async (id: string) => {
+    if (!id) return;
+
+    try {
       const response = await api.delete(`/PelaporanWbs?ids=["${id}"]`);
-    
+
       if (response.status === 200) {
         toast.success('Pengaduan berhasil dihapus');
         fetchComplaints();
       } else {
         toast.error('Gagal menghapus pengaduan');
       }
-      } catch (error: any) {
+    } catch (error: any) {
       console.error('❌ Gagal menghapus pengaduan:', error.response?.data);
       toast.error('Terjadi kesalahan saat menghapus pengaduan');
-      }
-    };
-    
-    if (error) {
-      return <Alert severity="error">{error}</Alert>;
     }
+  };
 
   const handleViewComplaint = (complaint: Pengaduan, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -202,21 +236,58 @@ export function TabelPetugasWbs() {
         <CardHeader
           title="Daftar Pengaduan Whistle Blowing System"
           action={
-            <TextField
-              placeholder="Cari berdasarkan judul..."
-              value={searchQuery}
-              onChange={handleSearch}
-              size="small"
-              sx={{ width: 300 }}
-            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl sx={{ minWidth: 150 }} size="small">
+                <InputLabel>Filter Unit</InputLabel>
+                <Select
+                  value={selectedUnit}
+                  onChange={handleUnitChange}
+                  label="Filter Unit"
+                >
+                  {units.map((unit) => (
+                    <MenuItem key={unit} value={unit}>
+                      {unit}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                placeholder="Cari berdasarkan judul..."
+                value={searchQuery}
+                onChange={handleSearch}
+                size="small"
+                sx={{ width: 300 }}
+              />
+            </Box>
           }
         />
 
         <TableContainer component={Paper}>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Judul</TableCell>
+                  <TableCell>Pihak Terlibat</TableCell>
+                  <TableCell>Unit</TableCell>
+                  <TableCell>Kategori</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Aksi</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {[...Array(rowsPerPage)].map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton width={150} /></TableCell>
+                    <TableCell><Skeleton width={100} /></TableCell>
+                    <TableCell><Skeleton width={80} /></TableCell>
+                    <TableCell><Skeleton width={80} /></TableCell>
+                    <TableCell><Skeleton width={60} /></TableCell>
+                    <TableCell align="right"><Skeleton width={80} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : (
             <>
               <Table>
@@ -273,12 +344,12 @@ export function TabelPetugasWbs() {
                             </IconButton>
                           ) : (
                             <IconButton
-                            onClick={() => handleDeleteComplaint(complaint.id)}
-                            color="error"
-                            title="Hapus pengaduan"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                              onClick={() => handleDeleteComplaint(complaint.id)}
+                              color="error"
+                              title="Hapus pengaduan"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
                           )}
                         </TableCell>
                       </TableRow>
@@ -346,10 +417,19 @@ export function TabelPetugasWbs() {
 
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Tanggal kejadian
+                  Tanggal Kejadian
                 </Typography>
                 <Typography>
                   {dayjs(viewDialog.complaint.tanggalKejadian).format('DD MMMM YYYY')}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Tanggal Dibuat
+                </Typography>
+                <Typography>
+                  {dayjs(viewDialog.complaint.createdAt).format('DD MMMM YYYY HH:mm')}
                 </Typography>
               </Box>
 
@@ -368,7 +448,7 @@ export function TabelPetugasWbs() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Lokasi Kejadian
                 </Typography>
-                <Typography>{viewDialog.complaint.lokasi|| '-'}</Typography>
+                <Typography>{viewDialog.complaint.lokasi || '-'}</Typography>
               </Box>
 
               {viewDialog.complaint.filePendukung && (

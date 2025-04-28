@@ -13,10 +13,11 @@ import {
   FormControlLabel,
   FormGroup,
   Divider,
-  CircularProgress,
   useMediaQuery,
   useTheme
 } from '@mui/material';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 import api from '@/lib/api/api';
 
@@ -159,48 +160,90 @@ export const AclManagementModal: React.FC<AclModalProps> = ({
         sx: {
           minWidth: isMobile ? '100%' : '800px',
           borderRadius: isMobile ? 0 : '12px',
-          backgroundColor: theme.palette.background.paper
+          backgroundColor: '#E3FEF7',
+          '@media (max-width: 600px)': {
+            margin: 0,
+            height: '100%',
+          }
         }
       }}
     >
       <DialogTitle sx={{ 
-        fontSize: isMobile ? '1rem' : '1.25rem',
+        fontSize: isMobile ? '0.9rem' : '1.25rem',
         fontWeight: 'bold', 
-        backgroundColor: theme.palette.primary.main,
-        color: theme.palette.primary.contrastText,
-        py: isMobile ? 1 : 2,
-        px: isMobile ? 2 : 3
+        backgroundColor: '#003C43',
+        color: '#E3FEF7',
+        py: isMobile ? 1.5 : 2,
+        px: isMobile ? 2 : 3,
+        '@media (max-width: 600px)': {
+          fontSize: '0.85rem',
+          py: 1,
+        }
       }}>
         Manage Permissions: {userLevelName.replace(/_/g, ' ')}
       </DialogTitle>
       
-      <DialogContent dividers sx={{ p: isMobile ? 1 : 2 }}>
+      <DialogContent dividers sx={{ 
+        p: isMobile ? 1.5 : 3,
+        backgroundColor: '#E3FEF7',
+        '@media (max-width: 600px)': {
+          p: 1,
+        }
+      }}>
         {loading && !features.length ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-            <CircularProgress size={isMobile ? 24 : 32} />
+          <Box display="flex" flexDirection="column" gap={2} minHeight="200px" p={2}>
+            <Skeleton 
+              height={isMobile ? 20 : 30} 
+              width="100%" 
+              baseColor="#77B0AA" 
+              highlightColor="#E3FEF7"
+            />
+            <Skeleton 
+              height={isMobile ? 15 : 20} 
+              count={3} 
+              width="100%" 
+              baseColor="#77B0AA" 
+              highlightColor="#E3FEF7"
+            />
           </Box>
         ) : (
           <Box sx={{ 
-            maxHeight: isMobile ? 'calc(100vh - 180px)' : '60vh',
+            maxHeight: isMobile ? 'calc(100vh - 200px)' : '60vh',
             overflow: 'auto',
-            pr: isMobile ? 0 : 1
+            pr: isMobile ? 0 : 2,
+            '@media (max-width: 600px)': {
+              maxHeight: 'calc(100vh - 180px)',
+            }
           }}>
             {features.map((feature) => (
-              <Box key={feature.id} mb={2}>
+              <Box key={feature.id} mb={isMobile ? 1.5 : 2}>
                 <Typography variant="subtitle1" sx={{ 
                   fontWeight: 'bold',
-                  fontSize: isMobile ? '0.875rem' : '1rem'
+                  fontSize: isMobile ? '0.85rem' : '1rem',
+                  color: '#003C43',
+                  '@media (max-width: 600px)': {
+                    fontSize: '0.8rem',
+                  }
                 }}>
                   {feature.name.replace(/_/g, ' ')}
                 </Typography>
-                <Divider sx={{ my: 1 }} />
+                <Divider sx={{ 
+                  my: 1, 
+                  backgroundColor: '#77B0AA',
+                  '@media (max-width: 600px)': {
+                    my: 0.5,
+                  }
+                }} />
                 <FormGroup sx={{ 
                   flexDirection: isMobile ? 'column' : 'row',
                   flexWrap: 'wrap',
                   '& .MuiFormControlLabel-root': {
                     mb: isMobile ? 0.5 : 0,
                     mr: isMobile ? 0 : 2,
-                    minWidth: isMobile ? '100%' : 120
+                    minWidth: isMobile ? '100%' : 140,
+                    '@media (max-width: 600px)': {
+                      mb: 0.3,
+                    }
                   }
                 }}>
                   {feature.actions.map((action) => (
@@ -210,14 +253,24 @@ export const AclManagementModal: React.FC<AclModalProps> = ({
                         <Checkbox
                           checked={selectedPermissions[feature.name]?.includes(action.name) || false}
                           onChange={() => handlePermissionChange(feature.name, action.name)}
-                          color="primary"
+                          sx={{
+                            color: '#135D66',
+                            '&.Mui-checked': {
+                              color: '#003C43',
+                            },
+                            transform: isMobile ? 'scale(0.9)' : 'scale(1)',
+                          }}
                           size={isMobile ? "small" : "medium"}
                         />
                       }
                       label={action.name}
                       sx={{ 
                         '& .MuiTypography-root': {
-                          fontSize: isMobile ? '0.8rem' : '0.875rem'
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
+                          color: '#135D66',
+                          '@media (max-width: 600px)': {
+                            fontSize: '0.7rem',
+                          }
                         }
                       }}
                     />
@@ -230,15 +283,33 @@ export const AclManagementModal: React.FC<AclModalProps> = ({
       </DialogContent>
       
       <DialogActions sx={{ 
-        p: isMobile ? 1 : 2,
-        justifyContent: 'space-between'
+        p: isMobile ? 1.5 : 2,
+        justifyContent: 'space-between',
+        backgroundColor: '#E3FEF7',
+        '@media (max-width: 600px)': {
+          p: 1,
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 1 : 0,
+        }
       }}>
         <Button 
           onClick={onClose} 
           variant="outlined"
           sx={{ 
-            minWidth: isMobile ? 80 : 120,
-            fontSize: isMobile ? '0.75rem' : '0.875rem'
+            minWidth: isMobile ? '100%' : 120,
+            fontSize: isMobile ? '0.75rem' : '0.875rem',
+            color: '#135D66',
+            borderColor: '#135D66',
+            backgroundColor: '#E3FEF7',
+            '&:hover': {
+              backgroundColor: '#77B0AA',
+              borderColor: '#003C43',
+              color: '#E3FEF7',
+            },
+            '@media (max-width: 600px)': {
+              fontSize: '0.7rem',
+              py: 0.5,
+            }
           }}
           disabled={loading}
           size={isMobile ? "small" : "medium"}
@@ -249,14 +320,28 @@ export const AclManagementModal: React.FC<AclModalProps> = ({
           onClick={handleSubmit} 
           variant="contained"
           sx={{ 
-            minWidth: isMobile ? 80 : 120,
-            fontSize: isMobile ? '0.75rem' : '0.875rem'
+            minWidth: isMobile ? '100%' : 120,
+            fontSize: isMobile ? '0.75rem' : '0.875rem',
+            backgroundColor: '#003C43',
+            color: '#E3FEF7',
+            '&:hover': {
+              backgroundColor: '#135D66',
+            },
+            '@media (max-width: 600px)': {
+              fontSize: '0.7rem',
+              py: 0.5,
+            }
           }}
           disabled={loading}
           size={isMobile ? "small" : "medium"}
         >
           {loading ? (
-            <CircularProgress size={isMobile ? 16 : 24} color="inherit" />
+            <Skeleton 
+              width={isMobile ? 60 : 80} 
+              height={isMobile ? 16 : 20} 
+              baseColor="#77B0AA" 
+              highlightColor="#E3FEF7"
+            />
           ) : 'Save'}
         </Button>
       </DialogActions>

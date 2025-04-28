@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EditIcon from '@mui/icons-material/Edit';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';  
+import DeleteIcon from '@mui/icons-material/Delete';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -35,9 +35,7 @@ import {
 import api from '@/lib/api/api';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-dayjs.locale('id'); 
+dayjs.locale('id');
 
 interface Pengaduan {
   id: string;
@@ -73,6 +71,12 @@ interface ViewComplaintDialog {
   complaint: Pengaduan | null;
 }
 
+interface MessageModal {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error';
+}
+
 const STATUS_ORDER = ['PENDING', 'PROCESS', 'REJECTED', 'COMPLETED'];
 
 export function TabelPetugasMasyarakat() {
@@ -96,6 +100,11 @@ export function TabelPetugasMasyarakat() {
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
   const [isSendingAlert, setIsSendingAlert] = useState(false);
+  const [messageModal, setMessageModal] = useState<MessageModal>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   const checkUserRoleFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -156,8 +165,13 @@ export function TabelPetugasMasyarakat() {
       }
     } catch (error: any) {
       console.error('❌ Gagal memuat pengaduan:', error.response?.data);
-      setError(error.response?.data?.message || 'Gagal memuat data pengaduan');
-      toast.error('Gagal memuat data pengaduan');
+      const errorMessage = error.response?.data?.message || 'Gagal memuat data pengaduan';
+      setError(errorMessage);
+      setMessageModal({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -171,49 +185,66 @@ export function TabelPetugasMasyarakat() {
   const handleCloseAlertDialog = () => {
     setAlertDialogOpen(false);
     setSelectedComplaintId(null);
+    setIsSendingAlert(false);
   };
 
-  const sendOfficerAlert = async () => {
-    if (!selectedComplaintId) return;
-    
+  const handleCloseMessageModal = () => {
+    setMessageModal({ open: false, message: '', severity: 'success' });
+  };
+
+  const sendOfficerAlert = useCallback(async () => {
+    if (!selectedComplaintId || isSendingAlert) return;
+
     setIsSendingAlert(true);
     try {
-      const response = await api.post('/notification/OfficerAlert', {
-        pengaduanId: selectedComplaintId
+      await api.post('/notification/OfficerAlert', {
+        pengaduanId: selectedComplaintId,
       });
-      
-      toast.success('Pengingat berhasil dikirim ke petugas unit', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+
+      setMessageModal({
+        open: true,
+        message: 'Berhasil memberikan peringatan ke petugas tertuju',
+        severity: 'success',
       });
     } catch (error: any) {
       console.error('Gagal mengirim pengingat:', error);
-      
+
       let errorMessage = 'Gagal mengirim pengingat';
-      if (error.response?.data?.message === 'Validation Error' && 
-          error.response?.data?.errors?.length > 0) {
+      if (error.response?.data?.message === 'Validation Error' && error.response?.data?.errors?.length > 0) {
         errorMessage = error.response.data.errors[0].message;
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+
+      setMessageModal({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
       });
     } finally {
       setIsSendingAlert(false);
       handleCloseAlertDialog();
+    }
+  }, [selectedComplaintId, isSendingAlert]);
+
+  const handleDeleteComplaint = async (id: string) => {
+    try {
+      const response = await api.delete('/pengaduan', { data: { ids: [id] } });
+      if (response.status === 200) {
+        setMessageModal({
+          open: true,
+          message: 'Berhasil menghapus pengaduan',
+          severity: 'success',
+        });
+        fetchComplaints();
+      }
+    } catch (error: any) {
+      console.error('❌ Gagal menghapus pengaduan:', error.response?.data);
+      setMessageModal({
+        open: true,
+        message: 'Terjadi kesalahan saat menghapus pengaduan',
+        severity: 'error',
+      });
     }
   };
 
@@ -232,19 +263,15 @@ export function TabelPetugasMasyarakat() {
 
   useEffect(() => {
     let result = [...complaints];
-    
+
     if (selectedUnit) {
-      result = result.filter(complaint => 
-        complaint.unit?.nama_unit === selectedUnit
-      );
+      result = result.filter((complaint) => complaint.unit?.nama_unit === selectedUnit);
     }
-    
+
     if (selectedStatus) {
-      result = result.filter(complaint => 
-        complaint.status.toUpperCase() === selectedStatus
-      );
+      result = result.filter((complaint) => complaint.status.toUpperCase() === selectedStatus);
     }
-    
+
     setFilteredComplaints(result);
   }, [complaints, selectedUnit, selectedStatus]);
 
@@ -325,27 +352,20 @@ export function TabelPetugasMasyarakat() {
 
   if (error) {
     return (
-      <>
-        <Alert severity="error">{error}</Alert>
-        <ToastContainer />
-      </>
+      <Dialog open={true} maxWidth="sm" fullWidth>
+        <DialogTitle>Error</DialogTitle>
+        <DialogContent>
+          <Typography>{error}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setError(null)}>Tutup</Button>
+        </DialogActions>
+      </Dialog>
     );
   }
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={1000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-      
       <Card>
         <CardHeader
           title="Daftar Pengaduan Masyarakat"
@@ -462,21 +482,22 @@ export function TabelPetugasMasyarakat() {
                         <TableCell>{complaint.unit?.nama_unit || '-'}</TableCell>
                         <TableCell>{complaint.kategori?.nama || 'Tidak ada kategori'}</TableCell>
                         <TableCell>
-                          <Chip 
-                            label={complaint.status} 
+                          <Chip
+                            label={complaint.status}
                             color={getStatusColor(complaint.status)}
                             size="small"
                           />
                         </TableCell>
                         <TableCell align="right">
-                          <IconButton
-                            onClick={(e) => handleViewComplaint(complaint, e)}
-                            color="info"
-                            title="Lihat detail"
-                            sx={{ mr: 1 }}
-                          >
-                            <RemoveRedEyeIcon />
-                          </IconButton>
+                          <Tooltip title="Lihat detail">
+                            <IconButton
+                              onClick={(e) => handleViewComplaint(complaint, e)}
+                              color="info"
+                              sx={{ mr: 1 }}
+                            >
+                              <RemoveRedEyeIcon />
+                            </IconButton>
+                          </Tooltip>
 
                           {isSuperOfficer && !['COMPLETED', 'REJECTED'].includes(complaint.status) && (
                             <Tooltip title="Ingatkan petugas unit">
@@ -484,18 +505,31 @@ export function TabelPetugasMasyarakat() {
                                 onClick={() => handleOpenAlertDialog(complaint.id)}
                                 color="warning"
                                 sx={{ mr: 1 }}
+                                disabled={isSendingAlert}
                               >
                                 <NotificationsActiveIcon />
                               </IconButton>
                             </Tooltip>
                           )}
-                          <IconButton
-                            onClick={(e) => handleManageComplaint(complaint.id, e)}
-                            color="primary"
-                            title="Kelola pengaduan"
-                          >
-                            <EditIcon />
-                          </IconButton>
+                          <Tooltip title="Kelola pengaduan">
+                            <IconButton
+                              onClick={(e) => handleManageComplaint(complaint.id, e)}
+                              color="primary"
+                              sx={{ mr: 1 }}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          {complaint.status === 'COMPLETED' && (
+                            <Tooltip title="Hapus pengaduan">
+                              <IconButton
+                                onClick={() => handleDeleteComplaint(complaint.id)}
+                                color="error"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
@@ -505,7 +539,7 @@ export function TabelPetugasMasyarakat() {
               <TablePagination
                 rowsPerPageOptions={[12, 24, 36]}
                 component="div"
-                count={filteredComplaints.length}
+                count={totalData}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}
@@ -557,8 +591,8 @@ export function TabelPetugasMasyarakat() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Status
                 </Typography>
-                <Chip 
-                  label={viewDialog.complaint.status} 
+                <Chip
+                  label={viewDialog.complaint.status}
                   color={getStatusColor(viewDialog.complaint.status)}
                   size="small"
                 />
@@ -650,19 +684,33 @@ export function TabelPetugasMasyarakat() {
       <Dialog open={alertDialogOpen} onClose={handleCloseAlertDialog}>
         <DialogTitle>Konfirmasi Pengingat</DialogTitle>
         <DialogContent>
-          <Typography>Apakah anda yakin ingin mengingatkan petugas unit untuk menindaklanjuti pengaduan ini?</Typography>
+          <Typography>
+            Apakah anda yakin ingin mengingatkan petugas unit untuk menindaklanjuti pengaduan ini?
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseAlertDialog} disabled={isSendingAlert}>
             Batal
           </Button>
-          <Button 
-            onClick={sendOfficerAlert} 
-            color="primary" 
+          <Button
+            onClick={sendOfficerAlert}
+            color="primary"
             variant="contained"
             disabled={isSendingAlert}
           >
             {isSendingAlert ? <CircularProgress size={24} /> : 'Kirim Pengingat'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={messageModal.open} onClose={handleCloseMessageModal} maxWidth="sm" fullWidth>
+        <DialogTitle>{messageModal.severity === 'success' ? 'Sukses' : 'Error'}</DialogTitle>
+        <DialogContent>
+          <Typography>{messageModal.message}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseMessageModal} color="primary">
+            Tutup
           </Button>
         </DialogActions>
       </Dialog>

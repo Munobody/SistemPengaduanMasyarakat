@@ -31,8 +31,8 @@ import {
 } from '@mui/material';
 import api from '@/lib/api/api';
 import dayjs from 'dayjs';
-import 'dayjs/locale/id'; // Import Indonesian locale
-dayjs.locale('id'); // Set locale to Indonesian
+import 'dayjs/locale/id'; 
+dayjs.locale('id');
 
 interface Pengaduan {
   id: string;

@@ -19,10 +19,10 @@ const rolePathMapping = {
     paths.dashboard.admin,
     paths.dashboard.kelolakategori,
     paths.dashboard.kelolaunit,
-    paths.dashboard.kelolawbs,
     paths.dashboard.usermanagement,
     paths.dashboard.account,
     paths.dashboard.updateduser,
+    paths.dashboard.kelolakategoriwbs,
   ],
   PETUGAS: [paths.dashboard.petugas, paths.dashboard.kelola, paths.dashboard.account],
   PETUGAS_SUPER: [

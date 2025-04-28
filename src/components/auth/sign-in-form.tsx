@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
@@ -174,7 +173,7 @@ export function SignInForm(): React.JSX.Element {
     bgcolor: '#79D7BE',
     color: '#000',
     '&:hover': { bgcolor: '#B9E5E8'},
-    position: 'relative', // Add this for loading spinner positioning
+    position: 'relative',
   }}
 >
   {isPending ? (

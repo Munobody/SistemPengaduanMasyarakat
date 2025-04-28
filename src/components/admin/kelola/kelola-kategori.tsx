@@ -27,7 +27,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import axios from 'axios';
+import api from '@/lib/api/api';
 
 interface Category {
   id: string;
@@ -74,15 +74,11 @@ export function KelolaKategori() {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('custom-auth-token');
-      const response = await axios.get(
+      const response = await api.get(
         `${process.env.NEXT_PUBLIC_API_URL}/kategori?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama&orderRule=asc`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
       );
 
       if (response.data.content?.entries) {
-        // Sort categories alphabetically by name
         const sortedCategories = response.data.content.entries.sort((a: Category, b: Category) =>
           a.nama.localeCompare(b.nama)
         );
@@ -127,16 +123,10 @@ export function KelolaKategori() {
         nama: categoryName.trim(),
       };
 
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
-
       console.log('📝 Mencoba', editMode ? 'mengubah' : 'menambah', 'kategori:', payload);
 
       if (editMode && currentCategory) {
-        const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/kategori/${currentCategory.id}`, payload, {
-          headers,
+        const response = await api.put(`${process.env.NEXT_PUBLIC_API_URL}/kategori/${currentCategory.id}`, payload, {
         });
         console.log('✅ Berhasil mengubah kategori:', response.data);
         setFeedbackModal({
@@ -146,7 +136,7 @@ export function KelolaKategori() {
           isError: false,
         });
       } else {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/kategori`, payload, { headers });
+        const response = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/kategori`, payload,);
 
         console.log('✅ Berhasil menambah kategori:', response.data);
         fetchCategories();
@@ -202,7 +192,7 @@ export function KelolaKategori() {
   const handleConfirmDelete = async () => {
     try {
       const token = localStorage.getItem('custom-auth-token');
-      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/kategori`, {
+      await api.delete(`${process.env.NEXT_PUBLIC_API_URL}/kategori`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           ids: JSON.stringify([deleteConfirmation.categoryId]),

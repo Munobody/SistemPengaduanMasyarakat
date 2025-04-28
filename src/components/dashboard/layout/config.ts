@@ -1,7 +1,7 @@
 import type { NavItemConfig } from '@/types/nav';
 import { paths } from '@/paths';
 import api from '@/lib/api/api';
-import type { User, userLevel } from '@/types/user';
+import type { User } from '@/types/user';
 
 interface Permission {
   subject: string;
@@ -20,73 +20,73 @@ interface AclResponse {
 const REQUIRED_ACTIONS = ['read', 'create', 'update', 'delete'];
 
 const CATEGORY_TO_SUBJECT_MAP: { [key: string]: string[] } = {
-  'Pengaduan': ['PENGADUAN'],
-  'WhistleBlowing System': ['PENGADUAN_WBS'],
-  'Kategori_WBS': ['KATEGORI_WBS'],
-  'Kelola': ['UNIT', 'KATEGORI', 'KATEGORI_WBS', 'USER','UPDATE_USER'],
-  'Tambah': ['USER'],
-  'Akun': ['USER'],
-  'TambahWbs': ['USER'],
+  Pengaduan: ['PENGADUAN'],
+  WhistleBlowingSystem: ['PENGADUAN_WBS'],
+  Kelola: ['UNIT', 'KATEGORI', 'USER', 'UPDATE_USER'],
+  KelolaWBS: ['KATEGORI_WBS'],
+  Tambah: ['USER'],
+  TambahWbs: ['USER'],
+  Akun: ['USER'],
 };
 
 const DASHBOARD_BY_LEVEL: { [key: string]: NavItemConfig } = {
-  'ADMIN': {
+  ADMIN: {
     key: 'dashboardadmin',
     title: 'Dashboard Admin',
     href: paths.dashboard.admin,
     icon: 'chart-pie',
     category: 'Dashboard',
   },
-  'KEPALA_PETUGAS_UNIT': {
+  KEPALA_PETUGAS_UNIT: {
     key: 'dashboardpetugas',
     title: 'Dashboard Petugas',
     href: paths.dashboard.petugas,
     icon: 'graph',
     category: 'Dashboard',
   },
-  'PETUGAS': {
+  PETUGAS: {
     key: 'dashboardpetugas',
     title: 'Dashboard Petugas',
     href: paths.dashboard.petugas,
     icon: 'graph',
     category: 'Dashboard',
   },
-  'PETUGAS_WBS': {
+  PETUGAS_WBS: {
     key: 'dashboardpetugaswbs',
     title: 'Dashboard WBS',
     href: paths.dashboard.dashboardwbs,
     icon: 'chart-bar',
     category: 'Dashboard',
   },
-  'KEPALA_WBS': {
+  KEPALA_WBS: {
     key: 'dashboardpetugaswbs',
     title: 'Dashboard WBS',
     href: paths.dashboard.dashboardwbs,
     icon: 'chart-bar',
     category: 'Dashboard',
   },
-  'MAHASISWA': {
+  MAHASISWA: {
     key: 'dashboard',
     title: 'Dashboard',
     href: paths.dashboard.overview,
     icon: 'chart-line',
     category: 'Dashboard',
   },
-  'DOSEN': {
+  DOSEN: {
     key: 'dashboard',
     title: 'Dashboard',
     href: paths.dashboard.overview,
     icon: 'chart-line',
     category: 'Dashboard',
   },
-  'TENAGA_KEPENDIDIKAN': {
+  TENAGA_KEPENDIDIKAN: {
     key: 'dashboard',
     title: 'Dashboard',
     href: paths.dashboard.overview,
     icon: 'chart-line',
     category: 'Dashboard',
   },
-  'PETUGAS_SUPER': {
+  PETUGAS_SUPER: {
     key: 'dashboardpetugas',
     title: 'Dashboard Petugas',
     href: paths.dashboard.petugas,
@@ -96,39 +96,46 @@ const DASHBOARD_BY_LEVEL: { [key: string]: NavItemConfig } = {
 };
 
 function hasFullActions(permission: Permission): boolean {
-  return REQUIRED_ACTIONS.every(action => permission.actions.includes(action));
+  return REQUIRED_ACTIONS.every((action) => permission.actions.includes(action));
 }
 
 function hasPermission(permissions: Permission[], category: string, userLevelName?: string): boolean {
   const requiredSubjects = CATEGORY_TO_SUBJECT_MAP[category];
-  if (!requiredSubjects) return false;
+  if (!requiredSubjects) {
+    console.warn(`No subjects defined for category: ${category}`);
+    return false;
+  }
 
   if (category === 'Akun') {
     return true;
   }
 
   if (category === 'Tambah') {
-    if (userLevelName === 'KEPALA_PETUGAS_UNIT') {
-      return true;
-    }
+    return userLevelName === 'KEPALA_PETUGAS_UNIT';
   }
 
   if (category === 'TambahWbs') {
-    if (userLevelName === 'KEPALA_WBS') {
-      return true;
-    }
+    return userLevelName === 'KEPALA_WBS';
   }
 
-  if (category === 'Kelola') {
-    return requiredSubjects.some(subject => {
-      const permission = permissions.find(p => p.subject === subject);
-      return permission && hasFullActions(permission);
+  if (category === 'KelolaWBS') {
+    // Hanya izinkan untuk PETUGAS_WBS atau KEPALA_WBS
+    if (!['PETUGAS_WBS', 'KEPALA_WBS'].includes(userLevelName || '')) {
+      return false;
+    }
+    return requiredSubjects.some((subject) => {
+      const permission = permissions.find((p) => p.subject === subject);
+      const hasAccess = permission && hasFullActions(permission);
+      console.log(`Checking KelolaWBS for subject ${subject}: ${hasAccess}`);
+      return hasAccess;
     });
   }
 
-  return requiredSubjects.some(subject => {
-    const permission = permissions.find(p => p.subject === subject);
-    return permission && hasFullActions(permission);
+  return requiredSubjects.some((subject) => {
+    const permission = permissions.find((p) => p.subject === subject);
+    const hasAccess = permission && hasFullActions(permission);
+    console.log(`Checking ${category} for subject ${subject}: ${hasAccess}`);
+    return hasAccess;
   });
 }
 
@@ -149,17 +156,39 @@ export async function getFilteredNavItems(userLevelId: string): Promise<NavItemC
 
     const dashboardItem = userLevelName ? DASHBOARD_BY_LEVEL[userLevelName] : null;
 
-    const otherItems = navItems.filter(item =>
-      item.category === 'Akun' ||
-      (item.category !== 'Dashboard' && hasPermission(permissions, item.category, userLevelName))
-    );
+    const otherItems = navItems.filter((item) => {
+      const hasAccess = item.category === 'Akun' || hasPermission(permissions, item.category, userLevelName);
+      console.log(`Nav item ${item.title} (${item.category}): ${hasAccess}`);
+      return hasAccess;
+    });
 
     const filteredItems = dashboardItem ? [dashboardItem, ...otherItems] : otherItems;
+
+    if (filteredItems.length === 0) {
+      console.warn('No navigation items available, returning default Account item');
+      return [
+        {
+          key: 'account',
+          title: 'Account',
+          href: paths.dashboard.account,
+          icon: 'user-circle',
+          category: 'Akun',
+        },
+      ];
+    }
 
     return filteredItems;
   } catch (error) {
     console.error('Error fetching or processing ACL:', error);
-    return [];
+    return [
+      {
+        key: 'account',
+        title: 'Account',
+        href: paths.dashboard.account,
+        icon: 'user-circle',
+        category: 'Akun',
+      },
+    ];
   }
 }
 
@@ -176,7 +205,7 @@ export const navItems: NavItemConfig[] = [
     title: 'Pengaduan WBS',
     href: paths.dashboard.wbs,
     icon: 'bell-ringing',
-    category: 'WhistleBlowing System',
+    category: 'WhistleBlowingSystem',
   },
   {
     key: 'kelolakategori',
@@ -218,7 +247,7 @@ export const navItems: NavItemConfig[] = [
     title: 'Kelola WBS',
     href: paths.dashboard.kelolawbs,
     icon: 'shield-star',
-    category: 'Kelola',
+    category: 'KelolaWBS', // Diubah dari 'Kelola' ke 'KelolaWBS'
   },
   {
     key: 'add_petugas',

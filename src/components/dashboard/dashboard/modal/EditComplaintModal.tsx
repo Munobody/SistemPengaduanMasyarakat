@@ -41,7 +41,7 @@ interface Complaint {
   harapan_pelapor: string;
   createdAt: string;
   status: string;
-  filePendukung: string; // Add this field
+  filePendukung: string;
 }
 
 interface EditComplaintModalProps {
@@ -125,34 +125,32 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave }: EditCom
   const handleSaveField = async (field: keyof Complaint) => {
     if (!complaint || editedValues[field] === undefined) {
       console.error('❌ No changes detected or complaint is null.');
+      toast.error('Tidak ada perubahan yang terdeteksi');
       return;
     }
   
     try {
       const complaintId = complaint.id.trim();
-  
-      // Prepare the payload with only the updated field
       const payload = { [field]: editedValues[field] };
   
-      // Debug log to verify the payload
-      console.log('🔍 Debugging Payload:', {
-        complaintId,
-        field,
-        payload,
-      });
-  
-      // Send the PUT request to update the complaint
       const response = await api.put(`/pelaporan/${complaintId}`, payload);
   
-      // Handle the successful response
-      if (response.status === 200 && response.data.message === "Successfully updated Pengaduan!") {
-        toast.success(response.data.message || 'Berhasil mengubah data!');
+      if (response.status === 200) {
+        // Toast dengan id untuk mencegah duplikasi
+        const toastId = toast.loading('Menyimpan perubahan...');
+        
+        setTimeout(() => {
+          toast.update(toastId, {
+            render: 'Perubahan berhasil disimpan!',
+            type: 'success',
+            isLoading: false,
+            autoClose: 3000
+          });
+        }, 500);
   
-        // Update the local state with the new value
         const updatedValue = response.data.content[field];
         onSave(field, updatedValue);
   
-        // Clear the edited value for this field
         setEditedValues((prev) => {
           const newValues = { ...prev };
           delete newValues[field];
@@ -160,26 +158,17 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave }: EditCom
         });
       }
     } catch (error: any) {
-      // Enhanced error logging
-      console.error('❌ Update Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || 'Internal Server Error',
-        endpoint: error.config?.url,
-        payload: error.config?.data,
-        complaintId: complaint.id,
+      console.error('❌ Update Error:', error);
+      toast.error(error.response?.data?.message || 'Gagal mengubah data. Silakan coba lagi.', {
+        toastId: 'unique-error-id' // Gunakan ID unik untuk error toast
       });
-  
-      toast.error(
-        error.response?.status === 400
-          ? 'Validasi gagal. Periksa data yang Anda masukkan.'
-          : error.response?.data?.message || 'Gagal mengubah data. Silakan coba lagi.'
-      );
     }
   };
 
   if (!complaint) return null;
 
   return (
+    
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Pengaduan</DialogTitle>
       <DialogContent>

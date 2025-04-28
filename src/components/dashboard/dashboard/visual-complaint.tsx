@@ -8,10 +8,9 @@ import PendingIcon from '@mui/icons-material/Pending';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SecurityIcon from '@mui/icons-material/Security';
 import PeopleIcon from '@mui/icons-material/People';
-import { Box, Grid, Skeleton, Typography } from '@mui/material';
+import { Box, Grid, Typography } from '@mui/material';
 import api from '@/lib/api/api';
 
-// Lazy load components
 const ComplaintInfo = lazy(() => import('./complaint-info'));
 const PieChart = lazy(() => import('./VisualDashboard/chart'));
 const LatestComplaints = lazy(() => import('./VisualDashboard/latest-complaint'));
@@ -249,16 +248,8 @@ const ComplaintsVisual: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <Grid container spacing={3}>
-          {[...Array(6)].map((_, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Skeleton variant="rectangular" height={120} width="100%" />
-            </Grid>
-          ))}
-        </Grid>
-        <Box sx={{ mt: 3 }}>
-          <Skeleton variant="rectangular" height={300} width="100%" />
-        </Box>
+        <WelcomeMessage userName={userName} />
+        <Typography>Loading data...</Typography>
       </Box>
     );
   }
@@ -280,44 +271,38 @@ const ComplaintsVisual: React.FC = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Total Pengaduan (All types) */}
         <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
-          <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+          <Suspense fallback={null}>
             <StatsCard
               title="Total Pengaduan"
               value={processedData.totalCount}
-              loading={loading}
               icon={<DescriptionIcon fontSize="large" />}
               color="primary.main"
-              backgroundColor="#E3FEF7"
-            />
+              backgroundColor="#E3FEF7" loading={false}            />
           </Suspense>
         </Grid>
 
         {/* Total Pengaduan Internal */}
         <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
-          <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+          <Suspense fallback={null}>
             <StatsCard
               title="Pengaduan Layanan"
               value={processedData.regularCount}
-              loading={loading}
               icon={<DescriptionIcon fontSize="large" />}
               color="info.main"
-              backgroundColor="#E8F4FD"
-            />
+              backgroundColor="#E8F4FD" loading={false}            />
           </Suspense>
         </Grid>
 
         {/* Total Pengaduan WBS (only shown if has access) */}
         {hasWBSAccess && (
           <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
-            <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+            <Suspense fallback={null}>
               <StatsCard
                 title="Pengaduan WBS"
                 value={processedData.wbsCount}
-                loading={loading}
                 icon={<SecurityIcon fontSize="large" />}
                 color="secondary.main"
-                backgroundColor="#EDE7F6"
-              />
+                backgroundColor="#EDE7F6" loading={false}              />
             </Suspense>
           </Grid>
         )}
@@ -325,72 +310,62 @@ const ComplaintsVisual: React.FC = () => {
         {/* Total Pengaduan Masyarakat (only shown if has access) */}
         {hasPublicAccess && (
           <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
-            <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+            <Suspense fallback={null}>
               <StatsCard
                 title="Pengaduan Masyarakat"
                 value={processedData.publicCount}
-                loading={loading}
                 icon={<PeopleIcon fontSize="large" />}
                 color="warning.main"
-                backgroundColor="#FFF4E5"
-              />
+                backgroundColor="#FFF4E5" loading={false}              />
             </Suspense>
           </Grid>
         )}
 
         {/* Diselesaikan */}
         <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
-          <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+          <Suspense fallback={null}>
             <StatsCard
               title="Diselesaikan"
               value={processedData.completedCount}
-              loading={loading}
               icon={<CheckCircleIcon fontSize="large" />}
               color="success.main"
-              backgroundColor="#E7F7ED"
-            />
+              backgroundColor="#E7F7ED" loading={false}            />
           </Suspense>
         </Grid>
 
         {/* Tertunda */}
         <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
-          <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+          <Suspense fallback={null}>
             <StatsCard
               title="Tertunda"
               value={processedData.pendingCount}
-              loading={loading}
               icon={<PendingIcon fontSize="large" />}
               color="warning.main"
-              backgroundColor="#FFF4E5"
-            />
+              backgroundColor="#FFF4E5" loading={false}            />
           </Suspense>
         </Grid>
 
         {/* Dalam Proses */}
         <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
-          <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+          <Suspense fallback={null}>
             <StatsCard
               title="Dalam Proses"
               value={processedData.processCount}
-              loading={loading}
               icon={<AutorenewIcon fontSize="large" />}
               color="info.main"
-              backgroundColor="#E8F4FD"
-            />
+              backgroundColor="#E8F4FD" loading={false}            />
           </Suspense>
         </Grid>
 
         {/* Tingkat Penyelesaian */}
         <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
-          <Suspense fallback={<Skeleton variant="rectangular" height={120} width="100%" />}>
+          <Suspense fallback={null}>
             <StatsCard
               title="Tingkat Penyelesaian"
               value={`${processedData.completionRate}%`}
-              loading={loading}
               icon={<AssessmentIcon fontSize="large" />}
               color="primary.main"
-              backgroundColor="#E3FEF7"
-            />
+              backgroundColor="#E3FEF7" loading={false}            />
           </Suspense>
         </Grid>
       </Grid>
@@ -401,8 +376,8 @@ const ComplaintsVisual: React.FC = () => {
             height: { xs: '400px', md: '600px' },
             overflow: 'auto' 
           }}>
-            <Suspense fallback={<Skeleton variant="rectangular" height="100%" width="100%" />}>
-              <PieChart data={processedData.pieChartData} loading={loading} />
+            <Suspense fallback={null}>
+              <PieChart data={processedData.pieChartData} />
             </Suspense>
           </Box>
         </Grid>
@@ -411,7 +386,7 @@ const ComplaintsVisual: React.FC = () => {
           mt: { xs: 2, md: 0 }
         }}>
           <Box sx={{ height: { xs: 'auto', md: '600px' } }}>
-            <Suspense fallback={<Skeleton variant="rectangular" height="100%" width="100%" />}>
+            <Suspense fallback={null}>
               <ComplaintInfo />
             </Suspense>
           </Box>
@@ -420,11 +395,8 @@ const ComplaintsVisual: React.FC = () => {
 
       <Grid container spacing={3} sx={{ mt: { xs: 2, md: 3 } }}>
         <Grid item xs={12}>
-          <Suspense fallback={<Skeleton variant="rectangular" height={300} width="100%" />}>
-            <LatestComplaints 
-              complaints={data.content.entries} 
-              loading={loading}
-            />
+          <Suspense fallback={null}>
+            <LatestComplaints complaints={data.content.entries} />
           </Suspense>
         </Grid>
       </Grid>

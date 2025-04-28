@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EditIcon from '@mui/icons-material/Edit';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -34,7 +33,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import api from '@/lib/api/api';
-import { toast, ToastContainer } from 'react-toastify';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 dayjs.locale('id');
@@ -71,6 +69,12 @@ interface ViewComplaintDialog {
   complaint: Pengaduan | null;
 }
 
+interface MessageModal {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error';
+}
+
 const STATUS_ORDER = ['PENDING', 'PROCESS', 'REJECTED', 'COMPLETED'];
 
 export function TabelPetugas() {
@@ -90,11 +94,15 @@ export function TabelPetugas() {
     open: false,
     complaint: null,
   });
-
-const [isSuperOfficer, setIsSuperOfficer] = useState(false);
- const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [isSuperOfficer, setIsSuperOfficer] = useState(false);
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
   const [isSendingAlert, setIsSendingAlert] = useState(false);
+  const [messageModal, setMessageModal] = useState<MessageModal>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   const checkUserRoleFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -151,7 +159,13 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
       }
     } catch (error: any) {
       console.error('❌ Gagal memuat pengaduan:', error.response?.data);
-      setError(error.response?.data?.message || 'Gagal memuat data pengaduan');
+      const errorMessage = error.response?.data?.message || 'Gagal memuat data pengaduan';
+      setError(errorMessage);
+      setMessageModal({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -165,49 +179,66 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
   const handleCloseAlertDialog = () => {
     setAlertDialogOpen(false);
     setSelectedComplaintId(null);
+    setIsSendingAlert(false);
   };
 
-  const sendOfficerAlert = async () => {
-    if (!selectedComplaintId) return;
-    
+  const handleCloseMessageModal = () => {
+    setMessageModal({ open: false, message: '', severity: 'success' });
+  };
+
+  const sendOfficerAlert = useCallback(async () => {
+    if (!selectedComplaintId || isSendingAlert) return;
+
     setIsSendingAlert(true);
     try {
-      const response = await api.post('/notification/OfficerAlert', {
-        pengaduanId: selectedComplaintId
+      await api.post('/notification/OfficerAlert', {
+        pengaduanId: selectedComplaintId,
       });
-      
-      toast.success('Pengingat berhasil dikirim ke petugas unit', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+
+      setMessageModal({
+        open: true,
+        message: 'Berhasil memberikan peringatan ke petugas tertuju',
+        severity: 'success',
       });
     } catch (error: any) {
       console.error('Gagal mengirim pengingat:', error);
-      
+
       let errorMessage = 'Gagal mengirim pengingat';
-      if (error.response?.data?.message === 'Validation Error' && 
-          error.response?.data?.errors?.length > 0) {
+      if (error.response?.data?.message === 'Validation Error' && error.response?.data?.errors?.length > 0) {
         errorMessage = error.response.data.errors[0].message;
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+
+      setMessageModal({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
       });
     } finally {
       setIsSendingAlert(false);
       handleCloseAlertDialog();
+    }
+  }, [selectedComplaintId, isSendingAlert]);
+
+  const handleDeleteComplaint = async (id: string) => {
+    try {
+      const response = await api.delete('/pelaporan', { data: { ids: [id] } });
+      if (response.status === 200) {
+        setMessageModal({
+          open: true,
+          message: 'Berhasil menghapus pengaduan',
+          severity: 'success',
+        });
+        fetchComplaints();
+      }
+    } catch (error: any) {
+      console.error('❌ Gagal menghapus pengaduan:', error.response?.data);
+      setMessageModal({
+        open: true,
+        message: 'Terjadi kesalahan saat menghapus pengaduan',
+        severity: 'error',
+      });
     }
   };
 
@@ -225,15 +256,15 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
 
   useEffect(() => {
     let result = complaints;
-    
+
     if (selectedUnit) {
       result = result.filter((c) => c.unit.nama_unit === selectedUnit);
     }
-    
+
     if (selectedStatus) {
       result = result.filter((c) => c.status.toUpperCase() === selectedStatus);
     }
-    
+
     setFilteredComplaints(result);
   }, [selectedUnit, selectedStatus, complaints]);
 
@@ -269,6 +300,8 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
         return 'info';
       case 'COMPLETED':
         return 'success';
+      case 'REJECTED':
+        return 'error';
       default:
         return 'default';
     }
@@ -288,42 +321,22 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
     setViewDialog({ open: false, complaint: null });
   };
 
-  const handleDeleteComplaint = async (id: string) => {
-    try {
-      const response = await api.delete('/pelaporan', { data: { ids: [id] } });
-      if (response.status === 200) {
-        toast.success('Pengaduan berhasil dihapus');
-        fetchComplaints();
-      }
-    } catch (error: any) {
-      console.error('❌ Gagal menghapus pengaduan:', error.response?.data);
-      toast.error('Terjadi kesalahan saat menghapus pengaduan');
-    }
-  }; 
-
   if (error) {
     return (
-      <>
-        <Alert severity="error">{error}</Alert>
-        <ToastContainer />
-      </>
+      <Dialog open={true} maxWidth="sm" fullWidth>
+        <DialogTitle>Error</DialogTitle>
+        <DialogContent>
+          <Typography>{error}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setError(null)}>Tutup</Button>
+        </DialogActions>
+      </Dialog>
     );
   }
 
   return (
     <>
-        <ToastContainer
-          position="top-right"
-          autoClose={5000} 
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          closeButton={true} 
-        />
       <Card>
         <CardHeader
           title="Daftar Pengaduan Internal"
@@ -408,46 +421,54 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
                         <TableCell>{complaint.unit.nama_unit}</TableCell>
                         <TableCell>{complaint.kategori.nama}</TableCell>
                         <TableCell>
-                          <Chip label={complaint.status} color={getStatusColor(complaint.status)} size="small" />
+                          <Chip
+                            label={complaint.status}
+                            color={getStatusColor(complaint.status)}
+                            size="small"
+                          />
                         </TableCell>
                         <TableCell align="right">
-                          <IconButton
-                            onClick={(e) => handleViewComplaint(complaint, e)}
-                            color="info"
-                            title="Lihat detail"
-                            sx={{ mr: 1 }}
-                          >
-                            <RemoveRedEyeIcon />
-                          </IconButton>
-                          
-                          {isSuperOfficer && !['COMPLETED', 'REJECTED'].includes(complaint.status) && (
-                            <Tooltip title="Ingatkan petugas unit">
+                          <Tooltip title="Lihat detail">
                             <IconButton
-                              onClick={() => handleOpenAlertDialog(complaint.id)}
-                              color="warning"
+                              onClick={(e) => handleViewComplaint(complaint, e)}
+                              color="info"
                               sx={{ mr: 1 }}
                             >
-                              <NotificationsActiveIcon />
+                              <RemoveRedEyeIcon />
                             </IconButton>
                           </Tooltip>
+
+                          {isSuperOfficer && !['COMPLETED', 'REJECTED'].includes(complaint.status) && (
+                            <Tooltip title="Ingatkan petugas unit">
+                              <IconButton
+                                onClick={() => handleOpenAlertDialog(complaint.id)}
+                                color="warning"
+                                sx={{ mr: 1 }}
+                                disabled={isSendingAlert}
+                              >
+                                <NotificationsActiveIcon />
+                              </IconButton>
+                            </Tooltip>
                           )}
 
                           {complaint.status !== 'COMPLETED' ? (
-                            <IconButton
-                              onClick={(e) => handleManageComplaint(complaint.id, e)}
-                              color="primary"
-                              title="Kelola pengaduan"
-                            >
-                              <EditIcon />
-                            </IconButton>
+                            <Tooltip title="Kelola pengaduan">
+                              <IconButton
+                                onClick={(e) => handleManageComplaint(complaint.id, e)}
+                                color="primary"
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
                           ) : (
-                            <IconButton
-                              onClick={() => handleDeleteComplaint(complaint.id)}
-                              color="error"
-                              title="Hapus pengaduan"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
+                            <Tooltip title="Hapus pengaduan">
+                              <IconButton
+                                onClick={() => handleDeleteComplaint(complaint.id)}
+                                color="error"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
                           )}
                         </TableCell>
                       </TableRow>
@@ -458,7 +479,7 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
               <TablePagination
                 rowsPerPageOptions={[12, 24, 36]}
                 component="div"
-                count={filteredComplaints.length}
+                count={totalData}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}
@@ -472,6 +493,7 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
           )}
         </TableContainer>
       </Card>
+
       <Dialog open={viewDialog.open} onClose={handleCloseView} maxWidth="md" fullWidth>
         <DialogTitle>Detail Pengaduan</DialogTitle>
         <DialogContent dividers>
@@ -565,25 +587,39 @@ const [isSuperOfficer, setIsSuperOfficer] = useState(false);
         </DialogActions>
       </Dialog>
 
-       <Dialog open={alertDialogOpen} onClose={handleCloseAlertDialog}>
-              <DialogTitle>Konfirmasi Pengingat</DialogTitle>
-              <DialogContent>
-                <Typography>Apakah anda yakin ingin mengingatkan petugas unit untuk menindaklanjuti pengaduan ini?</Typography>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleCloseAlertDialog} disabled={isSendingAlert}>
-                  Batal
-                </Button>
-                <Button 
-                  onClick={sendOfficerAlert} 
-                  color="primary" 
-                  variant="contained"
-                  disabled={isSendingAlert}
-                >
-                  {isSendingAlert ? <CircularProgress size={24} /> : 'Kirim Pengingat'}
-                </Button>
-              </DialogActions>
-            </Dialog>
+      <Dialog open={alertDialogOpen} onClose={handleCloseAlertDialog}>
+        <DialogTitle>Konfirmasi Pengingat</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Apakah anda yakin ingin mengingatkan petugas unit untuk menindaklanjuti pengaduan ini?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAlertDialog} disabled={isSendingAlert}>
+            Batal
+          </Button>
+          <Button
+            onClick={sendOfficerAlert}
+            color="primary"
+            variant="contained"
+            disabled={isSendingAlert}
+          >
+            {isSendingAlert ? <CircularProgress size={24} /> : 'Kirim Pengingat'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={messageModal.open} onClose={handleCloseMessageModal} maxWidth="sm" fullWidth>
+        <DialogTitle>{messageModal.severity === 'success' ? 'Sukses' : 'Error'}</DialogTitle>
+        <DialogContent>
+          <Typography>{messageModal.message}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseMessageModal} color="primary">
+            Tutup
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

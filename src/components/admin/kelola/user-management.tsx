@@ -5,15 +5,8 @@ import {
   Box,
   Button,
   Card,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControl,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Skeleton,
   Table,
   TableBody,
@@ -22,7 +15,6 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  TextField,
   Typography,
   useMediaQuery,
   useTheme,
@@ -31,8 +23,6 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { toast, ToastContainer } from 'react-toastify';
 
 import 'react-toastify/dist/ReactToastify.css';
-
-import AddIcon from '@mui/icons-material/Add';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import api from '@/lib/api/api';
@@ -341,7 +331,24 @@ export const UserManagement: React.FC = () => {
           />
         )}
       </Card>
-      <ToastContainer />
+      <ToastContainer
+          position={isMobile ? 'top-center' : 'top-right'}
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+          limit={3}
+          style={{
+            width: isMobile ? '90%' : undefined, 
+            maxWidth: '400px', 
+            marginTop: isMobile ? '1rem' : undefined,
+          }}
+        />
     </ThemeProvider>
   );
 };

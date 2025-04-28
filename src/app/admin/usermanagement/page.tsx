@@ -1,8 +1,6 @@
 import * as React from 'react';
 import type { Metadata } from 'next';
 import Grid from '@mui/material/Unstable_Grid2';
-import dayjs from 'dayjs';
-
 import { config } from '@/config';
 import UserManagement from '@/components/admin/kelola/user-management';
 

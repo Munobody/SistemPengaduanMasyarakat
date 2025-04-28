@@ -3,14 +3,11 @@
 import { useEffect, useState } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import {
   Box,
   Button,
   Card,
-  CardHeader,
-  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -27,10 +24,11 @@ import {
   TableRow,
   TextField,
   Typography,
+  Skeleton,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import axios from 'axios';
+import api from '@/lib/api/api';
 
 interface KepalaUnit {
   id: string;
@@ -69,11 +67,11 @@ export function KelolaUnit() {
   const [currentUnit, setCurrentUnit] = useState<Unit | null>(null);
   const [unitName, setUnitName] = useState('');
   const [kepalaUnitId, setKepalaUnitId] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalData, setTotalData] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState<FeedbackModal>({
     open: false,
     title: '',
@@ -92,12 +90,9 @@ export function KelolaUnit() {
 
   const fetchUnits = async () => {
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      const response = await axios.get(
+      setLoading(true);
+      const response = await api.get(
         `${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
       );
 
       if (response.data.content?.entries) {
@@ -116,8 +111,11 @@ export function KelolaUnit() {
         message: error.response?.data?.message || 'Gagal memuat data unit',
         isError: true,
       });
+    } finally {
+      setLoading(false);
     }
   };
+
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -143,18 +141,12 @@ export function KelolaUnit() {
     }
 
     try {
-      const token = localStorage.getItem('custom-auth-token');
       const payload = {
         nama_unit: unitName.trim(),
         kepalaUnit: kepalaUnitId.trim(),
       };
 
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/units`, payload, { headers });
+      const response = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/units`, payload);
 
       if (response.data.content) {
         handleClose();
@@ -180,17 +172,9 @@ export function KelolaUnit() {
     if (!unitName.trim() || !currentUnit) return;
 
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      const payload = {
+      await api.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${currentUnit.id}`, {
         nama_unit: unitName.trim(),
-      };
-
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
-
-      await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${currentUnit.id}`, payload, { headers });
+      });
 
       handleClose();
       setFeedbackModal({
@@ -214,17 +198,9 @@ export function KelolaUnit() {
     if (!kepalaUnitId.trim() || !currentUnit) return;
 
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      const payload = {
+      await api.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${currentUnit.id}`, {
         kepalaUnit: kepalaUnitId.trim(),
-      };
-
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
-
-      await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${currentUnit.id}`, payload, { headers });
+      });
 
       handleCloseKepalaUnit();
       setFeedbackModal({
@@ -257,14 +233,9 @@ export function KelolaUnit() {
 
   const handleConfirmDelete = async () => {
     try {
-      const token = localStorage.getItem('custom-auth-token');
-
-      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/units`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      await api.delete(`${process.env.NEXT_PUBLIC_API_URL}/units`, {
         params: {
-          ids: JSON.stringify([deleteConfirmation.unitName]), // Changed from unitId to unitName
+          ids: JSON.stringify([deleteConfirmation.unitId]),
         },
       });
 
@@ -294,6 +265,7 @@ export function KelolaUnit() {
   const handleClose = () => {
     setOpen(false);
     setUnitName('');
+    setKepalaUnitId('');
     setCurrentUnit(null);
     setIsEditingName(false);
   };
@@ -396,7 +368,21 @@ export function KelolaUnit() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {units.length > 0 ? (
+            {loading ? (
+              Array.from({ length: rowsPerPage }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton variant="text" width="80%" height={30} sx={{ bgcolor: 'rgba(19, 93, 102, 0.1)' }} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="80%" height={30} sx={{ bgcolor: 'rgba(19, 93, 102, 0.1)' }} />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Skeleton variant="rectangular" width={100} height={30} sx={{ bgcolor: 'rgba(19, 93, 102, 0.1)', borderRadius: 1 }} />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : units.length > 0 ? (
               units.map((unit) => (
                 <TableRow key={unit.id} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
                   <TableCell sx={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>{unit.nama_unit}</TableCell>
@@ -422,7 +408,7 @@ export function KelolaUnit() {
                     <IconButton
                       onClick={() => {
                         setCurrentUnit(unit);
-                        setKepalaUnitId('');
+                        setKepalaUnitId(unit.kepalaUnit?.no_identitas || '');
                         setOpenKepalaUnit(true);
                       }}
                       sx={{
@@ -509,7 +495,10 @@ export function KelolaUnit() {
           <Button
             onClick={isEditingName ? handleUpdateUnit : handleSubmit}
             variant="contained"
-            color="primary"
+            sx={{
+              bgcolor: '#135D66',
+              '&:hover': { bgcolor: '#003C43' },
+            }}
             disabled={!unitName.trim() || (!isEditingName && !kepalaUnitId.trim())}
           >
             {isEditingName ? 'Simpan' : 'Tambah'}
@@ -517,7 +506,6 @@ export function KelolaUnit() {
         </DialogActions>
       </Dialog>
 
-      {/* Kepala Unit Update Dialog */}
       <Dialog open={openKepalaUnit} onClose={handleCloseKepalaUnit}>
         <DialogTitle>Update Kepala Unit</DialogTitle>
         <DialogContent>
@@ -534,13 +522,20 @@ export function KelolaUnit() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseKepalaUnit}>Batal</Button>
-          <Button onClick={handleUpdateKepalaUnit} variant="contained" color="primary" disabled={!kepalaUnitId.trim()}>
+          <Button
+            onClick={handleUpdateKepalaUnit}
+            variant="contained"
+            sx={{
+              bgcolor: '#135D66',
+              '&:hover': { bgcolor: '#003C43' },
+            }}
+            disabled={!kepalaUnitId.trim()}
+          >
             Simpan
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Feedback Modal */}
       <Dialog
         open={deleteConfirmation.open}
         onClose={handleCloseDeleteConfirmation}
@@ -557,29 +552,44 @@ export function KelolaUnit() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteConfirmation}>Batal</Button>
-          <Button onClick={handleConfirmDelete} variant="contained" color="error" autoFocus>
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            sx={{ bgcolor: '#B8001F', '&:hover': { bgcolor: '#90001A' } }}
+            autoFocus
+          >
             Hapus
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={feedbackModal.open} onClose={handleCloseFeedbackModal} aria-labelledby="feedback-dialog-title">
+
+      <Dialog
+        open={feedbackModal.open}
+        onClose={handleCloseFeedbackModal}
+        aria-labelledby="feedback-dialog-title"
+      >
         <DialogTitle
           id="feedback-dialog-title"
           sx={{
-            color: feedbackModal.isError ? 'error.main' : 'success.main',
+            color: feedbackModal.isError ? 'error.main' : '#135D66',
             fontWeight: 'bold',
           }}
         >
           {feedbackModal.title}
         </DialogTitle>
         <DialogContent>
-          <DialogContentText>{feedbackModal.message}</DialogContentText>
+          <DialogContentText sx={{ color: '#003C43' }}>
+            {feedbackModal.message}
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button
             onClick={handleCloseFeedbackModal}
-            color={feedbackModal.isError ? 'error' : 'primary'}
             variant="contained"
+            sx={{
+              bgcolor: feedbackModal.isError ? '#B8001F' : '#135D66',
+              '&:hover': { bgcolor: feedbackModal.isError ? '#90001A' : '#003C43' },
+            }}
             autoFocus
           >
             OK
