@@ -95,6 +95,7 @@ export function TabelPetugas() {
     complaint: null,
   });
   const [isSuperOfficer, setIsSuperOfficer] = useState(false);
+  const [isPimpinanUniversitas, setIsPimpinanUniversitas] = useState(false);
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
   const [isSendingAlert, setIsSendingAlert] = useState(false);
@@ -111,6 +112,7 @@ export function TabelPetugas() {
         try {
           const parsedUser = JSON.parse(userData);
           setIsSuperOfficer(parsedUser.userLevel?.name === 'PETUGAS_SUPER');
+          setIsPimpinanUniversitas(parsedUser.userLevel?.name === 'PIMPINAN_UNIVERSITAS');
         } catch (error) {
           console.error('Error parsing user data:', error);
         }
@@ -438,7 +440,7 @@ export function TabelPetugas() {
                             </IconButton>
                           </Tooltip>
 
-                          {isSuperOfficer && !['COMPLETED', 'REJECTED'].includes(complaint.status) && (
+                          {(isSuperOfficer || isPimpinanUniversitas) && !['COMPLETED', 'REJECTED'].includes(complaint.status.toUpperCase()) && (
                             <Tooltip title="Ingatkan petugas unit">
                               <IconButton
                                 onClick={() => handleOpenAlertDialog(complaint.id)}

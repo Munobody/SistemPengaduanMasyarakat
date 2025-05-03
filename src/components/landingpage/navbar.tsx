@@ -49,7 +49,7 @@ export function Navbar() {
 
   const navItems = [
     { name: 'Beranda', id: 'beranda' },
-    { name: 'Jumlah Pengaduan', id: 'summary' },
+    { name: 'Instansi', id: 'summary' },
     { name: 'Panduan SIPL', id: 'informasi' },
     { name: 'Pengaduan', id: 'form' }
   ];

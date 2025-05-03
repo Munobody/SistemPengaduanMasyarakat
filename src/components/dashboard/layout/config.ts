@@ -93,6 +93,20 @@ const DASHBOARD_BY_LEVEL: { [key: string]: NavItemConfig } = {
     icon: 'graph',
     category: 'Dashboard',
   },
+  PIMPINAN_UNIVERSITAS: {
+    key: 'dashboard',
+    title: 'Dashboard',
+    href: paths.dashboard.petugas,
+    icon: 'chart-line',
+    category: 'Dashboard',
+  },
+  PIMPINAN_UNIT: {
+    key: 'dashboard',
+    title: 'Dashboard',
+    href: paths.dashboard.overview,
+    icon: 'chart-line',
+    category: 'Dashboard',
+  },
 };
 
 function hasFullActions(permission: Permission): boolean {
@@ -119,7 +133,6 @@ function hasPermission(permissions: Permission[], category: string, userLevelNam
   }
 
   if (category === 'KelolaWBS') {
-    // Hanya izinkan untuk PETUGAS_WBS atau KEPALA_WBS
     if (!['PETUGAS_WBS', 'KEPALA_WBS'].includes(userLevelName || '')) {
       return false;
     }
@@ -247,7 +260,7 @@ export const navItems: NavItemConfig[] = [
     title: 'Kelola WBS',
     href: paths.dashboard.kelolawbs,
     icon: 'shield-star',
-    category: 'KelolaWBS', // Diubah dari 'Kelola' ke 'KelolaWBS'
+    category: 'KelolaWBS',
   },
   {
     key: 'add_petugas',

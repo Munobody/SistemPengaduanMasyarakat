@@ -62,7 +62,7 @@ interface AclResponse {
 
 const WelcomeMessage = React.memo(({ userName }: { userName: string }) => (
   <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', pt: 0, mt: 0 }}>
-    Selamat Datang {userName || 'Mahasiswa'} !
+    Selamat Datang
   </Typography>
 ));
 

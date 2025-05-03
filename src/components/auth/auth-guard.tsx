@@ -52,6 +52,14 @@ const rolePathMapping = {
     paths.dashboard.wbs,
     paths.dashboard.account,
   ],
+  PIMPINAN_UNIVERSITAS: [
+    paths.dashboard.petugas,
+    paths.dashboard.account,
+  ],
+  PIMPINAN_UNIT: [
+    paths.dashboard.overview,
+    paths.dashboard.account,
+  ],
 };
 
 const fallbackPaths = {
@@ -64,6 +72,8 @@ const fallbackPaths = {
   MAHASISWA: paths.dashboard.overview,
   DOSEN: paths.dashboard.overview,
   TENAGA_KEPENDIDIKAN: paths.dashboard.overview,
+  PIMPINAN_UNIVERSITAS: paths.dashboard.overview,
+  PIMPINAN_UNIT: paths.dashboard.overview,
 };
 
 export function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps): React.JSX.Element | null {

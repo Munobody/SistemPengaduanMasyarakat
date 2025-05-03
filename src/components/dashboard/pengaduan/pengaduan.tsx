@@ -22,6 +22,7 @@ import api from '@/lib/api/api';
 interface Unit {
   id: string;
   nama_unit: string;
+  jenis_unit: string;
 }
 
 interface Category {
@@ -32,9 +33,12 @@ interface Category {
 export default function PengaduanPage() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedJenisUnit, setSelectedJenisUnit] = useState<string>('');
   const [selectedUnit, setSelectedUnit] = useState<string>('');
   const [units, setUnits] = useState<Unit[]>([]);
+  const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [jenisUnitOptions, setJenisUnitOptions] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string>('');
   const formRef = useRef<HTMLFormElement>(null);
@@ -42,6 +46,7 @@ export default function PengaduanPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const [rowsPerPage] = useState(100);
 
   const textFieldProps = {
     sx: {
@@ -59,23 +64,39 @@ export default function PengaduanPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [unitResponse, categoryResponse] = await Promise.all([api.get('/units'), api.get('/kategori')]);
-
+        const [unitResponse, categoryResponse] = await Promise.all([
+          api.get( `/units?page=1&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`),
+          api.get('/kategori'),
+        ]);
+  
         const unitList: Unit[] = unitResponse.data?.content?.entries || [];
         const categoryList: Category[] = categoryResponse.data?.content?.entries || [];
-
+        const uniqueJenisUnit = Array.from(new Set(unitList.map((unit) => unit.jenis_unit))).sort();
+        setJenisUnitOptions(uniqueJenisUnit);
         setUnits(unitList);
         setCategories(categoryList);
+  
         if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
-        if (unitList.length > 0) setSelectedUnit(unitList[0].id);
+        if (uniqueJenisUnit.length > 0) setSelectedJenisUnit(uniqueJenisUnit[0]);
       } catch (error: any) {
         console.error('Error fetching data:', error.response?.data || error.message);
         toast.error('Gagal memuat data.');
       }
     };
-
+  
     fetchData();
   }, []);
+  
+  useEffect(() => {
+    if (selectedJenisUnit) {
+      const filtered = units.filter((unit) => unit.jenis_unit === selectedJenisUnit);
+      setFilteredUnits(filtered);
+      setSelectedUnit(filtered.length > 0 ? filtered[0].id : '');
+    } else {
+      setFilteredUnits([]);
+      setSelectedUnit('');
+    }
+  }, [selectedJenisUnit, units]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -144,7 +165,8 @@ export default function PengaduanPage() {
         formRef.current!.reset();
         setSelectedFile(null);
         setSelectedCategory(categories[0]?.id || '');
-        setSelectedUnit(units[0]?.id || '');
+        setSelectedJenisUnit(jenisUnitOptions[0] || '');
+        setSelectedUnit('');
       }
     } catch (error: any) {
       console.error('❌ Error submitting form:', error.response?.data || error.message);
@@ -259,6 +281,13 @@ export default function PengaduanPage() {
                   size={isMobile ? 'small' : 'medium'}
                   {...textFieldProps}
                 />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, fontSize: isMobile ? '0.8rem' : '0.9rem' }}
+                >
+                  Masukkan judul laporan yang singkat dan jelas
+                </Typography>
               </Grid>
 
               <Grid item xs={12}>
@@ -274,6 +303,13 @@ export default function PengaduanPage() {
                   size={isMobile ? 'small' : 'medium'}
                   {...textFieldProps}
                 />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, fontSize: isMobile ? '0.8rem' : '0.9rem' }}
+                >
+                  Jelaskan detail pengaduan dengan lengkap dan akurat
+                </Typography>
               </Grid>
 
               <Grid item xs={12}>
@@ -295,28 +331,71 @@ export default function PengaduanPage() {
                     </MenuItem>
                   ))}
                 </TextField>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, fontSize: isMobile ? '0.8rem' : '0.9rem' }}
+                >
+                  Pilih kategori yang sesuai dengan pengaduan Anda
+                </Typography>
               </Grid>
 
               <Grid item xs={12}>
                 <TextField
                   fullWidth
                   select
-                  label="Unit"
-                  name="unit"
+                  label="Jenis Unit"
+                  name="jenis_unit"
                   margin="normal"
                   required
                   size={isMobile ? 'small' : 'medium'}
                   {...textFieldProps}
-                  value={selectedUnit}
-                  onChange={(e) => setSelectedUnit(e.target.value)}
+                  value={selectedJenisUnit}
+                  onChange={(e) => setSelectedJenisUnit(e.target.value)}
                 >
-                  {units.map((unit) => (
-                    <MenuItem key={unit.id} value={unit.id}>
-                      {unit.nama_unit}
+                  {jenisUnitOptions.map((jenis) => (
+                    <MenuItem key={jenis} value={jenis}>
+                      {jenis}
                     </MenuItem>
                   ))}
                 </TextField>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, fontSize: isMobile ? '0.8rem' : '0.9rem' }}
+                >
+                  Pilih jenis unit terlebih dahulu sebelum memilih unit
+                </Typography>
               </Grid>
+              {selectedJenisUnit && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Unit"
+                    name="unit"
+                    margin="normal"
+                    required
+                    size={isMobile ? 'small' : 'medium'}
+                    {...textFieldProps}
+                    value={selectedUnit}
+                    onChange={(e) => setSelectedUnit(e.target.value)}
+                  >
+                    {filteredUnits.map((unit) => (
+                      <MenuItem key={unit.id} value={unit.id}>
+                        {unit.nama_unit}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 0.5, fontSize: isMobile ? '0.8rem' : '0.9rem' }}
+                  >
+                    Pilih unit yang terkait dengan pengaduan Anda
+                  </Typography>
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <TextField
@@ -331,6 +410,13 @@ export default function PengaduanPage() {
                   {...textFieldProps}
                   placeholder="Apa harapan Anda terkait pengaduan ini?"
                 />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, fontSize: isMobile ? '0.8rem' : '0.9rem' }}
+                >
+                  Tulis harapan Anda terhadap penyelesaian pengaduan ini
+                </Typography>
               </Grid>
 
               <Grid item xs={12}>
@@ -379,6 +465,13 @@ export default function PengaduanPage() {
                       {fileError}
                     </Typography>
                   )}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 0.5, fontSize: isMobile ? '0.8rem' : '0.9rem' }}
+                  >
+                    Unggah file pendukung (maksimal 1MB, format: PDF, DOC, DOCX, PNG, JPG, JPEG)
+                  </Typography>
                 </Box>
               </Grid>
             </Grid>
@@ -390,7 +483,7 @@ export default function PengaduanPage() {
                 mt: isMobile ? 2 : 4,
               }}
             >
-                <Button
+              <Button
                 type="submit"
                 variant="contained"
                 fullWidth={isMobile}
@@ -403,9 +496,9 @@ export default function PengaduanPage() {
                   '&:hover': { bgcolor: '#B9E5E8' },
                 }}
                 disabled={loading}
-                >
+              >
                 {loading ? 'Mengirim...' : 'Kirim Laporan'}
-                </Button>
+              </Button>
             </Box>
           </form>
         </Paper>

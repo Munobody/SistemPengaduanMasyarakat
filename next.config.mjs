@@ -2,7 +2,7 @@
 const config = {
     compiler: {
       removeConsole: {
-        exclude: ['error'],
+        exclude: [''],
       },
     },
   };

@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { Box, Container, Typography } from '@mui/material';
-
+import { Box, Container, Typography, Divider } from '@mui/material';
 import { Navbar } from '@/components/landingpage/navbar';
 import ReportSummary from '@/components/landingpage/info-card';
 import ReportForm from '@/components/landingpage/report-form';
@@ -14,14 +13,18 @@ export const metadata = {
 
 export default function LandingPage(): React.JSX.Element {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* Hero Section */}
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      minHeight: '100vh',
+      scrollBehavior: 'smooth'
+    }}>
       <Box
         component="section"
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          minHeight: { xs: "70vh", md: "100vh" },
+          minHeight: { xs: '80vh', sm: '90vh', md: '100vh' },
           backgroundImage: 'url(/assets/bg-1.svg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -36,8 +39,8 @@ export default function LandingPage(): React.JSX.Element {
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            px: { xs: 2, sm: 4, md: 6 },
-            py: { xs: 6, md: 8 },
+            px: { xs: 3, sm: 4, md: 6 },
+            py: { xs: 8, sm: 10, md: 12 },
             zIndex: 1,
           }}
         >
@@ -48,12 +51,12 @@ export default function LandingPage(): React.JSX.Element {
               sx={{
                 color: 'white',
                 fontWeight: 800,
-                fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.5rem', lg: '4rem' },
+                fontSize: { xs: '2rem', sm: '3rem', md: '3.5rem', lg: '4rem' },
                 letterSpacing: { xs: '0.5px', md: '1px' },
-                lineHeight: 1.2,
-                textShadow: '2px 2px 8px rgba(0,0,0,0.6)',
-                mb: { xs: 2, md: 3 },
-                maxWidth: '85%',
+                lineHeight: 1.3,
+                textShadow: '2px 2px 8px rgba(0,0,0,0.5)',
+                mb: { xs: 3, md: 4 },
+                maxWidth: '90%',
                 mx: 'auto',
               }}
             >
@@ -65,17 +68,17 @@ export default function LandingPage(): React.JSX.Element {
               sx={{
                 color: 'white',
                 fontWeight: 600,
-                fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem', lg: '2.25rem' },
-                textShadow: '1px 1px 4px rgba(0,0,0,0.5)',
-                maxWidth: '70%',
+                fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.25rem', lg: '2.5rem' },
+                textShadow: '1px 1px 4px rgba(0,0,0,0.4)',
+                maxWidth: '80%',
                 mx: 'auto',
+                mb: { xs: 4, md: 6 },
               }}
             >
               UNIVERSITAS SYIAH KUALA
             </Typography>
           </Container>
         </Box>
-        {/* Overlay for better text visibility */}
         <Box
           sx={{
             position: 'absolute',
@@ -83,80 +86,116 @@ export default function LandingPage(): React.JSX.Element {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: 'rgba(0,0,0,0.25)',
             zIndex: 0,
           }}
         />
       </Box>
 
-      {/* Report Summary Section */}
-      <Box 
-        component="section" 
-        id="summary"
-        sx={{ 
-          py: { xs: 4, md: 6 },
-          backgroundColor: '#f9f9f9',
-        }}
-      >
-        <Container maxWidth="lg">
-          <ReportSummary />
-        </Container>
-      </Box>
+      {/* Divider between hero and form section */}
+      <Divider sx={{ borderColor: 'rgba(0,0,0,0.12)', borderWidth: 1, mx: 'auto', width: '90%' }} />
 
-      {/* Report Form Section */}
       <Box 
         component="section" 
         id="form"
         sx={{ 
-          py: { xs: 4, md: 6 },
+          py: { xs: 6, sm: 8, md: 10 },
+          backgroundColor: '#ffffff',
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="md">
           <ReportForm />
         </Container>
       </Box>
 
-      {/* Information Section */}
-      <Container
-        component="section"
-        id="informasi"
-        maxWidth="lg"
+      {/* Divider between form and summary sections */}
+      <Divider sx={{ 
+        borderColor: 'rgba(0,0,0,0.12)', 
+        borderWidth: 1, 
+        mx: 'auto', 
+        width: '90%',
+        my: 2 
+      }} />
+
+      <Box 
+        component="section" 
+        id="summary"
         sx={{ 
-          mt: { xs: 3, md: 6 }, 
-          mb: { xs: 4, md: 8 },
-          px: { xs: 2, sm: 3, md: 4 }
+          py: { xs: 6, sm: 8, md: 10 },
+          backgroundColor: '#ffffff',
         }}
       >
-        <InformasiSection />
-      </Container>
+        <Container maxWidth="xl">
+          <ReportSummary />
+        </Container>
+      </Box>
 
-      {/* Footer */}
+      {/* Divider between summary and informasi sections */}
+      <Divider sx={{ 
+        borderColor: 'rgba(0,0,0,0.12)', 
+        borderWidth: 1, 
+        mx: 'auto', 
+        width: '90%',
+        my: 2 
+      }} />
+
+      <Box
+        component="section"
+        id="informasi"
+        sx={{ 
+          py: { xs: 6, sm: 8, md: 10 },
+          backgroundColor: '#ffffff',
+        }}
+      >
+        <Container maxWidth="lg">
+          <InformasiSection />
+        </Container>
+      </Box>
+
+      {/* Divider before footer */}
+      <Divider sx={{ 
+        borderColor: 'rgba(0,0,0,0.12)', 
+        borderWidth: 1, 
+        mx: 'auto', 
+        width: '100%',
+        mt: 2 
+      }} />
+
       <Box
         component="footer"
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderTop: '1px solid #e0e0e0',
-          py: { xs: 3, md: 4 },
+          py: { xs: 4, sm: 5 },
           px: { xs: 3, sm: 4, md: 6 },
           mt: 'auto',
           backgroundColor: '#f5f5f5',
         }}
       >
-        <Typography
-          variant="body1"
-          sx={{
-            color: '#000',
-            fontWeight: 'bold',
-            mb: { xs: 2, md: 0 },
-            textAlign: { xs: 'center', md: 'left' },
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-          }}
-        >
-          © 2025 Sistem Pelaporan & Pengaduan Masyarakat
-        </Typography>
+        <Box sx={{ textAlign: { xs: 'center', sm: 'left' }, mb: { xs: 3, sm: 0 } }}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: '#000',
+              fontWeight: 'bold',
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+            }}
+          >
+            © 2025 Sistem Pelaporan & Pengaduan Masyarakat
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#555',
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              mt: 1,
+            }}
+          >
+            Universitas Syiah Kuala | Contact: info@usk.ac.id
+          </Typography>
+        </Box>
         <Box
           sx={{
             display: 'flex',
@@ -168,9 +207,10 @@ export default function LandingPage(): React.JSX.Element {
             src="/assets/logo-usk.png"
             alt="Logo USK"
             style={{ 
-              height: '50px',
-              maxHeight: '50px',
-              maxWidth: '100%'
+              height: '60px',
+              maxHeight: '60px',
+              maxWidth: '100%',
+              objectFit: 'contain',
             }}
           />
         </Box>

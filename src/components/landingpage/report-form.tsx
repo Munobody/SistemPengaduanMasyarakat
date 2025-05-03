@@ -4,7 +4,6 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { AttachFile, Delete } from '@mui/icons-material';
 import { Box, Button, CircularProgress, IconButton, MenuItem, Paper, TextField, Typography, useTheme, useMediaQuery } from '@mui/material';
-import axios from 'axios';
 import { useFormik } from 'formik';
 import { toast, ToastContainer } from 'react-toastify';
 import * as Yup from 'yup';
@@ -19,6 +18,12 @@ interface Category {
 interface Unit {
   id: string;
   nama_unit: string;
+  jenis_unit: string;
+}
+
+interface UnitType {
+  type: string;
+  label: string;
 }
 
 const ReportForm: React.FC = (): React.JSX.Element => {
@@ -27,13 +32,14 @@ const ReportForm: React.FC = (): React.JSX.Element => {
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   
   const [loading, setLoading] = useState(false);
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [allUnits, setAllUnits] = useState<Unit[]>([]);
+  const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
+  const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [fileName, setFileName] = useState('');
   const [rowsPerPage] = useState(100);
   const [page] = useState(0);
 
-  // Memoize data fetching to prevent unnecessary re-renders
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -70,21 +76,48 @@ const ReportForm: React.FC = (): React.JSX.Element => {
   const fetchUnits = async () => {
     try {
       const response = await api.get(
-        `/units?page=1&rows=12&orderKey=nama_unit&orderRule=asc`
+        `/units?page=1&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`
       );
 
       if (response.data.content?.entries) {
-        const unitList = response.data.content.entries.map((unit: Unit) => ({
+        const unitsData: Unit[] = response.data.content.entries.map((unit: Unit) => ({
           id: unit.id,
           nama_unit: unit.nama_unit,
+          jenis_unit: unit.jenis_unit,
         }));
-        setUnits(unitList);
+        
+        setAllUnits(unitsData);
+        const uniqueTypes: string[] = Array.from(new Set(unitsData.map(unit => unit.jenis_unit)));
+        
+        const types: UnitType[] = uniqueTypes.map(type => ({
+          type,
+          label: type === 'FAKULTAS' ? 'Fakultas' : 
+                 type === 'LEMBAGA' ? 'Lembaga' :
+                 type === 'UPT' ? 'Unit Pelayanan Terpadu' : 
+                 type === 'DIREKTORAT' ? 'Direktorat' : type,
+        }));
+        
+        setUnitTypes(types);
       } else {
-        setUnits([]);
+        setAllUnits([]);
+        setUnitTypes([]);
       }
     } catch (error: any) {
       console.error('Gagal memuat unit:', error.response?.data || error.message);
       toast.error('Gagal memuat data unit');
+    }
+  };
+
+  const handleUnitTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedType = event.target.value;
+    formik.setFieldValue('jenisUnit', selectedType);
+    formik.setFieldValue('unitId', ''); 
+    
+    if (selectedType) {
+      const filtered = allUnits.filter(unit => unit.jenis_unit === selectedType);
+      setFilteredUnits(filtered);
+    } else {
+      setFilteredUnits([]);
     }
   };
 
@@ -93,6 +126,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       judul: '',
       deskripsi: '',
       status: 'PENDING',
+      jenisUnit: '',
       unitId: '',
       response: '',
       kategoriId: '',
@@ -109,7 +143,19 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         .matches(/^62\d{9,13}$/, 'Nomor WhatsApp harus diawali dengan 62 dan berisi 9-13 digit')
         .required('Nomor WhatsApp wajib diisi'),
       kategoriId: Yup.string().required('Pilih kategori laporan'),
-      unitId: Yup.string().required('Pilih unit yang dilapor'),
+      jenisUnit: Yup.string().required('Pilih jenis unit terlebih dahulu'),
+      unitId: Yup.string().required('Pilih unit'),
+      filePendukung: Yup.mixed<File>().test(
+        'fileSize',
+        'Ukuran file maksimum 1MB',
+        (value) => {
+          if (!value) return true; // File is optional
+          if (value instanceof File) {
+            return value.size <= 1024 * 1024; // 1MB limit
+          }
+          return false; // Invalid file
+        }
+      ),
     }),
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
@@ -121,7 +167,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           const formData = new FormData();
           formData.append('file', values.filePendukung);
 
-          const uploadResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
+          const uploadResponse = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
 
@@ -146,7 +192,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           filePetugas: '',
         };
 
-        const response = await axios.post(apiUrl, dataToSend, {
+        const response = await api.post(apiUrl, dataToSend, {
           headers: { 'Content-Type': 'application/json' },
         });
 
@@ -154,6 +200,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           toast.success('Laporan berhasil dikirim!');
           resetForm();
           setFileName('');
+          setFilteredUnits([]);
         } else {
           toast.error('Gagal mengirim laporan.');
         }
@@ -168,9 +215,9 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 
   // Responsive text sizes
   const getResponsiveFontSize = () => {
-    if (isMobile) return '1rem';
-    if (isTablet) return '1.1rem';
-    return '1.2rem';
+    if (isMobile) return '0.875rem';
+    if (isTablet) return '1rem';
+    return '1.125rem';
   };
 
   const responsiveFontSize = getResponsiveFontSize();
@@ -190,10 +237,10 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         elevation={3}
         sx={{ 
           width: '100%',
-          maxWidth: '800px',
-          p: isMobile ? 2 : 4,
+          maxWidth: { xs: '100%', sm: '600px', md: '800px' },
+          p: { xs: 2, sm: 3, md: 4 },
           borderRadius: 2,
-          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
         }}
       >
         <Typography 
@@ -201,345 +248,469 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           sx={{ 
             fontWeight: 'bold', 
             textAlign: 'center', 
-            pb: 3,
-            color: 'text.primary',
-            fontSize: isMobile ? '1.5rem' : '2rem'
+            pb: { xs: 2, sm: 3 },
+            color: '#003C43',
+            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
           }}
         >
-          LAPORKAN!
+          Sampaikan Laporan Anda
         </Typography>
 
         <form onSubmit={formik.handleSubmit}>
           {/* Nama Field */}
-          <TextField
-            id="nama"
-            fullWidth
-            label="Nama"
-            name="nama"
-            variant="outlined"
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#135D66' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#135D66' 
-              },
-            }}
-            InputLabelProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            InputProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            value={formik.values.nama}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.nama && Boolean(formik.errors.nama)}
-            helperText={formik.touched.nama && formik.errors.nama}
-          />
-
-          {/* Judul Laporan Field */}
-          <TextField
-            id="judul"
-            fullWidth
-            label="Judul Laporan"
-            name="judul"
-            variant="outlined"
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#16404D' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#16404D' 
-              },
-            }}
-            InputLabelProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            InputProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            value={formik.values.judul}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.judul && Boolean(formik.errors.judul)}
-            helperText={formik.touched.judul && formik.errors.judul}
-          />
-
-          {/* Deskripsi Field */}
-          <TextField
-            id="deskripsi"
-            fullWidth
-            label="Isi Laporan"
-            name="deskripsi"
-            variant="outlined"
-            multiline
-            rows={isMobile ? 3 : 4}
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#16404D' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#16404D' 
-              },
-            }}
-            InputLabelProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            InputProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            value={formik.values.deskripsi}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.deskripsi && Boolean(formik.errors.deskripsi)}
-            helperText={formik.touched.deskripsi && formik.errors.deskripsi}
-          />
-
-          {/* Harapan Pelapor Field */}
-          <TextField
-            id="harapan_pelapor"
-            fullWidth
-            label="Harapan Pelapor"
-            name="harapan_pelapor"
-            variant="outlined"
-            multiline
-            rows={isMobile ? 2 : 2}
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#16404D' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#16404D' 
-              },
-            }}
-            InputLabelProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            InputProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            value={formik.values.harapan_pelapor}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.harapan_pelapor && Boolean(formik.errors.harapan_pelapor)}
-            helperText={formik.touched.harapan_pelapor && formik.errors.harapan_pelapor}
-          />
+          <Box mb={2}>
+            <TextField
+              id="nama-field"
+              fullWidth
+              label="Nama"
+              name="nama"
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#135D66' 
+                },
+                '& .MuiInputLabel-root.Mui-focused': { 
+                  color: '#135D66' 
+                },
+              }}
+              InputLabelProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              InputProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              value={formik.values.nama}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.nama && Boolean(formik.errors.nama)}
+              helperText={formik.touched.nama && formik.errors.nama}
+            />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Masukkan nama lengkap Anda
+            </Typography>
+          </Box>
 
           {/* Nomor WhatsApp Field */}
-          <TextField
-            id="no_telphone"
-            fullWidth
-            label="Nomor Whatsapp"
-            name="no_telphone"
-            variant="outlined"
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#16404D' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#16404D' 
-              },
-            }}
-            InputLabelProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            InputProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            value={formik.values.no_telphone}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.no_telphone && Boolean(formik.errors.no_telphone)}
-            helperText={formik.touched.no_telphone && formik.errors.no_telphone}
-          />
+          <Box mb={2}>
+            <TextField
+              id="no-telphone-field"
+              fullWidth
+              label="Nomor WhatsApp"
+              name="no_telphone"
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#135D66' 
+                },
+                '& .MuiInputLabel-root.Mui-focused': { 
+                  color: '#135D66' 
+                },
+              }}
+              InputLabelProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              InputProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              value={formik.values.no_telphone}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.no_telphone && Boolean(formik.errors.no_telphone)}
+              helperText={formik.touched.no_telphone && formik.errors.no_telphone}
+            />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Nomor harus diawali dengan 62 (contoh: 6281234567890)
+            </Typography>
+          </Box>
+
+          {/* Judul Laporan Field */}
+          <Box mb={2}>
+            <TextField
+              id="judul-field"
+              fullWidth
+              label="Judul Laporan"
+              name="judul"
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#135D66' 
+                },
+                '& .MuiInputLabel-root.Mui-focused': { 
+                  color: '#135D66' 
+                },
+              }}
+              InputLabelProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              InputProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              value={formik.values.judul}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.judul && Boolean(formik.errors.judul)}
+              helperText={formik.touched.judul && formik.errors.judul}
+            />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Masukkan judul singkat yang menggambarkan laporan
+            </Typography>
+          </Box>
+
+          {/* Deskripsi Field */}
+          <Box mb={2}>
+            <TextField
+              id="deskripsi-field"
+              fullWidth
+              label="Isi Laporan"
+              name="deskripsi"
+              variant="outlined"
+              multiline
+              rows={isMobile ? 3 : 4}
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#135D66' 
+                },
+                '& .MuiInputLabel-root.Mui-focused': { 
+                  color: '#135D66' 
+                },
+              }}
+              InputLabelProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              InputProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              value={formik.values.deskripsi}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.deskripsi && Boolean(formik.errors.deskripsi)}
+              helperText={formik.touched.deskripsi && formik.errors.deskripsi}
+            />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Jelaskan secara rinci isi laporan Anda
+            </Typography>
+          </Box>
+
+          {/* Harapan Pelapor Field */}
+          <Box mb={2}>
+            <TextField
+              id="harapan-pelapor-field"
+              fullWidth
+              label="Harapan Pelapor"
+              name="harapan_pelapor"
+              variant="outlined"
+              multiline
+              rows={isMobile ? 2 : 3}
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#135D66' 
+                },
+                '& .MuiInputLabel-root.Mui-focused': { 
+                  color: '#135D66' 
+                },
+              }}
+              InputLabelProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              InputProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              value={formik.values.harapan_pelapor}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.harapan_pelapor && Boolean(formik.errors.harapan_pelapor)}
+              helperText={formik.touched.harapan_pelapor && formik.errors.harapan_pelapor}
+            />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Tulis harapan atau solusi yang Anda inginkan (opsional)
+            </Typography>
+          </Box>
 
           {/* Kategori Field */}
-          <TextField
-            id="kategoriId"
-            fullWidth
-            label="Kategori Laporan"
-            name="kategoriId"
-            select
-            value={formik.values.kategoriId || ''}
-            onChange={(event) => formik.setFieldValue('kategoriId', event.target.value)}
-            onBlur={formik.handleBlur}
-            error={formik.touched.kategoriId && Boolean(formik.errors.kategoriId)}
-            helperText={formik.touched.kategoriId && formik.errors.kategoriId}
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#16404D' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#16404D' 
-              },
-            }}
-            InputLabelProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            SelectProps={{
-              MenuProps: {
-                PaperProps: {
-                  style: {
-                    maxHeight: isMobile ? 200 : 300,
+          <Box mb={2}>
+            <TextField
+              id="kategori-field"
+              fullWidth
+              label="Kategori Laporan"
+              name="kategoriId"
+              select
+              value={formik.values.kategoriId || ''}
+              onChange={(event) => formik.setFieldValue('kategoriId', event.target.value)}
+              onBlur={formik.handleBlur}
+              error={formik.touched.kategoriId && Boolean(formik.errors.kategoriId)}
+              helperText={formik.touched.kategoriId && formik.errors.kategoriId}
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#135D66' 
+                },
+                '& .MuiInputLabel-root.Mui-focused': { 
+                  color: '#135D66' 
+                },
+              }}
+              InputLabelProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    style: {
+                      maxHeight: isMobile ? 200 : 300,
+                    },
                   },
                 },
-              },
-            }}
-            InputProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-          >
-            {categories.map((category) => (
-              <MenuItem 
-                key={category.id} 
-                value={category.id}
-                sx={{ fontSize: responsiveFontSize }}
-              >
-                {category.nama}
+              }}
+              InputProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+            >
+              {categories.map((category) => (
+                <MenuItem 
+                  key={category.id} 
+                  value={category.id}
+                  sx={{ fontSize: responsiveFontSize }}
+                >
+                  {category.nama}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Pilih kategori yang sesuai dengan laporan Anda
+            </Typography>
+          </Box>
+
+          {/* Unit Type Field */}
+          <Box mb={2}>
+            <TextField
+              id="jenis-unit-field"
+              fullWidth
+              label="Jenis Unit"
+              name="jenisUnit"
+              select
+              value={formik.values.jenisUnit || ''}
+              onChange={handleUnitTypeChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.jenisUnit && Boolean(formik.errors.jenisUnit)}
+              helperText={formik.touched.jenisUnit && formik.errors.jenisUnit}
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#135D66' 
+                },
+                '& .MuiInputLabel-root.Mui-focused': { 
+                  color: '#135D66' 
+                },
+              }}
+              InputLabelProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    style: {
+                      maxHeight: isMobile ? 200 : 300,
+                    },
+                  },
+                },
+              }}
+              InputProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+            >
+              <MenuItem value="" sx={{ fontSize: responsiveFontSize }}>
+                <em>Pilih Jenis Unit</em>
               </MenuItem>
-            ))}
-          </TextField>
+              {unitTypes.map((type) => (
+                <MenuItem 
+                  key={type.type} 
+                  value={type.type}
+                  sx={{ fontSize: responsiveFontSize }}
+                >
+                  {type.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Pilih jenis unit terkait laporan
+            </Typography>
+          </Box>
 
           {/* Unit Field */}
-          <TextField
-            id="unitId"
-            fullWidth
-            label="Unit Yang Dilapor"
-            name="unitId"
-            select
-            value={formik.values.unitId || ''}
-            onChange={(event) => formik.setFieldValue('unitId', event.target.value)}
-            onBlur={formik.handleBlur}
-            error={formik.touched.unitId && Boolean(formik.errors.unitId)}
-            helperText={formik.touched.unitId && formik.errors.unitId}
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#16404D' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#16404D' 
-              },
-            }}
-            InputLabelProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-            SelectProps={{
-              MenuProps: {
-                PaperProps: {
-                  style: {
-                    maxHeight: isMobile ? 200 : 300,
+          {formik.values.jenisUnit && (
+            <Box mb={2}>
+              <TextField
+                id="unit-field"
+                fullWidth
+                label="Pilih Unit"
+                name="unitId"
+                select
+                value={formik.values.unitId || ''}
+                onChange={(event) => formik.setFieldValue('unitId', event.target.value)}
+                onBlur={formik.handleBlur}
+                error={formik.touched.unitId && Boolean(formik.errors.unitId)}
+                helperText={formik.touched.unitId && formik.errors.unitId}
+                sx={{
+                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                    borderColor: '#135D66' 
                   },
-                },
-              },
-            }}
-            InputProps={{ 
-              style: { 
-                fontSize: responsiveFontSize 
-              } 
-            }}
-          >
-            {units.map((unit) => (
-              <MenuItem 
-                key={unit.id} 
-                value={unit.id}
-                sx={{ fontSize: responsiveFontSize }}
+                  '& .MuiInputLabel-root.Mui-focused': { 
+                    color: '#135D66' 
+                  },
+                }}
+                InputLabelProps={{ 
+                  style: { fontSize: responsiveFontSize } 
+                }}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      style: {
+                        maxHeight: isMobile ? 200 : 300,
+                      },
+                    },
+                  },
+                }}
+                InputProps={{ 
+                  style: { fontSize: responsiveFontSize } 
+                }}
               >
-                {unit.nama_unit}
-              </MenuItem>
-            ))}
-          </TextField>
+                <MenuItem value="" sx={{ fontSize: responsiveFontSize }}>
+                  <em>Pilih Unit</em>
+                </MenuItem>
+                {filteredUnits.map((unit) => (
+                  <MenuItem 
+                    key={unit.id} 
+                    value={unit.id}
+                    sx={{ fontSize: responsiveFontSize }}
+                  >
+                    {unit.nama_unit}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#003C43', 
+                  mt: 0.5,
+                  fontSize: '0.75rem',
+                }}
+              >
+                Pilih unit spesifik terkait laporan
+              </Typography>
+            </Box>
+          )}
 
           {/* File Upload Section */}
           <Box sx={{ mt: 2, mb: 3 }}>
             <Typography 
               variant="body2" 
               sx={{ 
-                color: 'text.secondary', 
+                color: '#003C43', 
                 mb: 1,
-                fontSize: responsiveFontSize
+                fontSize: responsiveFontSize,
               }}
             >
-              Upload File
+              Upload File Pendukung
             </Typography>
-            <TextField
-              fullWidth
-              variant="outlined"
-              value={fileName}
-              placeholder="Belum ada file yang dipilih"
-              InputProps={{
-                readOnly: true,
-                startAdornment: fileName && <AttachFile sx={{ color: '#FBBF24', mr: 1 }} />,
-                endAdornment: fileName && (
-                  <IconButton
-                    onClick={() => {
-                      formik.setFieldValue('filePendukung', null);
-                      setFileName('');
-                    }}
-                    size={isMobile ? 'small' : 'medium'}
-                  >
-                    <Delete color="error" />
-                  </IconButton>
-                ),
-                style: { fontSize: responsiveFontSize }
-              }}
-              sx={{
-                mb: 2,
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                  borderColor: '#16404D' 
-                },
-              }}
-            />
+            <Box>
+              <TextField
+                id="file-upload-field"
+                fullWidth
+                variant="outlined"
+                value={fileName}
+                placeholder="Belum ada file yang dipilih"
+                aria-label="File Pendukung"
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: fileName && <AttachFile sx={{ color: '#FBBF24', mr: 1 }} />,
+                  endAdornment: fileName && (
+                    <IconButton
+                      onClick={() => {
+                        formik.setFieldValue('filePendukung', null);
+                        setFileName('');
+                      }}
+                      size={isMobile ? 'small' : 'medium'}
+                      aria-label="Hapus file"
+                    >
+                      <Delete color="error" />
+                    </IconButton>
+                  ),
+                  style: { fontSize: responsiveFontSize },
+                }}
+                sx={{
+                  mb: 2,
+                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                    borderColor: '#135D66' 
+                  },
+                }}
+                error={formik.touched.filePendukung && Boolean(formik.errors.filePendukung)}
+                helperText={formik.touched.filePendukung && formik.errors.filePendukung}
+              />
+            </Box>
             <Button
               variant="contained"
               component="label"
               sx={{
                 backgroundColor: '#003C43',
-                color: 'white',
+                color: '#E3FEF7',
                 fontWeight: 'bold',
                 '&:hover': { backgroundColor: '#135D66' },
-                px: isMobile ? 2 : 4,
+                px: { xs: 2, sm: 4 },
                 py: 1,
                 textTransform: 'none',
                 fontSize: responsiveFontSize,
-                width: isMobile ? '100%' : 'auto'
+                width: { xs: '100%', sm: 'auto' },
               }}
             >
               Pilih File
               <input
+                id="file-input"
                 type="file"
                 hidden
                 onChange={(event) => {
@@ -548,8 +719,19 @@ const ReportForm: React.FC = (): React.JSX.Element => {
                     setFileName(event.target.files[0].name);
                   }
                 }}
+                aria-hidden="true"
               />
             </Button>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 1,
+                fontSize: '0.75rem',
+              }}
+            >
+              Maksimum ukuran file 1MB (opsional)
+            </Typography>
           </Box>
 
           {/* Submit Button */}
@@ -560,23 +742,21 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               disabled={loading}
               sx={{
                 backgroundColor: '#003C43',
-                color: 'white',
+                color: '#E3FEF7',
                 fontWeight: 'bold',
-                px: isMobile ? 3 : 4,
+                px: { xs: 3, sm: 4 },
                 py: 1,
                 textTransform: 'none',
                 '&:hover': { backgroundColor: '#135D66' },
                 fontSize: responsiveFontSize,
-                width: isMobile ? '100%' : 'auto'
+                width: { xs: '100%', sm: 'auto' },
               }}
             >
               {loading ? (
                 <CircularProgress 
-                  size={24} 
+                  size={20} 
                   color="inherit" 
-                  sx={{ 
-                    mr: isMobile ? 1 : 2 
-                  }} 
+                  sx={{ mr: { xs: 1, sm: 2 } }} 
                 />
               ) : null}
               {loading ? (isMobile ? 'Mengirim...' : 'Sedang Mengirim...') : 'LAPOR!'}
