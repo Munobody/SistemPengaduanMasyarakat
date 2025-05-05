@@ -57,7 +57,7 @@ const rolePathMapping = {
     paths.dashboard.account,
   ],
   PIMPINAN_UNIT: [
-    paths.dashboard.overview,
+    paths.dashboard.petugas,
     paths.dashboard.account,
   ],
 };

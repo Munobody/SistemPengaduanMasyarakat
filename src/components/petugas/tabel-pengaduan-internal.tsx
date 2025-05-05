@@ -441,37 +441,42 @@ export function TabelPetugas() {
                           </Tooltip>
 
                           {(isSuperOfficer || isPimpinanUniversitas) && !['COMPLETED', 'REJECTED'].includes(complaint.status.toUpperCase()) && (
-                            <Tooltip title="Ingatkan petugas unit">
-                              <IconButton
-                                onClick={() => handleOpenAlertDialog(complaint.id)}
-                                color="warning"
-                                sx={{ mr: 1 }}
-                                disabled={isSendingAlert}
-                              >
-                                <NotificationsActiveIcon />
-                              </IconButton>
-                            </Tooltip>
-                          )}
+                          <Tooltip title="Ingatkan petugas unit">
+                            <IconButton
+                              onClick={() => handleOpenAlertDialog(complaint.id)}
+                              color="warning"
+                              sx={{ mr: 1 }}
+                              disabled={isSendingAlert}
+                            >
+                              <NotificationsActiveIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                          {complaint.status !== 'COMPLETED' ? (
-                            <Tooltip title="Kelola pengaduan">
-                              <IconButton
+                        
+                            {!isPimpinanUniversitas && (
+                            <>
+                              {complaint.status !== 'COMPLETED' ? (
+                              <Tooltip title="Kelola pengaduan">
+                                <IconButton
                                 onClick={(e) => handleManageComplaint(complaint.id, e)}
                                 color="primary"
-                              >
+                                >
                                 <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title="Hapus pengaduan">
-                              <IconButton
+                                </IconButton>
+                              </Tooltip>
+                              ) : (
+                              <Tooltip title="Hapus pengaduan">
+                                <IconButton
                                 onClick={() => handleDeleteComplaint(complaint.id)}
                                 color="error"
-                              >
+                                >
                                 <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          )}
+                                </IconButton>
+                              </Tooltip>
+                              )}
+                            </>
+                            )}
                         </TableCell>
                       </TableRow>
                     ))

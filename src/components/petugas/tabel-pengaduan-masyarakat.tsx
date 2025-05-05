@@ -352,6 +352,63 @@ export function TabelPetugasMasyarakat() {
     ));
   };
 
+  const renderActionButtons = (complaint: Pengaduan) => {
+    return (
+      <>
+        {/* View button - visible to all */}
+        <Tooltip title="Lihat detail">
+          <IconButton
+            onClick={(e) => handleViewComplaint(complaint, e)}
+            color="info"
+            sx={{ mr: 1 }}
+          >
+            <RemoveRedEyeIcon />
+          </IconButton>
+        </Tooltip>
+
+        {/* Alert button - only for PETUGAS_SUPER and PIMPINAN_UNIVERSITAS */}
+        {(isSuperOfficer || isPimpinanUniversitas) && 
+         !['COMPLETED', 'REJECTED'].includes(complaint.status.toUpperCase()) && (
+          <Tooltip title="Ingatkan petugas unit">
+            <IconButton
+              onClick={() => handleOpenAlertDialog(complaint.id)}
+              color="warning"
+              sx={{ mr: 1 }}
+              disabled={isSendingAlert}
+            >
+              <NotificationsActiveIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+
+        {/* Edit and Delete buttons - hide from PIMPINAN_UNIVERSITAS */}
+        {!isPimpinanUniversitas && (
+          <>
+            <Tooltip title="Kelola pengaduan">
+              <IconButton
+                onClick={(e) => handleManageComplaint(complaint.id, e)}
+                color="primary"
+                sx={{ mr: 1 }}
+              >
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            {complaint.status === 'COMPLETED' && (
+              <Tooltip title="Hapus pengaduan">
+                <IconButton
+                  onClick={() => handleDeleteComplaint(complaint.id)}
+                  color="error"
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </>
+        )}
+      </>
+    );
+  };
+
   if (error) {
     return (
       <Dialog open={true} maxWidth="sm" fullWidth>
@@ -491,46 +548,7 @@ export function TabelPetugasMasyarakat() {
                           />
                         </TableCell>
                         <TableCell align="right">
-                          <Tooltip title="Lihat detail">
-                            <IconButton
-                              onClick={(e) => handleViewComplaint(complaint, e)}
-                              color="info"
-                              sx={{ mr: 1 }}
-                            >
-                              <RemoveRedEyeIcon />
-                            </IconButton>
-                          </Tooltip>
-                          {(isSuperOfficer || isPimpinanUniversitas) && !['COMPLETED', 'REJECTED'].includes(complaint.status.toUpperCase()) && (
-                            <Tooltip title="Ingatkan petugas unit">
-                              <IconButton
-                                onClick={() => handleOpenAlertDialog(complaint.id)}
-                                color="warning"
-                                sx={{ mr: 1 }}
-                                disabled={isSendingAlert}
-                              >
-                                <NotificationsActiveIcon />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          <Tooltip title="Kelola pengaduan">
-                            <IconButton
-                              onClick={(e) => handleManageComplaint(complaint.id, e)}
-                              color="primary"
-                              sx={{ mr: 1 }}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          {complaint.status === 'COMPLETED' && (
-                            <Tooltip title="Hapus pengaduan">
-                              <IconButton
-                                onClick={() => handleDeleteComplaint(complaint.id)}
-                                color="error"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          )}
+                          {renderActionButtons(complaint)}
                         </TableCell>
                       </TableRow>
                     ))
@@ -668,7 +686,7 @@ export function TabelPetugasMasyarakat() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseView}>Tutup</Button>
-          {viewDialog.complaint && (
+          {viewDialog.complaint && !isPimpinanUniversitas && (
             <Button
               variant="contained"
               onClick={(e) => {

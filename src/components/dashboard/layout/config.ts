@@ -103,7 +103,7 @@ const DASHBOARD_BY_LEVEL: { [key: string]: NavItemConfig } = {
   PIMPINAN_UNIT: {
     key: 'dashboard',
     title: 'Dashboard',
-    href: paths.dashboard.overview,
+    href: paths.dashboard.petugas,
     icon: 'chart-line',
     category: 'Dashboard',
   },

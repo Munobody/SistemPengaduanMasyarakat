@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { Box, Container, Typography, Divider } from '@mui/material';
 import { Navbar } from '@/components/landingpage/navbar';
-import ReportSummary from '@/components/landingpage/info-card';
 import ReportForm from '@/components/landingpage/report-form';
 import InformasiSection from '@/components/landingpage/information';
 import { Metadata } from 'next';
+import ReportSummary from '@/components/landingpage/info-card';
 
 export const metadata = { 
   title: 'Sistem Pengaduan Layanan',
@@ -92,8 +92,44 @@ export default function LandingPage(): React.JSX.Element {
         />
       </Box>
 
-      {/* Divider between hero and form section */}
-      <Divider sx={{ borderColor: 'rgba(0,0,0,0.12)', borderWidth: 1, mx: 'auto', width: '90%' }} />
+      <Box
+        sx={{
+          position: 'relative',
+          backgroundColor: '#003C43',
+          backgroundSize: 'cover',
+          backgroundPosition: 'top',
+          backgroundRepeat: 'no-repeat',
+          py: { xs: 6, sm: 8, md: 10 },
+          textAlign: 'center',
+          mt: '-5px',
+        }}
+      >
+        <Container maxWidth="md">
+          <Typography
+            variant="h4"
+            component="h3"
+            sx={{
+              fontWeight: 700,
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
+              color: 'white',
+              mb: 2,
+            }}
+          >
+            SAMPAIKAN PENGADUAN ANDA DISINI!
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+              color: '#E0F7FA',
+              maxWidth: '600px',
+              mx: 'auto',
+            }}
+          >
+            Kami siap menerima pengaduan Anda untuk meningkatkan kualitas layanan di Universitas Syiah Kuala.
+          </Typography>
+        </Container>
+      </Box>
 
       <Box 
         component="section" 
@@ -108,7 +144,6 @@ export default function LandingPage(): React.JSX.Element {
         </Container>
       </Box>
 
-      {/* Divider between form and summary sections */}
       <Divider sx={{ 
         borderColor: 'rgba(0,0,0,0.12)', 
         borderWidth: 1, 
@@ -130,7 +165,6 @@ export default function LandingPage(): React.JSX.Element {
         </Container>
       </Box>
 
-      {/* Divider between summary and informasi sections */}
       <Divider sx={{ 
         borderColor: 'rgba(0,0,0,0.12)', 
         borderWidth: 1, 
@@ -152,15 +186,6 @@ export default function LandingPage(): React.JSX.Element {
         </Container>
       </Box>
 
-      {/* Divider before footer */}
-      <Divider sx={{ 
-        borderColor: 'rgba(0,0,0,0.12)', 
-        borderWidth: 1, 
-        mx: 'auto', 
-        width: '100%',
-        mt: 2 
-      }} />
-
       <Box
         component="footer"
         sx={{
@@ -171,7 +196,7 @@ export default function LandingPage(): React.JSX.Element {
           py: { xs: 4, sm: 5 },
           px: { xs: 3, sm: 4, md: 6 },
           mt: 'auto',
-          backgroundColor: '#f5f5f5',
+          backgroundColor: '#D1F8EF',
         }}
       >
         <Box sx={{ textAlign: { xs: 'center', sm: 'left' }, mb: { xs: 3, sm: 0 } }}>

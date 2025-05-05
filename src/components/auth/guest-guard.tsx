@@ -58,6 +58,12 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
         return;
       }
 
+      else if (user.userLevel?.name === 'PIMPINAN_UNIT') {
+        logger.debug('[GuestGuard]: User is PIMPINAN_UNOVERSITAS, redirecting to petugas dashboard');
+        router.replace(paths.dashboard.petugas);
+        return;
+      }
+
       else if (user.userLevel?.name === 'PETUGAS_WBS') {
         logger.debug('[GuestGuard]: User is PETUGAS_WBS, redirecting to petugaswbs dashboard');
         router.replace(paths.dashboard.dashboardwbs);
