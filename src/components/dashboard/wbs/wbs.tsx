@@ -25,7 +25,7 @@ import api from '@/lib/api/api';
 interface Unit {
   id: string;
   nama_unit: string;
-  jenis_unit: string; // Ensure this is explicitly typed as string
+  jenis_unit: string;
 }
 
 interface Category {
@@ -42,7 +42,7 @@ const WBSReportForm = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string>(''); // Now stores nama_unit
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [formData, setFormData] = useState({
     judul: '',
@@ -68,7 +68,6 @@ const WBSReportForm = () => {
 
         setJenisUnitOptions(uniqueJenisUnit);
         setUnits(unitList);
-        setCategories(categoryList);
         setCategories(categoryList.map((category: any) => ({ id: category.id, nama: category.nama })));
 
         // Set default selections
@@ -87,7 +86,7 @@ const WBSReportForm = () => {
     if (selectedJenisUnit) {
       const filtered = units.filter((unit) => unit.jenis_unit === selectedJenisUnit);
       setFilteredUnits(filtered);
-      setSelectedUnit(filtered.length > 0 ? filtered[0].id : '');
+      setSelectedUnit(filtered.length > 0 ? filtered[0].nama_unit : ''); // Store nama_unit instead of id
     } else {
       setFilteredUnits([]);
       setSelectedUnit('');
@@ -140,7 +139,7 @@ const WBSReportForm = () => {
       ...formData,
       kategoriId: selectedCategory,
       tanggalKejadian: date?.format('YYYY-MM-DD'),
-      unit: selectedUnit,
+      unit: selectedUnit, // Send nama_unit instead of id
       filePendukung: fileUrl,
     };
 
@@ -308,7 +307,7 @@ const WBSReportForm = () => {
                           }}
                         >
                           {filteredUnits.map((unit) => (
-                            <MenuItem key={unit.id} value={unit.id}>
+                            <MenuItem key={unit.id} value={unit.nama_unit}>
                               {unit.nama_unit}
                             </MenuItem>
                           ))}

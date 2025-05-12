@@ -9,6 +9,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import * as Yup from 'yup';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '@/lib/api/api';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 interface Category {
   id: string;
@@ -647,92 +648,116 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           )}
 
           {/* File Upload Section */}
-          <Box sx={{ mt: 2, mb: 3 }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: '#003C43', 
-                mb: 1,
-                fontSize: responsiveFontSize,
-              }}
-            >
-              Upload File Pendukung
-            </Typography>
-            <Box>
-              <TextField
-                id="file-upload-field"
-                fullWidth
-                variant="outlined"
-                value={fileName}
-                placeholder="Belum ada file yang dipilih"
-                aria-label="File Pendukung"
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: fileName && <AttachFile sx={{ color: '#FBBF24', mr: 1 }} />,
-                  endAdornment: fileName && (
-                    <IconButton
-                      onClick={() => {
-                        formik.setFieldValue('filePendukung', null);
-                        setFileName('');
-                      }}
-                      size={isMobile ? 'small' : 'medium'}
-                      aria-label="Hapus file"
-                    >
-                      <Delete color="error" />
-                    </IconButton>
-                  ),
-                  style: { fontSize: responsiveFontSize },
-                }}
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                    borderColor: '#135D66' 
-                  },
-                }}
-                error={formik.touched.filePendukung && Boolean(formik.errors.filePendukung)}
-                helperText={formik.touched.filePendukung && formik.errors.filePendukung}
-              />
-            </Box>
-            <Button
-              variant="contained"
-              component="label"
-              sx={{
-                backgroundColor: '#003C43',
-                color: '#E3FEF7',
-                fontWeight: 'bold',
-                '&:hover': { backgroundColor: '#135D66' },
-                px: { xs: 2, sm: 4 },
-                py: 1,
-                textTransform: 'none',
-                fontSize: responsiveFontSize,
-                width: { xs: '100%', sm: 'auto' },
-              }}
-            >
-              Pilih File
-              <input
-                id="file-input"
-                type="file"
-                hidden
-                onChange={(event) => {
-                  if (event.target.files && event.target.files[0]) {
-                    formik.setFieldValue('filePendukung', event.target.files[0]);
-                    setFileName(event.target.files[0].name);
-                  }
-                }}
-                aria-hidden="true"
-              />
-            </Button>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: '#003C43', 
-                mt: 1,
-                fontSize: '0.75rem',
-              }}
-            >
-              Maksimum ukuran file 1MB (opsional)
-            </Typography>
-          </Box>
+{/* File Upload Section */}
+<Box sx={{ mt: 3, mb: 4 }}>
+  <Typography
+    variant="body2"
+    sx={{
+      color: '#003C43',
+      mb: 1,
+      fontSize: responsiveFontSize,
+      fontWeight: 'bold',
+    }}
+  >
+    Upload File Pendukung
+  </Typography>
+  <Box
+    sx={{
+      border: '2px dashed #135D66',
+      borderRadius: 2,
+      p: 3,
+      textAlign: 'center',
+      bgcolor: '#E3FEF7',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    {fileName ? (
+      <>
+        <AttachFile sx={{ color: '#FBBF24', fontSize: 40, mb: 1 }} />
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#003C43',
+            fontSize: responsiveFontSize,
+            mb: 1,
+          }}
+        >
+          {fileName}
+        </Typography>
+        <Button
+          variant="outlined"
+          color="error"
+          size="small"
+          onClick={() => {
+            formik.setFieldValue('filePendukung', null);
+            setFileName('');
+          }}
+          sx={{
+            textTransform: 'none',
+            fontSize: responsiveFontSize,
+          }}
+        >
+          Hapus File
+        </Button>
+      </>
+    ) : (
+      <>
+        <CloudUploadIcon sx={{ color: '#135D66', fontSize: 50, mb: 2 }} />
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#003C43',
+            fontSize: responsiveFontSize,
+            mb: 2,
+          }}
+        >
+          Seret dan lepaskan file di sini, atau klik tombol di bawah untuk memilih file.
+        </Typography>
+        <Button
+          variant="contained"
+          component="label"
+          sx={{
+            backgroundColor: '#003C43',
+            color: '#E3FEF7',
+            fontWeight: 'bold',
+            '&:hover': { backgroundColor: '#135D66' },
+            px: { xs: 2, sm: 4 },
+            py: 1,
+            textTransform: 'none',
+            fontSize: responsiveFontSize,
+          }}
+        >
+          Pilih File
+          <input
+            id="file-input"
+            type="file"
+            hidden
+            onChange={(event) => {
+              if (event.target.files && event.target.files[0]) {
+                formik.setFieldValue('filePendukung', event.target.files[0]);
+                setFileName(event.target.files[0].name);
+              }
+            }}
+            aria-hidden="true"
+          />
+        </Button>
+      </>
+    )}
+  </Box>
+  <Typography
+    variant="body2"
+    sx={{
+      color: '#003C43',
+      mt: 1,
+      fontSize: '0.75rem',
+    }}
+  >
+    Maksimum ukuran file 1MB (opsional)
+  </Typography>
+</Box>
 
           {/* Submit Button */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

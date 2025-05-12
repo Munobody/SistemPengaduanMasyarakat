@@ -20,22 +20,17 @@ import {
   Button,
 } from '@mui/material';
 import { Delete } from '@mui/icons-material';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import api from '@/lib/api/api';
 
 interface Petugas {
-  id: string;
+  id?: string;
   email: string;
   no_identitas: string;
   name: string;
   no_telphone: string | null;
   createdAt: string;
   updatedAt: string;
-  unit_petugas: {
-    id: string;
-    nama_unit: string;
-  };
   userLevel: {
     name: string;
   };
@@ -56,18 +51,14 @@ export default function PetugasTable({ unitId, currentUserId }: PetugasTableProp
 
   const fetchPetugas = async () => {
     try {
-      const token = localStorage.getItem('custom-auth-token');
-      if (!token) {
-        throw new Error('Token not found');
-      }
-
       const response = await api.get(`/units/petugas/unit`, {
         params: {
           unitId,
         },
       });
 
-      setPetugasList(response.data.content.entries || []);
+      console.log('✅ Data petugas:', response.data); // Log data untuk debugging
+      setPetugasList(response.data.content || []);
     } catch (error: any) {
       console.error('❌ Gagal memuat data petugas:', error.response?.data || error.message);
     } finally {
@@ -190,7 +181,7 @@ export default function PetugasTable({ unitId, currentUserId }: PetugasTableProp
                   <TableCell>{petugas.email}</TableCell>
                   <TableCell>{petugas.no_identitas}</TableCell>
                   <TableCell>{petugas.userLevel.name}</TableCell>
-                  <TableCell>{petugas.unit_petugas.nama_unit}</TableCell>
+                  <TableCell>{'Tidak ada unit'}</TableCell>
                   <TableCell>
                     <IconButton
                       color="error"

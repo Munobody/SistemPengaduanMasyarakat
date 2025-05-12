@@ -11,7 +11,6 @@ interface Pengaduan {
   judul: string;
   deskripsi: string;
   kategoriId: string;
-  nameUnit: string;
   pelaporId: string;
   status: string;
   approvedBy: string | null;
@@ -23,6 +22,10 @@ interface Pengaduan {
     id: string;
     nama: string;
   };
+  unit?: {
+    id: string;
+    nama_unit: string;
+  }
 }
 
 interface KelolaPengaduanPageProps {
@@ -297,7 +300,7 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
                     <Typography variant="subtitle2" color="text.secondary">
                       Unit
                     </Typography>
-                    <Typography variant="body1">{complaint.nameUnit}</Typography>
+                    <Typography variant="body1">{complaint.unit?.nama_unit}</Typography>
                   </Grid>
 
                   <Grid item xs={12}>
@@ -348,49 +351,56 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
               </Typography>
               <form ref={responseFormRef} onSubmit={handleResponseSubmit}>
                 <Grid container spacing={2} direction="column">
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      select
-                      label="Status"
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      margin="normal"
-                      required
-                    >
-                      {statusOptions.map((status) => (
-                        <MenuItem key={status} value={status}>
-                          {status}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Status"
+                    id="status-select" 
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    margin="normal"
+                    required
+                  >
+                    {statusOptions.map((status) => (
+                      <MenuItem key={status} value={status}>
+                        {status}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
 
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Tanggapan Petugas"
-                      multiline
-                      rows={4}
-                      value={responseText}
-                      onChange={(e) => setResponseText(e.target.value)}
-                      margin="normal"
-                      required
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Tanggapan Petugas"
+                    id="response-text" 
+                    multiline
+                    rows={4}
+                    value={responseText}
+                    onChange={(e) => setResponseText(e.target.value)}
+                    margin="normal"
+                    required
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    component="label"
+                    startIcon={<AttachFileIcon />}
+                    sx={{ bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }}
+                  >
+                    Upload File Hasil
+                    <input
+                      type="file"
+                      hidden
+                      id="file-upload" 
+                      onChange={(e) => setPetugasFile(e.target.files?.[0] || null)}
                     />
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <Button
-                      variant="contained"
-                      component="label"
-                      startIcon={<AttachFileIcon />}
-                      sx={{ bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }}
-                    >
-                      Upload File Hasil
-                      <input type="file" hidden onChange={(e) => setPetugasFile(e.target.files?.[0] || null)} />
-                    </Button>
-                    {petugasFile && <Typography sx={{ mt: 2 }}>File terpilih: {petugasFile.name}</Typography>}
-                  </Grid>
+                  </Button>
+                  {petugasFile && <Typography sx={{ mt: 2 }}>File terpilih: {petugasFile.name}</Typography>}
+                </Grid>
 
                   <Grid item xs={12}>
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>

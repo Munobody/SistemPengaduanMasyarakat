@@ -420,60 +420,43 @@ export default function PengaduanPage() {
               </Grid>
 
               <Grid item xs={12}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    alignItems: isMobile ? 'stretch' : 'flex-start',
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    component="label"
-                    startIcon={<CloudUploadIcon />}
-                    fullWidth={isMobile}
-                    size={isMobile ? 'small' : 'medium'}
-                    sx={{
-                      bgcolor: '#006A67',
-                      '&:hover': { bgcolor: '#0F2B33' },
-                      width: isMobile ? '100%' : 'auto',
-                    }}
-                  >
-                    Upload File (Max 1MB)
-                    <input type="file" hidden onChange={handleFileChange} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
-                  </Button>
-                  {selectedFile && (
-                    <Typography
-                      variant={isMobile ? 'body2' : 'body1'}
-                      sx={{
-                        mt: 1,
-                        color: 'text.secondary',
-                      }}
-                    >
-                      File terpilih: {selectedFile.name}
-                    </Typography>
-                  )}
-                  {fileError && (
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: 'error.main',
-                        mt: 0.5,
-                      }}
-                    >
-                      {fileError}
-                    </Typography>
-                  )}
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 0.5, fontSize: isMobile ? '0.8rem' : '0.9rem' }}
-                  >
-                    Unggah file pendukung (maksimal 1MB, format: PDF, DOC, DOCX, PNG, JPG, JPEG)
+                  <Typography variant="h6" sx={{ 
+                    color: '#135D66',
+                    mb: 2,
+                    borderBottom: '2px solid #E3FEF7',
+                    pb: 1
+                  }}>
+                    Dokumen Pendukung
                   </Typography>
-                </Box>
-              </Grid>
+                  <Box sx={{ 
+                    border: '2px dashed #135D66',
+                    borderRadius: 2,
+                    p: 3,
+                    textAlign: 'center'
+                  }}>
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      startIcon={<CloudUploadIcon />}
+                      sx={{
+                        color: '#135D66',
+                        borderColor: '#135D66',
+                        '&:hover': {
+                          borderColor: '#003C43',
+                          bgcolor: 'rgba(19, 93, 102, 0.1)',
+                        },
+                      }}
+                    >
+                      Upload File
+                      <input type="file" hidden onChange={handleFileChange} />
+                    </Button>
+                    {File && (
+                      <Typography sx={{ mt: 2, color: '#135D66' }}>
+                        File terpilih: {File.name}
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
             </Grid>
 
             <Box
