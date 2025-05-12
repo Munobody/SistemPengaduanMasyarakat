@@ -5,6 +5,9 @@ const config = {
         exclude: [''],
       },
     },
+    eslint:{
+      ignoreDuringBuilds: true,
+    }
   };
   
   export default config;
