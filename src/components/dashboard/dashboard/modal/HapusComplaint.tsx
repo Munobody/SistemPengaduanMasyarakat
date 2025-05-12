@@ -136,8 +136,8 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange 
                   <TextField
                     fullWidth
                     margin="dense"
-                    value={complaint.title}
-                    onChange={(e) => onChange({ ...complaint, title: e.target.value })}
+                    value={complaint.judul}
+                    onChange={(e) => onChange({ ...complaint, judul: e.target.value })}
                   />
                 </TableCell>
               </TableRow>
@@ -151,8 +151,8 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange 
                     margin="dense"
                     multiline
                     rows={4}
-                    value={complaint.content}
-                    onChange={(e) => onChange({ ...complaint, content: e.target.value })}
+                    value={complaint.deskripsi}
+                    onChange={(e) => onChange({ ...complaint, deskripsi: e.target.value })}
                   />
                 </TableCell>
               </TableRow>
