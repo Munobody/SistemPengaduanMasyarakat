@@ -20,7 +20,7 @@ import {
   TextField,
   useMediaQuery,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -43,32 +43,31 @@ export interface ComplaintWbs {
   lokasi?: string;
 }
 
-export function TabelWbs(): JSX.Element {
+export function TabelWbs() {
   const [complaints, setComplaints] = useState<ComplaintWbs[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedRow, setSelectedRow] = useState<ComplaintWbs | null>(null);
-  const [viewOpen, setViewOpen] = useState<boolean>(false);
-  const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [totalRows, setTotalRows] = useState<number>(0);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const [totalRows, setTotalRows] = useState(0);
   const isMobile = useMediaQuery('(max-width:600px)');
 
-  const statusOrder: Record<string, number> = {
+  const statusOrder: { [key: string]: number } = {
     PENDING: 1,
     PROCESS: 2,
     COMPLETED: 3,
     REJECTED: 4,
   };
 
-  const fetchComplaints = async (): Promise<void> => {
+  const fetchComplaints = async () => {
     setLoading(true);
     try {
       const response = await api.get(`/PelaporanWbs?page=${page}&rows=${pageSize}&search=${searchQuery}`);
       const data = response.data;
-
-      if (data?.content?.entries) {
+      if (data?.content) {
         const sortedComplaints = data.content.entries.sort((a: ComplaintWbs, b: ComplaintWbs) => {
           const statusComparison = statusOrder[a.status] - statusOrder[b.status];
           if (statusComparison !== 0) return statusComparison;
@@ -76,50 +75,45 @@ export function TabelWbs(): JSX.Element {
         });
         setComplaints(sortedComplaints);
         setTotalRows(data.content.totalRows || sortedComplaints.length);
-      } else {
-        setComplaints([]);
-        setTotalRows(0);
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message || 'Gagal memuat data pengaduan.');
-      }
+    } catch (error: any) {
+      console.error('Error fetching complaints:', error);
+      toast.error(error.response?.data?.message || 'Gagal memuat data pengaduan.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect((): void => {
-    void fetchComplaints();
+  useEffect(() => {
+    fetchComplaints();
   }, [page, pageSize, searchQuery]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setPage(1);
   };
 
-  const handleDelete = async (row: ComplaintWbs): Promise<void> => {
+  const handleDelete = async (row: ComplaintWbs) => {
     try {
       await api.delete(`/PelaporanWbs?ids=["${row.id}"]`);
       toast.success('Pengaduan berhasil dihapus.');
-      void fetchComplaints();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message || 'Gagal menghapus pengaduan.');
-      }
+      fetchComplaints(); // Refresh the list after deletion
+    } catch (error: any) {
+      console.error('Error deleting complaint:', error);
+      toast.error(error.response?.data?.message || 'Gagal menghapus pengaduan.');
     } finally {
       setMenuAnchor(null);
     }
   };
 
-  const columns: GridColDef[] = [
+  const columns: any = [
     {
       field: 'judul',
       headerName: 'Judul Laporan',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => <span>{params.row.judul ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params.row.judul ?? '-'}</span>,
     },
     {
       field: 'deskripsi',
@@ -127,7 +121,7 @@ export function TabelWbs(): JSX.Element {
       flex: 2,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => <span>{params.row.deskripsi ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params.row.deskripsi ?? '-'}</span>,
     },
     {
       field: 'createdAt',
@@ -135,7 +129,7 @@ export function TabelWbs(): JSX.Element {
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => (
+      renderCell: (params: any) => (
         <span>{params.row.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
       ),
     },
@@ -145,7 +139,7 @@ export function TabelWbs(): JSX.Element {
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => <span>{params.row.kategori?.nama ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params.row.kategori?.nama ?? '-'}</span>,
     },
     {
       field: 'unit',
@@ -153,7 +147,57 @@ export function TabelWbs(): JSX.Element {
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => <span>{params.row.unit ?? '-'}</span>,
+      renderCell: (params: any) => <span>{params.row.unit ?? '-'}</span>,
+    },
+    {
+      field: 'response',
+      headerName: 'Tanggapan Petugas',
+      flex: 1.5,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => (
+        <span
+          style={{
+            whiteSpace: 'normal',
+            wordWrap: 'break-word',
+            width: '100%',
+            textAlign: 'center',
+            padding: '8px',
+          }}
+        >
+          {params.row.response ?? '-'}
+        </span>
+      ),
+    },
+    {
+      field: 'filePendukung',
+      headerName: 'File Pendukung',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) =>
+        params.row.filePendukung ? (
+          <IconButton size="small" href={params.row.filePendukung} target="_blank" title="Lihat File Pendukung">
+            <AttachFileIcon />
+          </IconButton>
+        ) : (
+          '-'
+        ),
+    },
+    {
+      field: 'filePetugas',
+      headerName: 'File Petugas',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) =>
+        params.row.filePetugas ? (
+          <IconButton size="small" href={params.row.filePetugas} target="_blank" title="Lihat File Petugas">
+            <AttachFileIcon />
+          </IconButton>
+        ) : (
+          '-'
+        ),
     },
     {
       field: 'status',
@@ -161,15 +205,15 @@ export function TabelWbs(): JSX.Element {
       flex: 1,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => {
+      renderCell: (params: any) => {
         const textColor =
           params.row.status === 'PENDING'
             ? '#F59E0B'
             : params.row.status === 'PROCESS'
-            ? '#3B82F6'
-            : params.row.status === 'COMPLETED'
-            ? '#10B981'
-            : '#EF4444';
+              ? '#3B82F6'
+              : params.row.status === 'COMPLETED'
+                ? '#10B981'
+                : '#EF4444';
         return (
           <Chip
             label={params.row.status ?? '-'}
@@ -191,7 +235,7 @@ export function TabelWbs(): JSX.Element {
       hideable: false,
       headerAlign: 'center',
       align: 'center',
-      renderCell: (params) => (
+      renderCell: (params: any) => (
         <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <IconButton
             onClick={(event) => {
@@ -238,7 +282,113 @@ export function TabelWbs(): JSX.Element {
     },
   ];
 
-  const handleViewOpen = async (row: ComplaintWbs): Promise<void> => {
+  const mobileColumns: any = [
+    {
+      field: 'judul',
+      headerName: 'Judul',
+      flex: 1.5,
+      headerAlign: 'center',
+      align: 'left',
+      renderCell: (params: any) => (
+        <Box sx={{ py: 1 }}>
+          <span>{params.row.judul ?? '-'}</span>
+        </Box>
+      ),
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Tanggal',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => (
+        <span>{params.row.createdAt ? dayjs(params.row.createdAt).format('DD/MM/YYYY') : '-'}</span>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => {
+        const textColor =
+          params.row.status === 'PENDING'
+            ? '#F59E0B'
+            : params.row.status === 'PROCESS'
+              ? '#3B82F6'
+              : params.row.status === 'COMPLETED'
+                ? '#10B981'
+                : '#EF4444';
+        return (
+          <Chip
+            label={params.row.status ?? '-'}
+            sx={{
+              color: textColor,
+              fontWeight: 'bold',
+              backgroundColor: 'transparent',
+              fontSize: '0.75rem',
+            }}
+          />
+        );
+      },
+    },
+    {
+      field: 'actions',
+      headerName: 'Aksi',
+      flex: 0.8,
+      headerAlign: 'center',
+      align: 'center',
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <IconButton
+            onClick={(event) => {
+              setMenuAnchor(event.currentTarget);
+              setSelectedRow(params.row);
+            }}
+            size="small"
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={() => setMenuAnchor(null)}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                selectedRow && handleViewOpen(selectedRow);
+                setMenuAnchor(null);
+              }}
+            >
+              <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Lihat
+            </MenuItem>
+            {selectedRow?.status === 'COMPLETED' && (
+              <MenuItem
+                onClick={() => {
+                  selectedRow && handleDelete(selectedRow);
+                }}
+              >
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Hapus
+              </MenuItem>
+            )}
+          </Menu>
+        </Box>
+      ),
+    },
+  ];
+
+  const activeColumns = isMobile ? mobileColumns : columns;
+
+  const handleViewOpen = async (row: ComplaintWbs) => {
     try {
       const response = await api.get(`/PelaporanWbs/${row.id}`);
       const data = response.data.content;
@@ -251,21 +401,52 @@ export function TabelWbs(): JSX.Element {
         lokasi: data.lokasi || '-',
       });
       setViewOpen(true);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error(error.message || 'Gagal memuat detail pengaduan.');
-      }
+    } catch (error: any) {
+      console.error('Error fetching complaint details:', error);
+      toast.error(error.response?.data?.message || 'Gagal memuat detail pengaduan.');
     }
   };
 
-  const handleViewClose = (): void => {
+  const handleViewClose = () => {
     setViewOpen(false);
     setSelectedRow(null);
   };
 
-  const handlePaginationChange = (model: GridPaginationModel): void => {
-    setPage(model.page + 1);
-    setPageSize(model.pageSize);
+  const handleExportCSV = () => {
+    const csvContent = [
+      [
+        'Judul Laporan',
+        'Isi Laporan',
+        'Tanggal',
+        'Kategori',
+        'Unit Tertuju',
+        'Status',
+        'Tanggapan Petugas',
+        'File Pendukung',
+        'File Petugas',
+      ],
+      ...complaints.map((c: ComplaintWbs) => [
+        c.judul,
+        c.deskripsi,
+        c.createdAt ? dayjs(c.createdAt).format('DD/MM/YYYY') : '-',
+        c.kategori?.nama,
+        c.unit,
+        c.status,
+        c.response || '-',
+        c.filePendukung || '-',
+        c.filePetugas || '-',
+      ]),
+    ]
+      .map((e) => e.map((x: any) => `"${(x || '').toString().replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `pengaduan_${dayjs().format('YYYY-MM-DD')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -281,6 +462,9 @@ export function TabelWbs(): JSX.Element {
           onChange={handleSearchChange}
           sx={{ width: isMobile ? '70%' : '300px' }}
         />
+        <IconButton onClick={handleExportCSV} title="Export CSV">
+          <FileDownloadIcon />
+        </IconButton>
       </Box>
       <Box sx={{ p: 2, width: '100%' }}>
         {loading ? (
@@ -290,12 +474,15 @@ export function TabelWbs(): JSX.Element {
         ) : (
           <DataGrid
             rows={complaints}
-            columns={columns}
-            pageSizeOptions={[5, 10, 20, 100]}
+            columns={activeColumns}
+            pageSizeOptions={[5, 10, 20,100]}
             pagination
             paginationMode="server"
             rowCount={totalRows}
-            onPaginationModelChange={handlePaginationChange}
+            onPaginationModelChange={(model) => {
+              setPage(model.page + 1);
+              setPageSize(model.pageSize);
+            }}
             disableColumnMenu
             disableRowSelectionOnClick
             disableColumnFilter
@@ -303,6 +490,18 @@ export function TabelWbs(): JSX.Element {
             disableColumnResize
             disableColumnSorting
             autoHeight
+            slotProps={{
+              toolbar: {
+                sx: {
+                  '& .MuiButtonBase-root': {
+                    color: '#16404D',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: '#16404D',
+                  },
+                },
+              },
+            }}
           />
         )}
       </Box>
