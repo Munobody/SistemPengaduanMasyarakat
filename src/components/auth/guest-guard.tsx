@@ -53,13 +53,13 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
       }
 
       else if (user.userLevel?.name === 'PIMPINAN_UNIVERSITAS') {
-        logger.debug('[GuestGuard]: User is PIMPINAN_UNOVERSITAS, redirecting to petugas dashboard');
+        logger.debug('[GuestGuard]: User is PIMPINAN_UNIVERSITAS, redirecting to petugas dashboard');
         router.replace(paths.dashboard.petugas);
         return;
       }
 
       else if (user.userLevel?.name === 'PIMPINAN_UNIT') {
-        logger.debug('[GuestGuard]: User is PIMPINAN_UNOVERSITAS, redirecting to petugas dashboard');
+        logger.debug('[GuestGuard]: User is PIMPINAN_UNIT, redirecting to petugas dashboard');
         router.replace(paths.dashboard.petugas);
         return;
       }
