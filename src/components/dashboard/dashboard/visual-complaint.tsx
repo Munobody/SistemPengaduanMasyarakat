@@ -66,7 +66,6 @@ const WelcomeMessage = React.memo(({ userName }: { userName: string }) => (
   </Typography>
 ));
 
-// Skeleton for StatsCard
 const StatsCardSkeleton = () => (
   <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2, minHeight: 150 }}>
     <Skeleton circle width={40} height={40} />
@@ -132,29 +131,29 @@ const ComplaintsVisual: React.FC = () => {
 
     const fetchAclAndData = async () => {
       if (!userLevelId) return;
-
+    
       try {
         const aclRes = await api.get<AclResponse>(`/acl/${userLevelId}`);
         const permissions = aclRes.data.content.permissions;
-
+    
         const wbsAccess = permissions.some(
           (p) =>
             (p.subject === 'PENGADUAN_WBS' || p.subject === 'WBS') &&
             p.actions.includes('read')
         );
-
+    
         const publicAccess = permissions.some(
           (p) =>
             p.subject === 'PENGADUAN_MASYARAKAT' &&
             p.actions.includes('read')
         );
-
+    
         if (!isMounted) return;
         setHasWBSAccess(wbsAccess);
         setHasPublicAccess(publicAccess);
-
+    
         const regularRes = await api.get<ApiResponse>('/pelaporan');
-
+    
         let wbsEntries: PengaduanEntry[] = [];
         if (wbsAccess) {
           try {
@@ -167,7 +166,7 @@ const ComplaintsVisual: React.FC = () => {
             console.error('Error fetching WBS data:', wbsError);
           }
         }
-
+    
         let publicEntries: PengaduanEntry[] = [];
         if (publicAccess) {
           try {
@@ -180,24 +179,24 @@ const ComplaintsVisual: React.FC = () => {
             console.error('Error fetching public complaints:', publicError);
           }
         }
-
+    
         const allEntries = [
           ...regularRes.data.content.entries,
-          ...wbsEntries,
-          ...publicEntries,
+          ...(wbsAccess ? wbsEntries : []),
+          ...(publicAccess ? publicEntries : []),
         ];
-
+    
         const regularCount = regularRes.data.content.entries.length;
-        const wbsCount = wbsEntries.length;
-        const publicCount = publicEntries.length;
-
+        const wbsCount = wbsAccess ? wbsEntries.length : 0;
+        const publicCount = publicAccess ? publicEntries.length : 0;
+    
         if (isMounted) {
           setData({
             ...regularRes.data,
             content: {
               ...regularRes.data.content,
               entries: allEntries,
-              totalData: regularCount + (wbsAccess ? wbsCount : 0) + (publicAccess ? publicCount : 0),
+              totalData: regularCount + wbsCount + publicCount,
             },
           });
           setLoading(false);
@@ -236,23 +235,23 @@ const ComplaintsVisual: React.FC = () => {
 
     const entries = data.content.entries;
     const regularEntries = entries.filter((entry) => !entry.isWBS && !entry.isPublic);
-    const wbsEntries = entries.filter((entry) => entry.isWBS);
-    const publicEntries = entries.filter((entry) => entry.isPublic);
-
+    const wbsEntries = hasWBSAccess ? entries.filter((entry) => entry.isWBS) : [];
+    const publicEntries = hasPublicAccess ? entries.filter((entry) => entry.isPublic) : [];
+  
     const statusCounts: Record<string, number> = {};
     entries.forEach((entry) => {
       statusCounts[entry.status] = (statusCounts[entry.status] || 0) + 1;
     });
-
+  
     const completedCount = statusCounts['COMPLETED'] || 0;
     const pendingCount = statusCounts['PENDING'] || 0;
     const processCount = statusCounts['PROCESS'] || 0;
     const wbsCount = wbsEntries.length;
     const publicCount = publicEntries.length;
     const regularCount = regularEntries.length;
-    const totalCount = entries.length;
+    const totalCount = regularCount + wbsCount + publicCount;
     const completionRate = totalCount > 0 ? ((completedCount / totalCount) * 100).toFixed(1) : '0';
-
+  
     const statusLabels = Object.keys(statusCounts);
     const pieChartData = {
       labels: statusLabels,
@@ -264,7 +263,7 @@ const ComplaintsVisual: React.FC = () => {
         },
       ],
     };
-
+  
     return {
       statusCounts,
       pieChartData,
