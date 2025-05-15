@@ -440,48 +440,48 @@ export default function PengaduanPage() {
                 </Typography>
               </Grid>
               <Grid item xs={12}>
-  <Typography
-    variant="h6"
-    sx={{
-      color: '#135D66',
-      mb: 2,
-      borderBottom: '2px solid #E3FEF7',
-      pb: 1,
-    }}
-  >
-    Dokumen Pendukung
-  </Typography>
-  <Box
-    {...getRootProps()}
-    sx={{
-      border: '2px dashed #135D66',
-      borderRadius: 2,
-      p: 3,
-      textAlign: 'center',
-      cursor: 'pointer',
-      '&:hover': {
-        borderColor: '#003C43',
-        bgcolor: 'rgba(19, 93, 102, 0.1)',
-      },
-    }}
-  >
-    <input {...getInputProps()} />
-    <CloudUploadIcon sx={{ fontSize: '3rem', color: '#135D66' }} />
-    <Typography sx={{ mt: 2, color: '#135D66' }}>
-      Seret dan lepaskan file di sini, atau klik untuk memilih file
-    </Typography>
-    {selectedFile && (
-      <Typography sx={{ mt: 2, color: '#135D66' }}>
-        File terpilih: {selectedFile.name}
-      </Typography>
-    )}
-    {fileError && (
-      <Typography sx={{ mt: 1, color: 'error.main' }}>
-        {fileError}
-      </Typography>
-    )}
-  </Box>
-</Grid>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: '#135D66',
+                    mb: 2,
+                    borderBottom: '2px solid #E3FEF7',
+                    pb: 1,
+                  }}
+                >
+                  Dokumen Pendukung
+                </Typography>
+                <Box
+                  {...getRootProps()}
+                  sx={{
+                    border: '2px dashed #135D66',
+                    borderRadius: 2,
+                    p: 3,
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      borderColor: '#003C43',
+                      bgcolor: 'rgba(19, 93, 102, 0.1)',
+                    },
+                  }}
+                >
+                  <input {...getInputProps()} />
+                  <CloudUploadIcon sx={{ fontSize: '3rem', color: '#135D66' }} />
+                  <Typography sx={{ mt: 2, color: '#135D66' }}>
+                    Seret dan lepaskan file di sini, atau klik untuk memilih file
+                  </Typography>
+                  {selectedFile && (
+                    <Typography sx={{ mt: 2, color: '#135D66' }}>
+                      File terpilih: {selectedFile.name}
+                    </Typography>
+                  )}
+                  {fileError && (
+                    <Typography sx={{ mt: 1, color: 'error.main' }}>
+                      {fileError}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
             </Grid>
 
             <Box
