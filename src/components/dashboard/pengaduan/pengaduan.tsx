@@ -14,7 +14,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
-
+import { useDropzone } from 'react-dropzone';
 import 'react-toastify/dist/ReactToastify.css';
 
 import api from '@/lib/api/api';
@@ -101,7 +101,7 @@ export default function PengaduanPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const fileSize = file.size / 1024 / 1024;
+      const fileSize = file.size / 1024 / 1024; // Ukuran file dalam MB
       if (fileSize > 1) {
         setFileError('Ukuran file tidak boleh lebih dari 1MB');
         setSelectedFile(null);
@@ -115,17 +115,17 @@ export default function PengaduanPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-
+  
     let fileUrl = '';
     if (selectedFile) {
       const formData = new FormData();
       formData.append('file', selectedFile);
-
+  
       try {
         const uploadResponse = await api.post('/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-
+  
         if (uploadResponse.status === 200) {
           fileUrl = uploadResponse.data.content.secure_url;
           console.log('✅ File berhasil diunggah:', fileUrl);
@@ -139,7 +139,7 @@ export default function PengaduanPage() {
         return;
       }
     }
-
+  
     const formData = new FormData(formRef.current!);
     const values = {
       judul: formData.get('title') as string,
@@ -148,20 +148,20 @@ export default function PengaduanPage() {
       unitId: selectedUnit,
       kategoriId: selectedCategory,
       harapan_pelapor: formData.get('expectation') as string,
-      filePendukung: fileUrl,
+      filePendukung: fileUrl, // URL file yang diunggah
       response: '',
       filePetugas: '',
     };
-
+  
     console.log('📝 Data yang akan dikirim:', values);
-
+  
     try {
       const response = await api.post('/pelaporan', values);
-
+  
       if (response.status === 201) {
         console.log('✅ Laporan berhasil dikirim:', response.data);
         toast.success('Laporan berhasil dikirim!');
-
+  
         formRef.current!.reset();
         setSelectedFile(null);
         setSelectedCategory(categories[0]?.id || '');
@@ -175,6 +175,27 @@ export default function PengaduanPage() {
       setLoading(false);
     }
   };
+  const handleDrop = (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      const fileSize = file.size / 1024 / 1024; // Ukuran file dalam MB
+      if (fileSize > 1) {
+        setFileError('Ukuran file tidak boleh lebih dari 1MB');
+        setSelectedFile(null);
+        return;
+      }
+      setFileError('');
+      setSelectedFile(file);
+    }
+  };
+  
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop: handleDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'image/*': ['.jpeg', '.jpg', '.png'],
+    },
+  });
 
   return (
     <Box
@@ -418,45 +439,49 @@ export default function PengaduanPage() {
                   Tulis harapan Anda terhadap penyelesaian pengaduan ini
                 </Typography>
               </Grid>
-
               <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ 
-                    color: '#135D66',
-                    mb: 2,
-                    borderBottom: '2px solid #E3FEF7',
-                    pb: 1
-                  }}>
-                    Dokumen Pendukung
-                  </Typography>
-                  <Box sx={{ 
-                    border: '2px dashed #135D66',
-                    borderRadius: 2,
-                    p: 3,
-                    textAlign: 'center'
-                  }}>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      startIcon={<CloudUploadIcon />}
-                      sx={{
-                        color: '#135D66',
-                        borderColor: '#135D66',
-                        '&:hover': {
-                          borderColor: '#003C43',
-                          bgcolor: 'rgba(19, 93, 102, 0.1)',
-                        },
-                      }}
-                    >
-                      Upload File
-                      <input type="file" hidden onChange={handleFileChange} />
-                    </Button>
-                    {File && (
-                      <Typography sx={{ mt: 2, color: '#135D66' }}>
-                        File terpilih: {File.name}
-                      </Typography>
-                    )}
-                  </Box>
-                </Grid>
+  <Typography
+    variant="h6"
+    sx={{
+      color: '#135D66',
+      mb: 2,
+      borderBottom: '2px solid #E3FEF7',
+      pb: 1,
+    }}
+  >
+    Dokumen Pendukung
+  </Typography>
+  <Box
+    {...getRootProps()}
+    sx={{
+      border: '2px dashed #135D66',
+      borderRadius: 2,
+      p: 3,
+      textAlign: 'center',
+      cursor: 'pointer',
+      '&:hover': {
+        borderColor: '#003C43',
+        bgcolor: 'rgba(19, 93, 102, 0.1)',
+      },
+    }}
+  >
+    <input {...getInputProps()} />
+    <CloudUploadIcon sx={{ fontSize: '3rem', color: '#135D66' }} />
+    <Typography sx={{ mt: 2, color: '#135D66' }}>
+      Seret dan lepaskan file di sini, atau klik untuk memilih file
+    </Typography>
+    {selectedFile && (
+      <Typography sx={{ mt: 2, color: '#135D66' }}>
+        File terpilih: {selectedFile.name}
+      </Typography>
+    )}
+    {fileError && (
+      <Typography sx={{ mt: 1, color: 'error.main' }}>
+        {fileError}
+      </Typography>
+    )}
+  </Box>
+</Grid>
             </Grid>
 
             <Box
