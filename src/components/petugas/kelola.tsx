@@ -12,6 +12,7 @@ interface Pengaduan {
   deskripsi: string;
   kategoriId: string;
   pelaporId: string;
+  NIK: string;
   status: string;
   approvedBy: string | null;
   harapan_pelapor: string | null;
@@ -259,12 +260,21 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
                 </Box>
               ) : complaint ? (
                 <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">
+                    {complaint.NIK ? (
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                      NIK Pelapor
+                      </Typography>
+                      <Typography variant="body1">{complaint.NIK}</Typography>
+                    </Grid>
+                    ) : (
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="text.secondary">
                       ID Pelapor
-                    </Typography>
-                    <Typography variant="body1">{complaint.pelaporId}</Typography>
-                  </Grid>
+                      </Typography>
+                      <Typography variant="body1">{complaint.pelaporId}</Typography>
+                    </Grid>
+                    )}
 
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" color="text.secondary">

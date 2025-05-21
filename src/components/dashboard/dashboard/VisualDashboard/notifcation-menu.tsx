@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useEffect } from 'react';
 import {
   Menu,
   MenuItem,
@@ -39,6 +39,7 @@ interface NotificationMenuProps {
   totalNotifications: number;
   onPageChange: (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => void;
   error: string | null;
+  onUnreadNotification?: () => void; 
 }
 
 const NotificationMenu: React.FC<NotificationMenuProps> = memo(
@@ -62,6 +63,11 @@ const NotificationMenu: React.FC<NotificationMenuProps> = memo(
     const [isSelecting, setIsSelecting] = useState<boolean>(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const [showUnreadNotification, setShowUnreadNotification] = useState(false);
+
+    const handleUnreadNotification = () => {
+      setShowUnreadNotification(true);
+    };
 
     const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
       setExpanded(isExpanded ? panel : false);
@@ -97,6 +103,7 @@ const NotificationMenu: React.FC<NotificationMenuProps> = memo(
       handleCloseConfirmDialog();
       handleClose();
     };
+    
 
     const getRelativeTime = (date: string) => {
       try {
@@ -105,6 +112,13 @@ const NotificationMenu: React.FC<NotificationMenuProps> = memo(
         return 'Baru saja';
       }
     };
+
+    useEffect(() => {
+      const unreadNotification = notifications.find((notification) => !notification.isRead);
+      if (unreadNotification) {
+        setExpanded(unreadNotification.id); // Automatically expand the first unread notification
+      }
+    }, [notifications]);
 
     return (
       <Menu
@@ -348,6 +362,8 @@ const NotificationMenu: React.FC<NotificationMenuProps> = memo(
             </>
           )}
         </Box>
+
+        
 
         {/* Dialog for confirmation */}
         <Dialog

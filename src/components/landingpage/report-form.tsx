@@ -10,6 +10,8 @@ import * as Yup from 'yup';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '@/lib/api/api';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 interface Category {
   id: string;
@@ -124,6 +126,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 
   const formik = useFormik({
     initialValues: {
+      NIK:'',
       judul: '',
       deskripsi: '',
       status: 'PENDING',
@@ -137,49 +140,52 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       filePendukung: null as File | null,
     },
     validationSchema: Yup.object({
+      NIK: Yup.string()
+        .matches(/^\d{16}$/, 'NIK harus terdiri dari 16 digit'),
+        // .nullable(),
       nama: Yup.string().required('Nama wajib diisi'),
       judul: Yup.string().required('Judul laporan wajib diisi'),
       deskripsi: Yup.string().required('Isi laporan wajib diisi'),
-      no_telphone: Yup.string()
-        .matches(/^62\d{9,13}$/, 'Nomor WhatsApp harus diawali dengan 62 dan berisi 9-13 digit')
-        .required('Nomor WhatsApp wajib diisi'),
       kategoriId: Yup.string().required('Pilih kategori laporan'),
       jenisUnit: Yup.string().required('Pilih jenis unit terlebih dahulu'),
       unitId: Yup.string().required('Pilih unit'),
-      filePendukung: Yup.mixed<File>().test(
+      filePendukung: Yup.mixed<File>()
+      .nullable()
+      .test(
         'fileSize',
         'Ukuran file maksimum 1MB',
         (value) => {
-          if (!value) return true; // File is optional
+          if (!value) return true;
           if (value instanceof File) {
-            return value.size <= 1024 * 1024; // 1MB limit
+            return value.size <= 1024 * 1024;
           }
-          return false; // Invalid file
+          return false; 
         }
       ),
     }),
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/pengaduan`;
-
+  
       try {
         let fileUrl = '';
         if (values.filePendukung) {
           const formData = new FormData();
           formData.append('file', values.filePendukung);
-
+  
           const uploadResponse = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
-
+  
           if (uploadResponse.status === 200) {
             fileUrl = uploadResponse.data.content.secure_url;
           } else {
             throw new Error('Gagal mengunggah file.');
           }
         }
-
+  
         const dataToSend = {
+          NIK: values.NIK.trim(),
           judul: values.judul.trim(),
           deskripsi: values.deskripsi.trim(),
           status: 'PENDING',
@@ -192,11 +198,11 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           filePendukung: fileUrl,
           filePetugas: '',
         };
-
+  
         const response = await api.post(apiUrl, dataToSend, {
           headers: { 'Content-Type': 'application/json' },
         });
-
+  
         if (response.status === 200) {
           toast.success('Laporan berhasil dikirim!');
           resetForm();
@@ -212,6 +218,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         setLoading(false);
       }
     },
+    enableReinitialize: true,
   });
 
   // Responsive text sizes
@@ -258,6 +265,46 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         </Typography>
 
         <form onSubmit={formik.handleSubmit}>
+          {/* NIK  Field */}
+          <Box mb={2}>
+            <TextField
+              id="nik-field"
+              fullWidth
+              label="NIK"
+              name="NIK"
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                  borderColor: '#135D66' 
+                },
+                '& .MuiInputLabel-root.Mui-focused': { 
+                  color: '#135D66' 
+                },
+              }}
+              InputLabelProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              InputProps={{ 
+                style: { fontSize: responsiveFontSize } 
+              }}
+              value={formik.values.NIK}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.NIK && Boolean(formik.errors.NIK)}
+              helperText={formik.touched.NIK && formik.errors.NIK}
+            />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#003C43', 
+                mt: 0.5,
+                fontSize: '0.75rem',
+              }}
+            >
+              Masukkan NIK Anda
+            </Typography>
+          </Box>
+
           {/* Nama Field */}
           <Box mb={2}>
             <TextField
@@ -299,44 +346,56 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           </Box>
 
           {/* Nomor WhatsApp Field */}
-          <Box mb={2}>
-            <TextField
-              id="no-telphone-field"
-              fullWidth
-              label="Nomor WhatsApp"
-              name="no_telphone"
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                  borderColor: '#135D66' 
-                },
-                '& .MuiInputLabel-root.Mui-focused': { 
-                  color: '#135D66' 
-                },
-              }}
-              InputLabelProps={{ 
-                style: { fontSize: responsiveFontSize } 
-              }}
-              InputProps={{ 
-                style: { fontSize: responsiveFontSize } 
-              }}
-              value={formik.values.no_telphone}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.no_telphone && Boolean(formik.errors.no_telphone)}
-              helperText={formik.touched.no_telphone && formik.errors.no_telphone}
-            />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: '#003C43', 
-                mt: 0.5,
-                fontSize: '0.75rem',
-              }}
-            >
-              Nomor harus diawali dengan 62 (contoh: 6281234567890)
-            </Typography>
-          </Box>
+            <Box mb={2}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#003C43',
+                  mb: 1,
+                  fontSize: responsiveFontSize,
+                  fontWeight: 'bold',
+                }}
+              >
+                Nomor WhatsApp
+              </Typography>
+              <PhoneInput
+                international
+                defaultCountry="ID"
+                value={formik.values.no_telphone}
+                onChange={(value) => formik.setFieldValue('no_telphone', value || '')}
+                inputComponent="input"
+                style={{
+                  width: '100%',
+                  fontSize: responsiveFontSize,
+                  borderColor: formik.touched.no_telphone && formik.errors.no_telphone ? 'red' : '#135D66',
+                  borderRadius: '4px',
+                  padding: '10px',
+                  border: '1px solid',
+                }}
+              />
+              {formik.touched.no_telphone && formik.errors.no_telphone && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'red',
+                    mt: 1,
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  {formik.errors.no_telphone}
+                </Typography>
+              )}
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#003C43',
+                  mt: 1,
+                  fontSize: '0.75rem',
+                }}
+              >
+                Nomor harus diawali dengan kode negara (contoh: +62 81234567890)
+              </Typography>
+            </Box>
 
           {/* Judul Laporan Field */}
           <Box mb={2}>
@@ -646,9 +705,8 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               </Typography>
             </Box>
           )}
-
           {/* File Upload Section */}
-{/* File Upload Section */}
+          {/* File Upload Section */}
 <Box sx={{ mt: 3, mb: 4 }}>
   <Typography
     variant="body2"
@@ -659,7 +717,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       fontWeight: 'bold',
     }}
   >
-    Upload File Pendukung
+    Upload File Pendukung (Opsional)
   </Typography>
   <Box
     sx={{
@@ -760,33 +818,35 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 </Box>
 
           {/* Submit Button */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-              sx={{
-                backgroundColor: '#003C43',
-                color: '#E3FEF7',
-                fontWeight: 'bold',
-                px: { xs: 3, sm: 4 },
-                py: 1,
-                textTransform: 'none',
-                '&:hover': { backgroundColor: '#135D66' },
-                fontSize: responsiveFontSize,
-                width: { xs: '100%', sm: 'auto' },
-              }}
-            >
-              {loading ? (
-                <CircularProgress 
-                  size={20} 
-                  color="inherit" 
-                  sx={{ mr: { xs: 1, sm: 2 } }} 
-                />
-              ) : null}
-              {loading ? (isMobile ? 'Mengirim...' : 'Sedang Mengirim...') : 'LAPOR!'}
-            </Button>
-          </Box>
+          {formik.isValid && (
+  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <Button
+      type="submit"
+      variant="contained"
+      disabled={loading}
+      sx={{
+        backgroundColor: '#003C43',
+        color: '#E3FEF7',
+        fontWeight: 'bold',
+        px: { xs: 3, sm: 4 },
+        py: 1,
+        textTransform: 'none',
+        '&:hover': { backgroundColor: '#135D66' },
+        fontSize: responsiveFontSize,
+        width: { xs: '100%', sm: 'auto' },
+      }}
+    >
+      {loading ? (
+        <CircularProgress 
+          size={20} 
+          color="inherit" 
+          sx={{ mr: { xs: 1, sm: 2 } }} 
+        />
+      ) : null}
+      {loading ? (isMobile ? 'Mengirim...' : 'Sedang Mengirim...') : 'LAPOR!'}
+    </Button>
+  </Box>
+)}
         </form>
       </Paper>
     </Box>

@@ -39,6 +39,7 @@ dayjs.locale('id');
 
 interface Pengaduan {
   id: string;
+  NIK: string;
   judul: string;
   deskripsi: string;
   kategoriId: string;
@@ -578,6 +579,13 @@ export function TabelPetugasMasyarakat() {
         <DialogContent dividers>
           {viewDialog.complaint ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  NIK
+                </Typography>
+                <Typography>{viewDialog.complaint.NIK || '-'}</Typography>
+              </Box>
+
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
                   Judul Laporan
