@@ -126,7 +126,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
 
   const formik = useFormik({
     initialValues: {
-      NIK:'',
+      NIK: '',
       judul: '',
       deskripsi: '',
       status: 'PENDING',
@@ -141,8 +141,8 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     },
     validationSchema: Yup.object({
       NIK: Yup.string()
-        .matches(/^\d{16}$/, 'NIK harus terdiri dari 16 digit'),
-        // .nullable(),
+        .matches(/^\d{16}$/, 'NIK harus terdiri dari 16 digit')
+        .required('NIK wajib diisi'), // Perubahan: NIK menjadi wajib diisi
       nama: Yup.string().required('Nama wajib diisi'),
       judul: Yup.string().required('Judul laporan wajib diisi'),
       deskripsi: Yup.string().required('Isi laporan wajib diisi'),
@@ -150,18 +150,19 @@ const ReportForm: React.FC = (): React.JSX.Element => {
       jenisUnit: Yup.string().required('Pilih jenis unit terlebih dahulu'),
       unitId: Yup.string().required('Pilih unit'),
       filePendukung: Yup.mixed<File>()
-      .nullable()
-      .test(
-        'fileSize',
-        'Ukuran file maksimum 1MB',
-        (value) => {
-          if (!value) return true;
-          if (value instanceof File) {
-            return value.size <= 1024 * 1024;
+        .nullable()
+        .test(
+          'fileSize',
+          'Ukuran file maksimum 1MB',
+          (value) => {
+            if (!value) return true; // File opsional
+            if (value instanceof File) {
+              return value.size <= 1024 * 1024;
+            }
+            return false;
           }
-          return false; 
-        }
-      ),
+        ),
+      harapan_pelapor: Yup.string().nullable(), // Tidak wajib diisi
     }),
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
