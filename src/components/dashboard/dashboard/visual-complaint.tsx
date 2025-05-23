@@ -13,6 +13,7 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css'; // Import skeleton styles
 import api from '@/lib/api/api';
 import StatsCard from './VisualDashboard/stats-card';
+import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 
 const ComplaintInfo = lazy(() => import('./complaint-info'));
 const PieChart = lazy(() => import('./VisualDashboard/chart'));
@@ -36,6 +37,23 @@ interface PengaduanEntry {
   filePetugas: string;
   isWBS?: boolean;
   isPublic?: boolean;
+}
+
+interface Unit {
+  id: string;
+  kode: string;
+  nama_unit: string;
+  jenis_unit: string;
+}
+
+interface UnitResponse {
+  content: {
+    entries: Unit[];
+    totalData: number;
+    totalPage: number;
+  };
+  message: string;
+  errors: string[];
 }
 
 interface ApiResponse {
@@ -109,6 +127,17 @@ const ComplaintsVisual: React.FC = () => {
   const [hasWBSAccess, setHasWBSAccess] = useState<boolean>(false);
   const [hasPublicAccess, setHasPublicAccess] = useState<boolean>(false);
   const [userLevelId, setUserLevelId] = useState<string>('');
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [uniqueJenisUnit, setUniqueJenisUnit] = useState<string[]>([]);
+  const [selectedJenisUnit, setSelectedJenisUnit] = useState<string>('');
+  const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
+  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
+  const [isPimpinanUniversitas, setIsPimpinanUniversitas] = useState(false);
+
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    setIsPimpinanUniversitas(userData?.userLevel?.name === 'PIMPINAN_UNIVERSITAS');
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -217,6 +246,179 @@ const ComplaintsVisual: React.FC = () => {
     };
   }, [userLevelId]);
 
+  // Add this effect after the existing useEffects
+useEffect(() => {
+  const fetchUnits = async () => {
+    if (!isPimpinanUniversitas) return;
+    
+    try {
+      const response = await api.get<UnitResponse>('/units?page=1&rows=50');
+      const allUnits = response.data.content.entries;
+      setUnits(allUnits);
+      
+      // Get unique jenis_unit values
+      const uniqueTypes = Array.from(new Set(allUnits.map(unit => unit.jenis_unit)));
+      setUniqueJenisUnit(uniqueTypes);
+    } catch (error) {
+      console.error('Error fetching units:', error);
+    }
+  };
+
+  fetchUnits();
+}, [isPimpinanUniversitas]);
+const handleUnitChange = async (event: SelectChangeEvent) => {
+  const unitId = event.target.value;
+  setSelectedUnitId(unitId);
+  
+  setLoading(true);
+  try {
+    if (!unitId) {
+      // Reset to show all data when no unit is selected
+      const regularRes = await api.get<ApiResponse>('/pelaporan');
+      let wbsEntries: PengaduanEntry[] = [];
+      let publicEntries: PengaduanEntry[] = [];
+
+      if (hasWBSAccess) {
+        try {
+          const wbsRes = await api.get<ApiResponse>('/PelaporanWbs?page=0&rows=1000');
+          wbsEntries = (wbsRes.data.content.entries || []).map((entry) => ({
+            ...entry,
+            isWBS: true,
+          }));
+        } catch (wbsError) {
+          console.error('Error fetching WBS data:', wbsError);
+        }
+      }
+
+      if (hasPublicAccess) {
+        try {
+          const publicRes = await api.get<ApiResponse>('/pengaduan');
+          publicEntries = (publicRes.data.content.entries || []).map((entry) => ({
+            ...entry,
+            isPublic: true,
+          }));
+        } catch (publicError) {
+          console.error('Error fetching public complaints:', publicError);
+        }
+      }
+
+      const allEntries = [
+        ...regularRes.data.content.entries,
+        ...wbsEntries,
+        ...publicEntries,
+      ];
+
+      setData({
+        ...regularRes.data,
+        content: {
+          ...regularRes.data.content,
+          entries: allEntries,
+          totalData: allEntries.length,
+        },
+      });
+    } else {
+      // Fetch filtered data for both internal and public complaints
+      const promises = [];
+      
+      // Internal complaints
+      promises.push(api.get<ApiResponse>(`/pelaporan?filters={"unitId":"${unitId}"}`));
+      
+      // Public complaints if user has access
+      if (hasPublicAccess) {
+        promises.push(api.get<ApiResponse>(`/pengaduan?filters={"unitId":"${unitId}"}`));
+      }
+
+      const responses = await Promise.all(promises);
+      
+      // Combine the entries from both responses
+      const internalEntries = responses[0].data.content.entries;
+      const publicEntries = hasPublicAccess ? 
+        responses[1].data.content.entries.map(entry => ({ ...entry, isPublic: true })) : 
+        [];
+
+      const allEntries = [...internalEntries, ...publicEntries];
+
+      setData({
+        ...responses[0].data,
+        content: {
+          ...responses[0].data.content,
+          entries: allEntries,
+          totalData: allEntries.length,
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    setError('Failed to fetch data');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleJenisUnitChange = async (event: SelectChangeEvent) => {
+  const jenisUnit = event.target.value;
+  setSelectedJenisUnit(jenisUnit);
+  setSelectedUnitId(''); 
+  
+  if (!jenisUnit) {
+    // Reset to initial data when clearing jenis unit
+    setLoading(true);
+    try {
+      const regularRes = await api.get<ApiResponse>('/pelaporan');
+      let wbsEntries: PengaduanEntry[] = [];
+      let publicEntries: PengaduanEntry[] = [];
+
+      if (hasWBSAccess) {
+        try {
+          const wbsRes = await api.get<ApiResponse>('/PelaporanWbs?page=0&rows=1000');
+          wbsEntries = (wbsRes.data.content.entries || []).map((entry) => ({
+            ...entry,
+            isWBS: true,
+          }));
+        } catch (wbsError) {
+          console.error('Error fetching WBS data:', wbsError);
+        }
+      }
+
+      if (hasPublicAccess) {
+        try {
+          const publicRes = await api.get<ApiResponse>('/pengaduan');
+          publicEntries = (publicRes.data.content.entries || []).map((entry) => ({
+            ...entry,
+            isPublic: true,
+          }));
+        } catch (publicError) {
+          console.error('Error fetching public complaints:', publicError);
+        }
+      }
+
+      const allEntries = [
+        ...regularRes.data.content.entries,
+        ...wbsEntries,
+        ...publicEntries,
+      ];
+
+      setData({
+        ...regularRes.data,
+        content: {
+          ...regularRes.data.content,
+          entries: allEntries,
+          totalData: allEntries.length,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  }
+  
+  // Filter units based on selected jenis_unit
+  const filtered = units.filter(unit => unit.jenis_unit === jenisUnit);
+  setFilteredUnits(filtered);
+};
+
   const processedData = useMemo(() => {
     if (!data || !data.content?.entries) {
       return {
@@ -280,13 +482,56 @@ const ComplaintsVisual: React.FC = () => {
 
   return (
     <Box sx={{ flexGrow: 1, p: 3, pt: 0 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, pt: 0 }}>
-        {loading ? (
-          <Skeleton width={300} height={40} />
-        ) : (
-          <WelcomeMessage userName={userName} />
-        )}
-      </Box>
+<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, pt: 0 }}>
+  <Box>
+    {loading ? (
+      <Skeleton width={300} height={40} />
+    ) : (
+      <WelcomeMessage userName={userName} />
+    )}
+  </Box>
+  
+  {isPimpinanUniversitas && (
+    <Box sx={{ display: 'flex', gap: 2 }}>
+      <FormControl sx={{ minWidth: 200 }}>
+        <InputLabel>Jenis Unit</InputLabel>
+        <Select
+          value={selectedJenisUnit}
+          onChange={handleJenisUnitChange}
+          label="Jenis Unit"
+        >
+          <MenuItem value="">
+            <em>Semua Unit</em>
+          </MenuItem>
+          {uniqueJenisUnit.map((type) => (
+            <MenuItem key={type} value={type}>
+              {type}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <FormControl sx={{ minWidth: 200 }}>
+        <InputLabel>Nama Unit</InputLabel>
+        <Select
+          value={selectedUnitId}
+          onChange={handleUnitChange}
+          label="Nama Unit"
+          disabled={!selectedJenisUnit}
+        >
+          <MenuItem value="">
+            <em>Pilih Unit</em>
+          </MenuItem>
+          {filteredUnits.map((unit) => (
+            <MenuItem key={unit.id} value={unit.id}>
+              {unit.nama_unit}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Box>
+  )}
+</Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Total Pengaduan */}

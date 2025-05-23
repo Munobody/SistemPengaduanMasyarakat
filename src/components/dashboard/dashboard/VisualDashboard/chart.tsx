@@ -18,20 +18,38 @@ interface ChartProps {
 }
 
 const Chart: React.FC<ChartProps> = ({ data, loading }) => {
+  // Add default empty data
+  const chartData = useMemo(() => {
+    if (!data || !data.labels || !data.datasets?.length) {
+      return {
+        labels: [],
+        datasets: [{
+          data: [],
+          backgroundColor: [],
+          borderWidth: 1
+        }]
+      };
+    }
+    return data;
+  }, [data]);
 
   const statusCounts = useMemo(() => {
-    return data.labels.reduce(
+    if (!chartData.labels || !chartData.datasets?.[0]?.data) return {};
+    
+    return chartData.labels.reduce(
       (acc, label, index) => {
-        acc[label] = data.datasets[0].data[index];
+        acc[label] = chartData.datasets[0].data[index];
         return acc;
       },
       {} as Record<string, number>
     );
-  }, [data]);
+  }, [chartData]);
 
   const totalCount = useMemo(() => {
-    return data.datasets[0].data.reduce((sum, value) => sum + value, 0);
-  }, [data]);
+    if (!chartData.datasets?.[0]?.data) return 0;
+    
+    return chartData.datasets[0].data.reduce((sum, value) => sum + value, 0);
+  }, [chartData]);
 
   const centerTextPlugin = {
     id: 'centerText',
@@ -55,23 +73,38 @@ const Chart: React.FC<ChartProps> = ({ data, loading }) => {
       {loading ? (
         <Skeleton variant="rectangular" width="100%" height={250} />
       ) : (
-          <Box
-            sx={{
-              width: '100%',
-              height: 300,
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
+        <Box
+          sx={{
+            width: '100%',
+            height: 300,
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          {chartData.labels.length > 0 ? (
             <Pie
-              data={data}
+              data={chartData}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
               }}
               plugins={[centerTextPlugin]} 
             />
-          </Box>
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%'
+              }}
+            >
+              <Typography color="textSecondary">
+                Tidak ada data untuk ditampilkan
+              </Typography>
+            </Box>
+          )}
+        </Box>
       )}
     </Paper>
   );
