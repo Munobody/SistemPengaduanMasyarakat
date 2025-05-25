@@ -57,7 +57,7 @@ const UnitTransferForm = ({ complaint, units, uniqueJenisUnit, onUnitChange, loa
   const handleJenisUnitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const jenisUnit = event.target.value;
     setSelectedJenisUnit(jenisUnit);
-    setSelectedUnitId(''); // Reset selected unit
+    setSelectedUnitId('');
     const filtered = units.filter((unit) => unit.jenis_unit === jenisUnit);
     setFilteredUnits(filtered);
   };
@@ -214,7 +214,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
         const unitList = unitResponse.data?.content?.entries || [];
         setUnits(unitList);
 
-        // Get unique jenis_unit values
         const uniqueTypes = Array.from(new Set(unitList.map((unit: Unit) => unit.jenis_unit))) as string[];
         setUniqueJenisUnit(uniqueTypes);
 
@@ -504,13 +503,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
                       Kategori
                     </Typography>
                     <Typography variant="body1">{complaint.kategori?.nama || 'Tidak ada kategori'}</Typography>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Jenis Unit
-                    </Typography>
-                    <Typography variant="body1">{complaint.unit?.nama_unit}</Typography>
                   </Grid>
 
                   <Grid item xs={12}>
