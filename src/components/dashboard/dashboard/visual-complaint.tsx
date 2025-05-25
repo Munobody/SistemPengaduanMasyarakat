@@ -2,18 +2,22 @@
 
 import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PendingIcon from '@mui/icons-material/Pending';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
-import SecurityIcon from '@mui/icons-material/Security';
 import PeopleIcon from '@mui/icons-material/People';
+import SecurityIcon from '@mui/icons-material/Security';
 import { Box, Grid, Typography } from '@mui/material';
 import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css'; // Import skeleton styles
+import 'react-loading-skeleton/dist/skeleton.css';
+import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from '@mui/material';
+import { format } from 'date-fns';
 import api from '@/lib/api/api';
 import StatsCard from './VisualDashboard/stats-card';
-import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 const ComplaintInfo = lazy(() => import('./complaint-info'));
 const PieChart = lazy(() => import('./VisualDashboard/chart'));
@@ -119,6 +123,14 @@ const LatestComplaintsSkeleton = () => (
   </Box>
 );
 
+function getDateRangeFilter(start: Date | null, end: Date | null) {
+  if (!start || !end) return '';
+  const formatDateForFilter = (date: Date) => {
+    return format(date, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+  };
+  return `&rangedFilters=[{"key": "createdAt", "start": "${formatDateForFilter(start)}","end": "${formatDateForFilter(end)}"}]`;
+}
+
 const ComplaintsVisual: React.FC = () => {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -133,10 +145,14 @@ const ComplaintsVisual: React.FC = () => {
   const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string>('');
   const [isPimpinanUniversitas, setIsPimpinanUniversitas] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [isPimpinanUnit, setIsPimpinanUnit] = useState(false);
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     setIsPimpinanUniversitas(userData?.userLevel?.name === 'PIMPINAN_UNIVERSITAS');
+    setIsPimpinanUnit(userData?.userLevel?.name === 'PIMPINAN_UNIT');
   }, []);
 
   useEffect(() => {
@@ -160,29 +176,25 @@ const ComplaintsVisual: React.FC = () => {
 
     const fetchAclAndData = async () => {
       if (!userLevelId) return;
-    
+
       try {
         const aclRes = await api.get<AclResponse>(`/acl/${userLevelId}`);
         const permissions = aclRes.data.content.permissions;
-    
+
         const wbsAccess = permissions.some(
-          (p) =>
-            (p.subject === 'PENGADUAN_WBS' || p.subject === 'WBS') &&
-            p.actions.includes('read')
+          (p) => (p.subject === 'PENGADUAN_WBS' || p.subject === 'WBS') && p.actions.includes('read')
         );
-    
+
         const publicAccess = permissions.some(
-          (p) =>
-            p.subject === 'PENGADUAN_MASYARAKAT' &&
-            p.actions.includes('read')
+          (p) => p.subject === 'PENGADUAN_MASYARAKAT' && p.actions.includes('read')
         );
-    
+
         if (!isMounted) return;
         setHasWBSAccess(wbsAccess);
         setHasPublicAccess(publicAccess);
-    
+
         const regularRes = await api.get<ApiResponse>('/pelaporan');
-    
+
         let wbsEntries: PengaduanEntry[] = [];
         if (wbsAccess) {
           try {
@@ -195,7 +207,7 @@ const ComplaintsVisual: React.FC = () => {
             console.error('Error fetching WBS data:', wbsError);
           }
         }
-    
+
         let publicEntries: PengaduanEntry[] = [];
         if (publicAccess) {
           try {
@@ -208,17 +220,17 @@ const ComplaintsVisual: React.FC = () => {
             console.error('Error fetching public complaints:', publicError);
           }
         }
-    
+
         const allEntries = [
           ...regularRes.data.content.entries,
           ...(wbsAccess ? wbsEntries : []),
           ...(publicAccess ? publicEntries : []),
         ];
-    
+
         const regularCount = regularRes.data.content.entries.length;
         const wbsCount = wbsAccess ? wbsEntries.length : 0;
         const publicCount = publicAccess ? publicEntries.length : 0;
-    
+
         if (isMounted) {
           setData({
             ...regularRes.data,
@@ -246,107 +258,62 @@ const ComplaintsVisual: React.FC = () => {
     };
   }, [userLevelId]);
 
-  // Add this effect after the existing useEffects
-useEffect(() => {
-  const fetchUnits = async () => {
-    if (!isPimpinanUniversitas) return;
-    
-    try {
-      const response = await api.get<UnitResponse>('/units?page=1&rows=50');
-      const allUnits = response.data.content.entries;
-      setUnits(allUnits);
-      
-      // Get unique jenis_unit values
-      const uniqueTypes = Array.from(new Set(allUnits.map(unit => unit.jenis_unit)));
-      setUniqueJenisUnit(uniqueTypes);
-    } catch (error) {
-      console.error('Error fetching units:', error);
-    }
-  };
+  useEffect(() => {
+    const fetchUnits = async () => {
+      if (!isPimpinanUniversitas) return;
 
-  fetchUnits();
-}, [isPimpinanUniversitas]);
+      try {
+        const response = await api.get<UnitResponse>('/units?page=1&rows=50');
+        const allUnits = response.data.content.entries;
+        setUnits(allUnits);
+
+        const uniqueTypes = Array.from(new Set(allUnits.map((unit) => unit.jenis_unit)));
+        setUniqueJenisUnit(uniqueTypes);
+      } catch (error) {
+        console.error('Error fetching units:', error);
+      }
+    };
+
+    fetchUnits();
+  }, [isPimpinanUniversitas]);
+
+
 const handleUnitChange = async (event: SelectChangeEvent) => {
   const unitId = event.target.value;
   setSelectedUnitId(unitId);
-  
+
   setLoading(true);
   try {
-    if (!unitId) {
-      // Reset to show all data when no unit is selected
-      const regularRes = await api.get<ApiResponse>('/pelaporan');
-      let wbsEntries: PengaduanEntry[] = [];
-      let publicEntries: PengaduanEntry[] = [];
+    const dateFilter = startDate && endDate ? getDateRangeFilter(startDate, endDate) : '';
+    const unitFilter = unitId ? `filters={"unitId":"${unitId}"}` : '';
+    const separator = unitFilter && dateFilter ? '&' : '';
+    const query = unitFilter + (separator + dateFilter);
 
-      if (hasWBSAccess) {
-        try {
-          const wbsRes = await api.get<ApiResponse>('/PelaporanWbs?page=0&rows=1000');
-          wbsEntries = (wbsRes.data.content.entries || []).map((entry) => ({
-            ...entry,
-            isWBS: true,
-          }));
-        } catch (wbsError) {
-          console.error('Error fetching WBS data:', wbsError);
-        }
+    const regularRes = await api.get<ApiResponse>(`/pelaporan?${query}`);
+    
+    let publicEntries: PengaduanEntry[] = [];
+    if (hasPublicAccess) {
+      try {
+        const publicRes = await api.get<ApiResponse>(`/pengaduan?${query}`);
+        publicEntries = (publicRes.data.content.entries || []).map((entry) => ({
+          ...entry,
+          isPublic: true,
+        }));
+      } catch (publicError) {
+        console.error('Error fetching public complaints:', publicError);
       }
-
-      if (hasPublicAccess) {
-        try {
-          const publicRes = await api.get<ApiResponse>('/pengaduan');
-          publicEntries = (publicRes.data.content.entries || []).map((entry) => ({
-            ...entry,
-            isPublic: true,
-          }));
-        } catch (publicError) {
-          console.error('Error fetching public complaints:', publicError);
-        }
-      }
-
-      const allEntries = [
-        ...regularRes.data.content.entries,
-        ...wbsEntries,
-        ...publicEntries,
-      ];
-
-      setData({
-        ...regularRes.data,
-        content: {
-          ...regularRes.data.content,
-          entries: allEntries,
-          totalData: allEntries.length,
-        },
-      });
-    } else {
-      // Fetch filtered data for both internal and public complaints
-      const promises = [];
-      
-      // Internal complaints
-      promises.push(api.get<ApiResponse>(`/pelaporan?filters={"unitId":"${unitId}"}`));
-      
-      // Public complaints if user has access
-      if (hasPublicAccess) {
-        promises.push(api.get<ApiResponse>(`/pengaduan?filters={"unitId":"${unitId}"}`));
-      }
-
-      const responses = await Promise.all(promises);
-      
-      // Combine the entries from both responses
-      const internalEntries = responses[0].data.content.entries;
-      const publicEntries = hasPublicAccess ? 
-        responses[1].data.content.entries.map(entry => ({ ...entry, isPublic: true })) : 
-        [];
-
-      const allEntries = [...internalEntries, ...publicEntries];
-
-      setData({
-        ...responses[0].data,
-        content: {
-          ...responses[0].data.content,
-          entries: allEntries,
-          totalData: allEntries.length,
-        },
-      });
     }
+
+    const allEntries = [...regularRes.data.content.entries, ...publicEntries];
+
+    setData({
+      ...regularRes.data,
+      content: {
+        ...regularRes.data.content,
+        entries: allEntries,
+        totalData: allEntries.length,
+      },
+    });
   } catch (error) {
     console.error('Error fetching data:', error);
     setError('Failed to fetch data');
@@ -355,69 +322,102 @@ const handleUnitChange = async (event: SelectChangeEvent) => {
   }
 };
 
-const handleJenisUnitChange = async (event: SelectChangeEvent) => {
-  const jenisUnit = event.target.value;
-  setSelectedJenisUnit(jenisUnit);
-  setSelectedUnitId(''); 
-  
-  if (!jenisUnit) {
-    // Reset to initial data when clearing jenis unit
-    setLoading(true);
-    try {
-      const regularRes = await api.get<ApiResponse>('/pelaporan');
-      let wbsEntries: PengaduanEntry[] = [];
-      let publicEntries: PengaduanEntry[] = [];
+  const handleJenisUnitChange = async (event: SelectChangeEvent) => {
+    const jenisUnit = event.target.value;
+    setSelectedJenisUnit(jenisUnit);
+    setSelectedUnitId('');
 
-      if (hasWBSAccess) {
-        try {
-          const wbsRes = await api.get<ApiResponse>('/PelaporanWbs?page=0&rows=1000');
-          wbsEntries = (wbsRes.data.content.entries || []).map((entry) => ({
-            ...entry,
-            isWBS: true,
-          }));
-        } catch (wbsError) {
-          console.error('Error fetching WBS data:', wbsError);
+    if (!jenisUnit) {
+      setLoading(true);
+      try {
+        const regularRes = await api.get<ApiResponse>('/pelaporan');
+        let wbsEntries: PengaduanEntry[] = [];
+        let publicEntries: PengaduanEntry[] = [];
+
+        if (hasWBSAccess) {
+          try {
+            const wbsRes = await api.get<ApiResponse>('/PelaporanWbs?page=0&rows=1000');
+            wbsEntries = (wbsRes.data.content.entries || []).map((entry) => ({
+              ...entry,
+              isWBS: true,
+            }));
+          } catch (wbsError) {
+            console.error('Error fetching WBS data:', wbsError);
+          }
         }
-      }
 
-      if (hasPublicAccess) {
-        try {
-          const publicRes = await api.get<ApiResponse>('/pengaduan');
-          publicEntries = (publicRes.data.content.entries || []).map((entry) => ({
-            ...entry,
-            isPublic: true,
-          }));
-        } catch (publicError) {
-          console.error('Error fetching public complaints:', publicError);
+        if (hasPublicAccess) {
+          try {
+            const publicRes = await api.get<ApiResponse>('/pengaduan');
+            publicEntries = (publicRes.data.content.entries || []).map((entry) => ({
+              ...entry,
+              isPublic: true,
+            }));
+          } catch (publicError) {
+            console.error('Error fetching public complaints:', publicError);
+          }
         }
+
+        const allEntries = [...regularRes.data.content.entries, ...wbsEntries, ...publicEntries];
+
+        setData({
+          ...regularRes.data,
+          content: {
+            ...regularRes.data.content,
+            entries: allEntries,
+            totalData: allEntries.length,
+          },
+        });
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to fetch data');
+      } finally {
+        setLoading(false);
       }
-
-      const allEntries = [
-        ...regularRes.data.content.entries,
-        ...wbsEntries,
-        ...publicEntries,
-      ];
-
-      setData({
-        ...regularRes.data,
-        content: {
-          ...regularRes.data.content,
-          entries: allEntries,
-          totalData: allEntries.length,
-        },
-      });
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Failed to fetch data');
-    } finally {
-      setLoading(false);
     }
-  }
-  
-  // Filter units based on selected jenis_unit
-  const filtered = units.filter(unit => unit.jenis_unit === jenisUnit);
-  setFilteredUnits(filtered);
-};
+    const filtered = units.filter((unit) => unit.jenis_unit === jenisUnit);
+    setFilteredUnits(filtered);
+  };
+    const handleDateChange = async () => {
+      if (!startDate || !endDate) return;
+
+      setLoading(true);
+      try {
+        const dateRangeFilter = getDateRangeFilter(startDate, endDate);
+
+        // Fetch both internal and public complaints in parallel
+        const promises = [api.get<ApiResponse>(`/pelaporan?${dateRangeFilter}`)];
+        
+        if (hasPublicAccess) {
+          promises.push(api.get<ApiResponse>(`/pengaduan?${dateRangeFilter}`));
+        }
+
+        const [regularRes, publicRes] = await Promise.all(promises);
+        
+        let allEntries = [...regularRes.data.content.entries];
+        
+        if (hasPublicAccess && publicRes) {
+          const publicEntries = publicRes.data.content.entries.map(entry => ({
+            ...entry,
+            isPublic: true
+          }));
+          allEntries = [...allEntries, ...publicEntries];
+        }
+
+        setData({
+          ...regularRes.data,
+          content: {
+            ...regularRes.data.content,
+            entries: allEntries,
+            totalData: allEntries.length,
+          },
+        });
+      } catch (error) {
+        setError('Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const processedData = useMemo(() => {
     if (!data || !data.content?.entries) {
@@ -439,12 +439,26 @@ const handleJenisUnitChange = async (event: SelectChangeEvent) => {
     const regularEntries = entries.filter((entry) => !entry.isWBS && !entry.isPublic);
     const wbsEntries = hasWBSAccess ? entries.filter((entry) => entry.isWBS) : [];
     const publicEntries = hasPublicAccess ? entries.filter((entry) => entry.isPublic) : [];
-  
+
     const statusCounts: Record<string, number> = {};
     entries.forEach((entry) => {
       statusCounts[entry.status] = (statusCounts[entry.status] || 0) + 1;
     });
-  
+
+    const formatDateForFilter = (date: Date) => {
+      return format(date, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    };
+    function getDateRangeFilter(start: Date | null, end: Date | null) {
+      if (!start || !end) return '';
+      const startDate = new Date(start);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(end);
+      endDate.setHours(23, 59, 59, 999);
+      
+      return `rangedFilters=[{"key": "createdAt", "start": "${format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")}","end": "${format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")}"}]`;
+    }
+
     const completedCount = statusCounts['COMPLETED'] || 0;
     const pendingCount = statusCounts['PENDING'] || 0;
     const processCount = statusCounts['PROCESS'] || 0;
@@ -453,7 +467,7 @@ const handleJenisUnitChange = async (event: SelectChangeEvent) => {
     const regularCount = regularEntries.length;
     const totalCount = regularCount + wbsCount + publicCount;
     const completionRate = totalCount > 0 ? ((completedCount / totalCount) * 100).toFixed(1) : '0';
-  
+
     const statusLabels = Object.keys(statusCounts);
     const pieChartData = {
       labels: statusLabels,
@@ -465,7 +479,7 @@ const handleJenisUnitChange = async (event: SelectChangeEvent) => {
         },
       ],
     };
-  
+
     return {
       statusCounts,
       pieChartData,
@@ -482,59 +496,148 @@ const handleJenisUnitChange = async (event: SelectChangeEvent) => {
 
   return (
     <Box sx={{ flexGrow: 1, p: 3, pt: 0 }}>
-<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, pt: 0 }}>
-  <Box>
-    {loading ? (
-      <Skeleton width={300} height={40} />
-    ) : (
-      <WelcomeMessage userName={userName} />
-    )}
-  </Box>
-  
-  {isPimpinanUniversitas && (
-    <Box sx={{ display: 'flex', gap: 2 }}>
-      <FormControl sx={{ minWidth: 200 }}>
-        <InputLabel>Jenis Unit</InputLabel>
-        <Select
-          value={selectedJenisUnit}
-          onChange={handleJenisUnitChange}
-          label="Jenis Unit"
-        >
-          <MenuItem value="">
-            <em>Semua Unit</em>
-          </MenuItem>
-          {uniqueJenisUnit.map((type) => (
-            <MenuItem key={type} value={type}>
-              {type}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+        <Box sx={{ mb: 3, pt: 0 }}>
+          {loading ? <Skeleton width={300} height={40} /> : <WelcomeMessage userName={userName} />}
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            {(isPimpinanUniversitas || isPimpinanUnit) && (
+          <Grid item xs={12} sm={6} md={4} lg={3}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <DatePicker
+              value={startDate}
+              onChange={(newValue) => {
+                setStartDate(newValue);
+                setEndDate(null);
+              }}
+              slotProps={{
+                textField: {
+              size: 'small',
+              helperText: 'Pilih tanggal awal'
+                }
+              }}
+            />
+            <DatePicker
+              value={endDate}
+              onChange={(newValue) => {
+                if (startDate && newValue) {
+              setEndDate(newValue);
+              const fetchData = async () => {
+                setLoading(true);
+                try {
+                  const dateRangeFilter = getDateRangeFilter(startDate, newValue);
 
-      <FormControl sx={{ minWidth: 200 }}>
-        <InputLabel>Nama Unit</InputLabel>
-        <Select
-          value={selectedUnitId}
-          onChange={handleUnitChange}
-          label="Nama Unit"
-          disabled={!selectedJenisUnit}
-        >
-          <MenuItem value="">
-            <em>Pilih Unit</em>
-          </MenuItem>
-          {filteredUnits.map((unit) => (
-            <MenuItem key={unit.id} value={unit.id}>
-              {unit.nama_unit}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-    </Box>
-  )}
-</Box>
+                  const regularRes = await api.get<ApiResponse>(`/pelaporan?${dateRangeFilter}`);
+
+                  let allEntries = [...regularRes.data.content.entries];
+                  if (hasPublicAccess) {
+                try {
+                  const publicRes = await api.get<ApiResponse>(`/pengaduan?${dateRangeFilter}`);
+                  const publicEntries = publicRes.data.content.entries.map(entry => ({
+                    ...entry,
+                    isPublic: true
+                  }));
+                  allEntries = [...allEntries, ...publicEntries];
+                } catch (publicError) {
+                  console.error('Error fetching public complaints:', publicError);
+                }
+                  }
+
+                  setData({
+                ...regularRes.data,
+                content: {
+                  ...regularRes.data.content,
+                  entries: allEntries,
+                  totalData: allEntries.length,
+                },
+                  });
+                } catch (error) {
+                  console.error('Error fetching data:', error);
+                  setError('Failed to fetch data');
+                } finally {
+                  setLoading(false);
+                }
+              };
+
+              fetchData();
+                }
+              }}
+              minDate={startDate || undefined}
+              disabled={!startDate}
+              slotProps={{
+                textField: {
+              size: 'small',
+              helperText: 'Pilih tanggal akhir'
+                }
+              }}
+            />
+              </Box>
+            </LocalizationProvider>
+          </Grid>
+            )}
+
+            {isPimpinanUniversitas && (
+            <>
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <FormControl fullWidth sx={{ display: 'flex', justifyContent: 'center' }}>
+              <InputLabel sx={{ transform: 'translate(14px, 8px) scale(1)' }}>Jenis Unit</InputLabel>
+              <Select
+                value={selectedJenisUnit}
+                onChange={handleJenisUnitChange}
+                label="Jenis Unit"
+                size="small"
+                sx={{
+                '& .MuiSelect-select': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  paddingY: '8px'
+                }
+                }}
+              >
+                <MenuItem value="">
+                <em>Semua Unit</em>
+                </MenuItem>
+                {uniqueJenisUnit.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+                ))}
+              </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <FormControl fullWidth sx={{ display: 'flex', justifyContent: 'center' }}>
+              <InputLabel sx={{ transform: 'translate(14px, 8px) scale(1)' }}>Nama Unit</InputLabel>
+              <Select
+                value={selectedUnitId}
+                onChange={handleUnitChange}
+                label="Nama Unit"
+                disabled={!selectedJenisUnit}
+                size="small"
+                sx={{
+                '& .MuiSelect-select': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  paddingY: '8px'
+                }
+                }}
+              >
+                <MenuItem value="">
+                <em>Pilih Unit</em>
+                </MenuItem>
+                {filteredUnits.map((unit) => (
+                <MenuItem key={unit.id} value={unit.id}>
+                  {unit.nama_unit}
+                </MenuItem>
+                ))}
+              </Select>
+              </FormControl>
+            </Grid>
+            </>
+            )}
+          </Grid>
+        </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Total Pengaduan */}
         <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
           {loading ? (
             <StatsCardSkeleton />
