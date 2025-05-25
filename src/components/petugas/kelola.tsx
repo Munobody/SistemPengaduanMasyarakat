@@ -5,6 +5,9 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '@/lib/api/api';
 import { useRouter } from 'next/navigation';
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
 
 interface Pengaduan {
   id: string;
@@ -29,9 +32,145 @@ interface Pengaduan {
   }
 }
 
+interface Unit {
+  id: string;
+  nama_unit: string;
+  jenis_unit: string;
+}
+
 interface KelolaPengaduanPageProps {
   id?: string;
 }
+
+const UnitTransferForm = ({ complaint, units, uniqueJenisUnit, onUnitChange, loading }: {
+  complaint: Pengaduan | null;
+  units: Unit[];
+  uniqueJenisUnit: string[];
+  onUnitChange: (unitId: string) => Promise<void>;
+  loading: boolean;
+}) => {
+  const [selectedJenisUnit, setSelectedJenisUnit] = useState<string>('');
+  const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
+  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
+  const [openConfirm, setOpenConfirm] = useState(false);
+
+  const handleJenisUnitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const jenisUnit = event.target.value;
+    setSelectedJenisUnit(jenisUnit);
+    setSelectedUnitId(''); // Reset selected unit
+    const filtered = units.filter((unit) => unit.jenis_unit === jenisUnit);
+    setFilteredUnits(filtered);
+  };
+
+  const handleConfirmTransfer = () => {
+    if (selectedUnitId) {
+      onUnitChange(selectedUnitId);
+      setOpenConfirm(false);
+    }
+  };
+
+  return (
+    <Paper elevation={3} sx={{ p: 3, borderRadius: 2, mb: { xs: 2, md: 0 } }}>
+      <Typography variant="h6" gutterBottom textAlign="center" sx={{ pb: 2 }}>
+        Form Pemindahan Unit
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <TextField
+            id="jenis-unit-select"
+            fullWidth
+            select
+            label="Jenis Unit"
+            value={selectedJenisUnit}
+            onChange={handleJenisUnitChange}
+            margin="normal"
+            required
+          >
+            {uniqueJenisUnit.map((jenisUnit) => (
+              <MenuItem key={jenisUnit} value={jenisUnit}>
+                {jenisUnit}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+        
+        <Grid item xs={12}>
+          <TextField
+            id="unit-select"
+            fullWidth
+            select
+            label="Unit"
+            value={selectedUnitId}
+            onChange={(e) => setSelectedUnitId(e.target.value)}
+            margin="normal"
+            required
+            disabled={!selectedJenisUnit}
+          >
+            {filteredUnits.map((unit) => (
+              <MenuItem key={unit.id} value={unit.id}>
+                {unit.nama_unit}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Button
+              variant="contained"
+              onClick={() => setOpenConfirm(true)}
+              disabled={!selectedUnitId || loading}
+              sx={{
+                width: { xs: '100%', sm: '50%', md: '30%' },
+                py: 1.5,
+                bgcolor: '#4A628A',
+                '&:hover': { bgcolor: '#3A4F6A' }
+              }}
+            >
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                'Pindahkan Unit'
+              )}
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
+
+      <Dialog
+        open={openConfirm}
+        onClose={() => setOpenConfirm(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Konfirmasi Pemindahan Unit
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Apakah anda yakin ingin mengubah unit pada pengaduan ini?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            onClick={() => setOpenConfirm(false)}
+            color="inherit"
+          >
+            Batal
+          </Button>
+          <Button 
+            onClick={handleConfirmTransfer}
+            variant="contained"
+            sx={{ bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }}
+            autoFocus
+          >
+            Ya, Pindahkan
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Paper>
+  );
+};
 
 export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
   const router = useRouter();
@@ -39,7 +178,12 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [units, setUnits] = useState<string[]>([]);
+  const [isPetugasSuper, setIsPetugasSuper] = useState(false);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [uniqueJenisUnit, setUniqueJenisUnit] = useState<string[]>([]);
+  const [selectedJenisUnit, setSelectedJenisUnit] = useState<string>('');
+  const [selectedUnitId, setSelectedUnitId] = useState<string>('');
+  const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
   const [categories, setCategories] = useState<{ id: string; nama: string }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [responseText, setResponseText] = useState<string>('');
@@ -51,25 +195,33 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
   const statusOptions = ['PENDING', 'PROCESS', 'REJECTED', 'COMPLETED'];
 
   useEffect(() => {
+    const checkUserRole = () => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      setIsPetugasSuper(user?.userLevel?.name === 'PETUGAS_SUPER');
+    };
+    
+    checkUserRole();
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const [unitResponse, categoryResponse] = await Promise.all([
-          api.get('/units'),
+          api.get('/units?page=1&rows=100'),
           api.get('/kategori'),
         ]);
 
-        const unitList = unitResponse.data?.content?.entries.map((unit: { nama_unit: string }) => unit.nama_unit) || [];
-        const categoryList =
-          categoryResponse.data?.content?.entries.map((category: { id: string; nama: string }) => ({
-            id: category.id,
-            nama: category.nama,
-          })) || [];
-
+        const unitList = unitResponse.data?.content?.entries || [];
         setUnits(unitList);
+
+        // Get unique jenis_unit values
+        const uniqueTypes = Array.from(new Set(unitList.map((unit: Unit) => unit.jenis_unit))) as string[];
+        setUniqueJenisUnit(uniqueTypes);
+
+        const categoryList = categoryResponse.data?.content?.entries || [];
         setCategories(categoryList);
 
         if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
-        if (unitList.length > 0) setSelectedUnit(unitList[0]);
       } catch (error: any) {
         console.error('Error fetching data:', error.response?.data || error.message);
         toast.error('Gagal memuat data.');
@@ -244,12 +396,60 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
     }
   };
 
+  // Add handleUnitChange function
+  const handleUnitChange = async (unitId: string) => {
+    setSelectedUnitId(unitId);
+    
+    if (!complaint?.id) return;
+    
+    setLoading(true);
+    try {
+      const response = await api.put(`/pelaporan/${complaint.id}`, {
+        unitId: unitId
+      });
+      
+      if (response.status === 200) {
+        toast.success('Unit berhasil diperbarui!');
+        // Update the local complaint data
+        const updatedUnit = units.find(u => u.id === unitId);
+        setComplaint(prev => prev ? {
+          ...prev,
+          unit: updatedUnit,
+          unitId: unitId
+        } : null);
+      }
+    } catch (error: any) {
+      console.error('Error updating unit:', error);
+      toast.error('Gagal memperbarui unit');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Container maxWidth="xl" sx={{ flexGrow: 1, py: 4 }}>
+      <Container maxWidth="xl" sx={{ flexGrow: 1, py: 0 }}>
+        {/* Add Back Button */}
+        <Box sx={{ mb: 3 }}>
+          <Button
+            variant="contained"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => router.push('/dashboard')}
+            sx={{
+              bgcolor: '#4A628A',
+              '&:hover': { bgcolor: '#3A4F6A' },
+              px: 3,
+              py: 1
+            }}
+          >
+            Kembali ke Dashboard
+          </Button>
+        </Box>
+
         <Grid container spacing={4}>
+          {/* Left side - Detail Pengaduan */}
           <Grid item xs={12} md={6}>
-            <Paper elevation={3} sx={{ p: 6, borderRadius: 2 }}>
+            <Paper elevation={3} sx={{ p: { xs: 3, md: 6 }, borderRadius: 2 }}>
               <Typography variant="h5" gutterBottom textAlign="center" sx={{ pb: 4 }}>
                 Detail Pengaduan
               </Typography>
@@ -308,6 +508,13 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
 
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" color="text.secondary">
+                      Jenis Unit
+                    </Typography>
+                    <Typography variant="body1">{complaint.unit?.nama_unit}</Typography>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
                       Unit
                     </Typography>
                     <Typography variant="body1">{complaint.unit?.nama_unit}</Typography>
@@ -353,85 +560,115 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
               )}
             </Paper>
           </Grid>
-          
-          <Grid item xs={12} md={6}>
-            <Paper elevation={3} sx={{ p: 6, borderRadius: 2 }}>
-              <Typography variant="h5" gutterBottom textAlign="center" sx={{ pb: 4 }}>
-                Form Pengelolaan Laporan
-              </Typography>
-              <form ref={responseFormRef} onSubmit={handleResponseSubmit}>
-                <Grid container spacing={2} direction="column">
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    select
-                    label="Status"
-                    id="status-select" 
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    margin="normal"
-                    required
-                  >
-                    {statusOptions.map((status) => (
-                      <MenuItem key={status} value={status}>
-                        {status}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
 
+          {/* Right side - Forms Section */}
+          <Grid item xs={12} md={6}>
+            <Grid container spacing={3}>
+              {/* Complaint Management Form - Now at the top */}
+              <Grid item xs={12}>
+                <Paper elevation={3} sx={{ p: { xs: 3, md: 6 }, borderRadius: 2 }}>
+                  <Typography variant="h6" gutterBottom textAlign="center" sx={{ pb: 2 }}>
+                    Form Pengelolaan Pengaduan
+                  </Typography>
+                  <form ref={responseFormRef} onSubmit={handleResponseSubmit}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <TextField
+                          id="status-select"
+                          fullWidth
+                          select
+                          label="Status"
+                          value={selectedStatus}
+                          onChange={(e) => setSelectedStatus(e.target.value)}
+                          margin="normal"
+                          required
+                          InputLabelProps={{
+                            htmlFor: "status-select"
+                          }}
+                        >
+                          {statusOptions.map((status) => (
+                            <MenuItem key={status} value={status}>
+                              {status}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <TextField
+                          id="response-text"
+                          fullWidth
+                          label="Tanggapan Petugas"
+                          multiline
+                          rows={4}
+                          value={responseText}
+                          onChange={(e) => setResponseText(e.target.value)}
+                          margin="normal"
+                          required
+                          InputLabelProps={{
+                            htmlFor: "response-text"
+                          }}
+                        />
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <input
+                          type="file"
+                          id="file-upload"
+                          hidden
+                          onChange={(e) => setPetugasFile(e.target.files?.[0] || null)}
+                        />
+                        <Button
+                          variant="contained"
+                          component="label"
+                          htmlFor="file-upload"
+                          startIcon={<AttachFileIcon />}
+                          sx={{ bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }}
+                        >
+                          Upload File Hasil
+                        </Button>
+                        {petugasFile && (
+                          <Typography sx={{ mt: 2 }}>
+                            File terpilih: {petugasFile.name}
+                          </Typography>
+                        )}
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                          <Button
+                            type="submit"
+                            variant="contained"
+                            sx={{
+                              width: { xs: '100%', sm: '50%', md: '30%' },
+                              py: 1.5,
+                              bgcolor: '#4A628A',
+                              '&:hover': { bgcolor: '#3A4F6A' }
+                            }}
+                            disabled={loading}
+                          >
+                            {loading ? 'Mengirim...' : 'Kirim Tanggapan'}
+                          </Button>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </form>
+                </Paper>
+              </Grid>
+
+              {/* Unit Transfer Form - Now at the bottom, only for PETUGAS_SUPER */}
+              {isPetugasSuper && (
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Tanggapan Petugas"
-                    id="response-text" 
-                    multiline
-                    rows={4}
-                    value={responseText}
-                    onChange={(e) => setResponseText(e.target.value)}
-                    margin="normal"
-                    required
+                  <UnitTransferForm
+                    complaint={complaint}
+                    units={units}
+                    uniqueJenisUnit={uniqueJenisUnit}
+                    onUnitChange={handleUnitChange}
+                    loading={loading}
                   />
                 </Grid>
-
-                <Grid item xs={12}>
-                  <Button
-                    variant="contained"
-                    component="label"
-                    startIcon={<AttachFileIcon />}
-                    sx={{ bgcolor: '#4A628A', '&:hover': { bgcolor: '#3A4F6A' } }}
-                  >
-                    Upload File Hasil
-                    <input
-                      type="file"
-                      hidden
-                      id="file-upload" 
-                      onChange={(e) => setPetugasFile(e.target.files?.[0] || null)}
-                    />
-                  </Button>
-                  {petugasFile && <Typography sx={{ mt: 2 }}>File terpilih: {petugasFile.name}</Typography>}
-                </Grid>
-
-                  <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        sx={{
-                          width: '30%',
-                          py: 1.5,
-                          bgcolor: '#4A628A',
-                          '&:hover': { bgcolor: '#3A4F6A' },
-                        }}
-                        disabled={loading}
-                      >
-                        {loading ? 'Mengirim...' : 'Kirim Tanggapan'}
-                      </Button>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </form>
-            </Paper>
+              )}
+            </Grid>
           </Grid>
         </Grid>
       </Container>
