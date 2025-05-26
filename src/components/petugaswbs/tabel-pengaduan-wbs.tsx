@@ -97,7 +97,7 @@ export function TabelPetugasWbs() {
           rows: rowsPerPage,
           searchFilters: JSON.stringify(filters),
           orderKey: 'createdAt',
-          orderRule: 'desc', // We'll handle status sorting client-side
+          orderRule: 'desc',
         },
       });
 
@@ -118,13 +118,11 @@ export function TabelPetugasWbs() {
 
         setComplaints(sortedComplaints);
         setTotalData(response.data.content.totalData);
-        console.log('📋 Daftar pengaduan Internal:', sortedComplaints);
       } else {
         setComplaints([]);
         setTotalData(0);
       }
     } catch (error: any) {
-      console.error('❌ Gagal memuat pengaduan:', error.response?.data);
       setError(error.response?.data?.message || 'Gagal memuat data pengaduan');
     } finally {
       setLoading(false);
@@ -192,7 +190,6 @@ export function TabelPetugasWbs() {
         toast.error('Gagal menghapus pengaduan');
       }
     } catch (error: any) {
-      console.error('❌ Gagal menghapus pengaduan:', error.response?.data);
       toast.error('Terjadi kesalahan saat menghapus pengaduan');
     }
   };

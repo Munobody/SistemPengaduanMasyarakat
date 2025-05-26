@@ -95,8 +95,8 @@ export function LatestComplaints() {
     try {
       const response = await api.delete(`/pelaporan?ids=["${id}"]`, {});
       if (response.status === 200) {
-        toast.success('Pengaduan berhasil dihapus!'); // Use toast for success message
-        fetchComplaints(); // Refresh data after deletion
+        toast.success('Pengaduan berhasil dihapus!'); 
+        fetchComplaints(); 
       }
     } catch (error: any) {
       console.error('Error deleting complaint:', error);
@@ -572,7 +572,7 @@ export function LatestComplaints() {
           <DataGrid
             rows={filteredComplaints ?? []}
             columns={activeColumns}
-            pageSizeOptions={[5, 10, 20,100]}
+            pageSizeOptions={[5, 10, 20, 100]}
             pagination
             paginationMode="server"
             rowCount={filteredComplaints?.length ?? 0}
@@ -594,6 +594,19 @@ export function LatestComplaints() {
                   '& .MuiIconButton-root': { color: '#16404D' },
                 },
               },
+              noRowsOverlay: {
+                sx: {
+                  fontSize: '1rem',
+                  color: 'text.secondary',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+              },
+            }}
+            localeText={{
+              noRowsLabel: 'Belum Ada Pengaduan Yang Diajukan',
             }}
           />
         ) : (
