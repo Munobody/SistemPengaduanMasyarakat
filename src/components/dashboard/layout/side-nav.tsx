@@ -30,7 +30,6 @@ export function SideNav(): React.JSX.Element {
 
   React.useEffect(() => {
     if (user?.userLevelId) {
-      // Panggil fungsi untuk mendapatkan navItems yang difilter berdasarkan ACL
       getFilteredNavItems(user.userLevelId).then((items) => {
         setFilteredNavItems(items);
       });
@@ -50,8 +49,6 @@ export function SideNav(): React.JSX.Element {
         '--NavItem-icon-color': isDayTime ? '#135D66' : '#77B0AA',
         '--NavItem-icon-active-color': isDayTime ? '#003C43' : '#E3FEF7',
         '--NavItem-icon-disabled-color': isDayTime ? 'rgba(19, 93, 102, 0.5)' : 'rgba(119, 176, 170, 0.5)',
-        
-        // Layout styles
         bgcolor: 'var(--SideNav-background)',
         color: 'var(--SideNav-color)',
         display: { xs: 'none', lg: 'flex' },
@@ -69,7 +66,11 @@ export function SideNav(): React.JSX.Element {
     >
       <Stack spacing={2} sx={{ p: 3, alignItems: 'left' }}>
         <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
-          <Logo src={isDayTime ? '/assets/logo-usk.png' : '/assets/logo-usk-putih.png'} height={70} width={150} />
+          <Logo 
+            src={isDayTime ? '/assets/logo-usk.png' : '/assets/logo-usk-putih.png'} 
+            height={70} 
+            width={150} 
+          />
         </Box>
       </Stack>
       <Divider sx={{ borderColor: isDayTime ? '#77B0AA' : '#135D66' }} />
@@ -89,8 +90,9 @@ function renderNavItems({
   pathname: string;
   isDayTime: boolean;
 }): React.JSX.Element {
+  // Add a unique identifier for empty categories
   const groupedItems = items.reduce((acc: Record<string, NavItemConfig[]>, item) => {
-    const category = item.category || 'Menu';
+    const category = item.category || 'uncategorized';
     if (!acc[category]) {
       acc[category] = [];
     }
@@ -101,7 +103,7 @@ function renderNavItems({
   return (
     <Stack component="ul" spacing={2} sx={{ listStyle: 'none', m: 0, p: 0 }}>
       {Object.entries(groupedItems).map(([category, categoryItems]) => (
-        <React.Fragment key={category}>
+        <React.Fragment key={`nav-category-${category}`}>
           <Typography
             variant="subtitle2"
             sx={{
@@ -113,18 +115,22 @@ function renderNavItems({
               opacity: 0.8,
             }}
           >
-            {category}
+            {category === 'uncategorized' ? 'Menu' : category}
           </Typography>
-          <Stack component="ul" spacing={1} sx={{ listStyle: 'none', m: 0, p: 0 }}>
-            {categoryItems.map((item) => {
-              const { key, ...otherProps } = item;
+          <Stack 
+            component="ul" 
+            spacing={1} 
+            sx={{ listStyle: 'none', m: 0, p: 0 }}
+          >
+            {categoryItems.map((item, index) => {
+              const itemKey = `nav-item-${category}-${item.href || ''}-${item.title}-${index}`;
               return (
                 <NavItem
-                  key={''}
-                  // key={key || item.href || item.title} // Use key if provided, else fallback to href or title
                   pathname={pathname}
                   isDayTime={isDayTime}
-                  {...otherProps}                />
+                  {...item}
+                  key={itemKey}
+                />
               );
             })}
           </Stack>
@@ -190,7 +196,7 @@ function NavItem({
         }}
       >
         <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>
-          {Icon ? (
+          {Icon && (
             <Icon
               fill={
                 active
@@ -202,7 +208,7 @@ function NavItem({
               fontSize="var(--icon-fontSize-md)"
               weight={active ? 'fill' : undefined}
             />
-          ) : null}
+          )}
         </Box>
         <Box sx={{ flex: '1 1 auto' }}>
           <Typography

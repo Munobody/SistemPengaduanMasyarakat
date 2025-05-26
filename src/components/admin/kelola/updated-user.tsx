@@ -1,6 +1,6 @@
- 'use client';
+'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -124,6 +124,16 @@ interface UserLevel {
   updatedAt: string;
 }
 
+interface ApiResponse {
+  content: {
+    entries: User[];
+    totalData: number;
+    totalPage: number;
+  };
+  message: string;
+  errors: any[];
+}
+
 const USER_LEVEL_NAMES = [
   'MAHASISWA',
   'DOSEN',
@@ -134,9 +144,21 @@ const USER_LEVEL_NAMES = [
   'KEPALA_PETUGAS_UNIT',
   'KEPALA_WBS',
   'PETUGAS_WBS',
+  'PIMPINAN_UNIT',
 ] as const;
 
 type UserLevelName = (typeof USER_LEVEL_NAMES)[number];
+
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
 
 export const RoleManagement: React.FC = () => {
   const theme = useTheme();
@@ -144,8 +166,9 @@ export const RoleManagement: React.FC = () => {
 
   const [users, setUsers] = useState<User[]>([]);
   const [userLevels, setUserLevels] = useState<UserLevel[]>([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage] = useState(10);
+  const [page, setPage] = useState(0); // Keep 0-based for MUI pagination
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalData, setTotalData] = useState(0);
   const [selectedUserLevelName, setSelectedUserLevelName] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>(''); // State untuk pencarian
   const [openAddUser, setOpenAddUser] = useState(false);
@@ -164,9 +187,19 @@ export const RoleManagement: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users?page=1&rows=50');
-      if (response.data?.content?.entries) {
+      const searchFilters = searchQuery
+        ? JSON.stringify({ no_identitas: searchQuery })
+        : undefined;
+
+      const response = await api.get<ApiResponse>(
+        `/users?page=${page + 1}&rows=${rowsPerPage}${
+          searchFilters ? `&searchFilters=${searchFilters}` : ''
+        }`
+      );
+
+      if (response.data?.content) {
         setUsers(response.data.content.entries);
+        setTotalData(response.data.content.totalData);
       }
     } catch (error) {
       console.error('Failed to load users:', error);
@@ -197,7 +230,7 @@ export const RoleManagement: React.FC = () => {
   useEffect(() => {
     fetchUsers();
     fetchUserLevels();
-  }, []);
+  }, [page, rowsPerPage, searchQuery]);
 
   const handleSubmitAddUser = async () => {
     if (!formData.email || !formData.password || !formData.name) {
@@ -282,15 +315,16 @@ export const RoleManagement: React.FC = () => {
   };
 
   // Modifikasi filteredUsers untuk mendukung pencarian berdasarkan no_identitas
-  const filteredUsers = users
-    .filter((user) =>
-      selectedUserLevelName === 'ALL' ? true : user.userLevel.name === selectedUserLevelName
-    )
-    .filter((user) =>
-      searchQuery
-        ? user.no_identitas?.toLowerCase().includes(searchQuery.toLowerCase())
-        : true
-    );
+  const filteredUsers = users.filter((user) =>
+    selectedUserLevelName === 'ALL' ? true : user.userLevel.name === selectedUserLevelName
+  );
+
+  const debouncedSearch = useCallback(
+    debounce((value: string) => {
+      setSearchQuery(value);
+    }, 500),
+    []
+  );
 
   return (
     <ThemeProvider theme={theme}>
@@ -335,8 +369,7 @@ export const RoleManagement: React.FC = () => {
               label="Search by ID Number"
               variant="outlined"
               size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => debouncedSearch(e.target.value)}
               sx={{
                 minWidth: isMobile ? '100%' : 200,
                 backgroundColor: 'white',
@@ -420,7 +453,7 @@ export const RoleManagement: React.FC = () => {
                   </TableRow>
                 ))
               ) : filteredUsers.length > 0 ? (
-                filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((user) => (
+                filteredUsers.map((user) => (
                   <TableRow key={user.id} sx={{ '&:hover': { backgroundColor: '#f5f5f5' } }}>
                     <TableCell sx={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>{user.name || '-'}</TableCell>
                     {!isMobile && (
@@ -489,12 +522,16 @@ export const RoleManagement: React.FC = () => {
             </TableBody>
           </Table>
           <TablePagination
-            rowsPerPageOptions={[10]}
+            rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={filteredUsers.length}
+            count={totalData}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={(_, newPage) => setPage(newPage)}
+            onRowsPerPageChange={(event) => {
+              setRowsPerPage(parseInt(event.target.value, 10));
+              setPage(0); // Reset to first page when changing rows per page
+            }}
             labelRowsPerPage="Rows per page"
             sx={{
               backgroundColor: '#E3FEF7',

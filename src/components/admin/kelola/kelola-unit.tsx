@@ -61,13 +61,26 @@ export function KelolaUnit() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [pagination, setPagination] = useState({ page: 0, rowsPerPage: 10, totalData: 0 });
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const [dialogState, setDialogState] = useState({
+  interface DialogState {
+    open: boolean;
+    isEditing: boolean;
+    currentUnit: Unit | null;
+    unitName: string;
+    kepalaUnitId: string;
+    pimpinanUnitId: string; // Add this
+    selectedJenisUnit: string;
+  }
+
+  // Update the initial state in your component
+  const [dialogState, setDialogState] = useState<DialogState>({
     open: false,
     isEditing: false,
-    currentUnit: null as Unit | null,
+    currentUnit: null,
     unitName: '',
     kepalaUnitId: '',
+    pimpinanUnitId: '', // Add this
     selectedJenisUnit: '',
   });
 
@@ -84,35 +97,48 @@ export function KelolaUnit() {
     unitName: '',
   });
 
-  const fetchUnits = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { page, rowsPerPage } = pagination;
-      const response = await api.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`
-      );
+const fetchUnits = useCallback(async () => {
+  try {
+    setLoading(true);
+    const { page, rowsPerPage } = pagination;
+    let url = `${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`;
 
-      if (response.data.content?.entries) {
-        setUnits(response.data.content.entries);
-        setPagination((prev) => ({
-          ...prev,
-          totalData: response.data.content.totalData,
-        }));
-      } else {
-        setUnits([]);
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch units:', error.response?.data);
-      setFeedbackModal({
-        open: true,
-        title: 'Error',
-        message: error.response?.data?.message || 'Failed to fetch units',
-        isError: true,
-      });
-    } finally {
-      setLoading(false);
+    // Add search filter if query exists
+    if (searchQuery.trim()) {
+      url += `&searchFilters=${JSON.stringify({ nama_unit: searchQuery.trim() })}`;
     }
-  }, [pagination.page, pagination.rowsPerPage]);
+
+    const response = await api.get(url);
+
+    if (response.data.content?.entries) {
+      setUnits(response.data.content.entries);
+      setPagination((prev) => ({
+        ...prev,
+        totalData: response.data.content.totalData,
+      }));
+    } else {
+      setUnits([]);
+    }
+  } catch (error: any) {
+    console.error('Failed to fetch units:', error.response?.data);
+    setFeedbackModal({
+      open: true,
+      title: 'Error',
+      message: error.response?.data?.message || 'Failed to fetch units',
+      isError: true,
+    });
+  } finally {
+    setLoading(false);
+  }
+}, [pagination.page, pagination.rowsPerPage, searchQuery]);
+
+// Add debounced search
+const debouncedSearch = useCallback(
+  debounce((value: string) => {
+    setSearchQuery(value);
+  }, 500),
+  []
+);
 
   useEffect(() => {
     fetchUnits();
@@ -125,6 +151,7 @@ export function KelolaUnit() {
       currentUnit: unit || null,
       unitName: unit?.nama_unit || '',
       kepalaUnitId: unit?.kepalaUnit?.no_identitas || '',
+      pimpinanUnitId: '',
       selectedJenisUnit: unit?.jenis_unit || '',
     });
   };
@@ -136,6 +163,7 @@ export function KelolaUnit() {
       currentUnit: null,
       unitName: '',
       kepalaUnitId: '',
+      pimpinanUnitId: '',
       selectedJenisUnit: '',
     });
   };
@@ -167,55 +195,67 @@ export function KelolaUnit() {
       setDeleteConfirmation({ open: false, unitId: '', unitName: '' });
     }
   };
+const handleSubmit = async () => {
+  const {
+    unitName,
+    kepalaUnitId,
+    pimpinanUnitId,
+    selectedJenisUnit,
+    isEditing,
+    currentUnit,
+  } = dialogState;
 
-  const handleSubmit = async () => {
-    const { unitName, kepalaUnitId, selectedJenisUnit, isEditing, currentUnit } = dialogState;
+  if (
+    !unitName.trim() ||
+    (!isEditing && (!kepalaUnitId.trim() || !pimpinanUnitId.trim() || !selectedJenisUnit.trim()))
+  ) {
+    setFeedbackModal({
+      open: true,
+      title: 'Warning',
+      message: 'Semua field harus diisi.',
+      isError: true,
+    });
+    return;
+  }
 
-    if (!unitName.trim() || (!isEditing && (!kepalaUnitId.trim() || !selectedJenisUnit.trim()))) {
+  try {
+    if (isEditing && currentUnit) {
+      await api.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${currentUnit.id}`, {
+        nama_unit: unitName.trim(),
+      });
       setFeedbackModal({
         open: true,
-        title: 'Warning',
-        message: 'All fields are required.',
-        isError: true,
+        title: 'Success',
+        message: `Unit "${unitName}" telah diperbarui.`,
+        isError: false,
       });
-      return;
-    }
+    } else {
+      const requestBody = {
+        nama_unit: unitName.trim(),
+        jenis_unit: selectedJenisUnit.trim(),
+        kepalaUnit: kepalaUnitId.trim(),
+        pimpinanUnitId: pimpinanUnitId.trim()
+      };
 
-    try {
-      if (isEditing && currentUnit) {
-        await api.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${currentUnit.id}`, {
-          nama_unit: unitName.trim(),
-        });
-        setFeedbackModal({
-          open: true,
-          title: 'Success',
-          message: `Unit "${unitName}" has been updated.`,
-          isError: false,
-        });
-      } else {
-        await api.post(`${process.env.NEXT_PUBLIC_API_URL}/units`, {
-          nama_unit: unitName.trim(),
-          jenis_unit: selectedJenisUnit.trim(),
-          kepalaUnit: kepalaUnitId.trim(),
-        });
-        setFeedbackModal({
-          open: true,
-          title: 'Success',
-          message: `Unit "${unitName}" has been added.`,
-          isError: false,
-        });
-      }
-      fetchUnits();
-      handleCloseDialog();
-    } catch (error: any) {
+      await api.post(`${process.env.NEXT_PUBLIC_API_URL}/units`, requestBody);
       setFeedbackModal({
         open: true,
-        title: 'Error',
-        message: error.response?.data?.message || 'Failed to save unit',
-        isError: true,
+        title: 'Success',
+        message: `Unit "${unitName}" telah ditambahkan.`,
+        isError: false,
       });
     }
-  };
+    fetchUnits();
+    handleCloseDialog();
+  } catch (error: any) {
+    setFeedbackModal({
+      open: true,
+      title: 'Error',
+      message: error.response?.data?.message || 'Gagal menyimpan unit',
+      isError: true,
+    });
+  }
+};
 
   return (
     <Card sx={{ backgroundColor: '#E3FEF7', p: 2, borderRadius: 2, boxShadow: 3 }}>
@@ -232,11 +272,29 @@ export function KelolaUnit() {
         </Button>
       </Box>
 
+      {/* Replace Filter Section with Search */}
+      <Box sx={{ display: 'flex', mb: 2 }}>
+        <TextField
+          label="Cari Unit"
+          placeholder="Masukkan nama unit..."
+          fullWidth
+          onChange={(e) => debouncedSearch(e.target.value)}
+          sx={{
+            maxWidth: 300,
+            backgroundColor: 'white',
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 1,
+            },
+          }}
+        />
+      </Box>
+
       <TableContainer component={Paper} sx={{ backgroundColor: 'white', borderRadius: 1 }}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Nama Unit</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Jenis Unit</TableCell>
               <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Kepala Unit</TableCell>
               <TableCell align="right" sx={{ fontWeight: 'bold', color: '#003C43' }}>
                 Aksi
@@ -247,7 +305,7 @@ export function KelolaUnit() {
             {loading ? (
               Array.from({ length: pagination.rowsPerPage }).map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell colSpan={3}>
+                  <TableCell colSpan={4}>
                     <Skeleton variant="text" width="100%" height={30} />
                   </TableCell>
                 </TableRow>
@@ -256,6 +314,7 @@ export function KelolaUnit() {
               units.map((unit) => (
                 <TableRow key={unit.id}>
                   <TableCell>{unit.nama_unit}</TableCell>
+                  <TableCell>{unit.jenis_unit}</TableCell>
                   <TableCell>{unit.kepalaUnit?.name || '-'}</TableCell>
                   <TableCell align="right">
                     <IconButton onClick={() => handleOpenDialog(unit)}>
@@ -269,7 +328,7 @@ export function KelolaUnit() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} align="center">
+                <TableCell colSpan={4} align="center">
                   No units found.
                 </TableCell>
               </TableRow>
@@ -294,7 +353,7 @@ export function KelolaUnit() {
         />
       </TableContainer>
 
-      {/* Dialogs */}
+      {/* Add/Edit Dialog */}
       <Dialog open={dialogState.open} onClose={handleCloseDialog}>
         <DialogTitle sx={{ color: '#003C43' }}>
           {dialogState.isEditing ? 'Edit Unit' : 'Tambah Unit'}
@@ -305,32 +364,25 @@ export function KelolaUnit() {
             fullWidth
             value={dialogState.unitName}
             onChange={(e) => setDialogState((prev) => ({ ...prev, unitName: e.target.value }))}
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, mt: 2 }}
           />
           {!dialogState.isEditing && (
             <>
-              <TextField
-                select
-                label="Jenis Unit"
-                fullWidth
-                value={dialogState.selectedJenisUnit}
-                onChange={(e) =>
-                  setDialogState((prev) => ({ ...prev, selectedJenisUnit: e.target.value }))
-                }
-                sx={{ mb: 2 }}
-              >
-                {['FAKULTAS', 'UPT', 'DIREKTORAT', 'LEMBAGA'].map((jenis) => (
-                  <MenuItem key={jenis} value={jenis}>
-                    {jenis}
-                  </MenuItem>
-                ))}
-              </TextField>
               <TextField
                 label="ID Kepala Unit"
                 fullWidth
                 value={dialogState.kepalaUnitId}
                 onChange={(e) =>
                   setDialogState((prev) => ({ ...prev, kepalaUnitId: e.target.value }))
+                }
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="ID Pimpinan Unit"
+                fullWidth
+                value={dialogState.pimpinanUnitId}
+                onChange={(e) =>
+                  setDialogState((prev) => ({ ...prev, pimpinanUnitId: e.target.value }))
                 }
               />
             </>
@@ -350,7 +402,10 @@ export function KelolaUnit() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteConfirmation.open} onClose={() => setDeleteConfirmation({ open: false, unitId: '', unitName: '' })}>
+      <Dialog
+        open={deleteConfirmation.open}
+        onClose={() => setDeleteConfirmation({ open: false, unitId: '', unitName: '' })}
+      >
         <DialogTitle sx={{ color: '#003C43' }}>Konfirmasi Penghapusan</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -374,7 +429,10 @@ export function KelolaUnit() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={feedbackModal.open} onClose={() => setFeedbackModal((prev) => ({ ...prev, open: false }))}>
+      <Dialog
+        open={feedbackModal.open}
+        onClose={() => setFeedbackModal((prev) => ({ ...prev, open: false }))}
+      >
         <DialogTitle sx={{ color: feedbackModal.isError ? '#D32F2F' : '#003C43' }}>
           {feedbackModal.title}
         </DialogTitle>
@@ -392,4 +450,15 @@ export function KelolaUnit() {
       </Dialog>
     </Card>
   );
+}
+
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
 }

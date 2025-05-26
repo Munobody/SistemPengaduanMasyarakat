@@ -1,31 +1,29 @@
 'use client';
 
 import React, { useEffect, useState, memo } from 'react';
-import { Box, Card, CardContent, Grid, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { Bar, Line } from 'react-chartjs-2';
+import { Box, Card, CardContent, Grid, Typography, ButtonGroup, Button, useMediaQuery, useTheme } from '@mui/material';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import api from '@/lib/api/api';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
-  LineElement,
   PointElement,
+  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
-  ChartData,
-  ChartOptions,
 } from 'chart.js';
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
-import api from '@/lib/api/api';
+import { Line, Bar } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
-  LineElement,
   PointElement,
+  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
@@ -34,366 +32,135 @@ ChartJS.register(
 interface Unit {
   id: string;
   nama_unit: string;
-}
-
-interface Category {
-  id: string;
-  nama: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  role: string;
+  jenis_unit: string;
   createdAt?: string;
-}
-
-interface Complaint {
-  id: string;
-  judul: string;
-  deskripsi: string;
-  status: string;
-  pelaporId: string;
-  unitId: string;
-  response: string;
-  kategoriId: string;
-  createdAt: string;
-  updatedAt: string;
-  nama: string;
-  tipePengaduan: string;
-}
-
-interface ApiResponse<T> {
-  content: {
-    entries: T[];
-    totalData: number;
-    totalPage: number;
+  kepalaUnit?: {
+    name: string;
   };
-  message: string;
-  errors: any[];
 }
 
 const AdminDashboardVisualization: React.FC = memo(() => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [totalUnits, setTotalUnits] = useState<number>(0);
+  const [totalPelaporan, setTotalPelaporan] = useState<number>(0);
+  const [totalPelaporanMasyarakat, setTotalPelaporanMasyarakat] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState<string>('');
+  const [groupBy, setGroupBy] = useState<'bulan' | 'hari'>('bulan');
+  const [internalEntries, setInternalEntries] = useState<any[]>([]);
+  const [masyarakatEntries, setMasyarakatEntries] = useState<any[]>([]);
+  const [trendLabels, setTrendLabels] = useState<string[]>([]);
+  const [internalData, setInternalData] = useState<number[]>([]);
+  const [masyarakatData, setMasyarakatData] = useState<number[]>([]);
+  const [totalInternalPelaporan, setTotalInternalPelaporan] = useState<number>(0);
+  const [recentUnits, setRecentUnits] = useState<Unit[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [unitResponse, categoryResponse, userResponse, publicComplaintResponse, userComplaintResponse] = await Promise.all([
-          api.get<ApiResponse<Unit>>('/units?page=1&rows=12&orderKey=nama_unit&orderRule=asc'),
-          api.get<ApiResponse<Category>>('/kategori?page=1&rows=12&orderKey=nama&orderRule=asc'),
-          api.get<ApiResponse<User>>('/users?page=1&rows=50'),
-          api.get<ApiResponse<Complaint>>('/pengaduan?page=1&rows=50'), // Public complaints
-          api.get<ApiResponse<Complaint>>('/pelaporan?page=1&rows=50'), // User complaints
+        // Total pelaporan & masyarakat
+        const pelaporanCountResponse = await api.get('/pelaporan/count');
+        const totalCount = pelaporanCountResponse.data.content.totalCount || 0;
+        const totalMasyarakat = pelaporanCountResponse.data.content.totalCountMasyarakat || 0;
+        
+        setTotalPelaporan(totalCount);
+        setTotalPelaporanMasyarakat(totalMasyarakat);
+        setTotalInternalPelaporan(totalCount - totalMasyarakat); // Calculate internal reports
+
+        // Data internal & masyarakat
+        const [internalRes, masyarakatRes] = await Promise.all([
+          api.get('/pelaporan?page=1&rows=365&orderKey=createdAt&orderRule=asc'),
+          api.get('/pengaduan?page=1&rows=365&orderKey=createdAt&orderRule=asc'),
         ]);
+        setInternalEntries(internalRes.data.content.entries || []);
+        setMasyarakatEntries(masyarakatRes.data.content.entries || []);
 
-        const publicComplaints = publicComplaintResponse.data.content.entries || [];
-        const userComplaints = userComplaintResponse.data.content.entries || [];
-        const combinedComplaints = [...publicComplaints, ...userComplaints];
+        // Fetch units and filter recent ones
+        const unitResponse = await api.get('/units?page=1&rows=100');
+        const units = unitResponse.data.content.entries || [];
+        
+        // Filter units created within last month
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        
+        const recent = units.filter((unit: Unit) => {
+          if (!unit.createdAt) return false;
+          const createdDate = new Date(unit.createdAt);
+          return createdDate > oneMonthAgo;
+        });
 
-        setUnits(unitResponse.data.content.entries || []);
-        setCategories(categoryResponse.data.content.entries || []);
-        setUsers(userResponse.data.content.entries || []);
-        setComplaints(combinedComplaints);
-        console.log('Fetched public complaints from /pengaduan:', publicComplaints);
-        console.log('Fetched user complaints from /pelaporan:', userComplaints);
-        console.log('Combined complaints:', combinedComplaints);
-      } catch (error: any) {
-        console.error('Error fetching data:', error.response?.data || error.message);
+        setRecentUnits(recent);
+        setTotalUnits(unitResponse.data.content.totalData || 0);
+
+      } catch (error) {
+        setTotalUnits(0);
+        setTotalPelaporan(0);
+        setTotalPelaporanMasyarakat(0);
+        setTotalInternalPelaporan(0);
+        setInternalEntries([]);
+        setMasyarakatEntries([]);
+        setRecentUnits([]);
       } finally {
         setLoading(false);
       }
     };
-
-    const userData = JSON.parse(localStorage.getItem('user') || '{}');
-    if (userData && userData.name) {
-      setUserName(userData.name);
-    }
-
     fetchData();
   }, []);
 
+  // Sinkronisasi label dan data untuk 2 line
+  useEffect(() => {
+    // Helper untuk group data
+    function group(entries: any[], mode: 'bulan' | 'hari') {
+      const map: Record<string, number> = {};
+      entries.forEach((item) => {
+        const date = new Date(item.createdAt);
+        let key = '';
+        if (mode === 'bulan') {
+          key = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+        } else {
+          key = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        map[key] = (map[key] || 0) + 1;
+      });
+      return map;
+    }
+
+    const mapInternal = group(internalEntries, groupBy);
+    const mapMasyarakat = group(masyarakatEntries, groupBy);
+
+    // Gabungkan semua label unik, urutkan
+    const allLabels = Array.from(new Set([...Object.keys(mapInternal), ...Object.keys(mapMasyarakat)]));
+    // Sort label by date
+    allLabels.sort((a, b) => {
+      // Convert label to Date for sorting
+      const parse = (label: string) =>
+        groupBy === 'bulan'
+          ? new Date('01 ' + label) // e.g. "Jan 2025" => "01 Jan 2025"
+          : new Date(label);
+      return parse(a).getTime() - parse(b).getTime();
+    });
+
+    setTrendLabels(allLabels);
+    setInternalData(allLabels.map((l) => mapInternal[l] || 0));
+    setMasyarakatData(allLabels.map((l) => mapMasyarakat[l] || 0));
+  }, [internalEntries, masyarakatEntries, groupBy]);
+
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          p: isMobile ? 2 : 3,
-          minHeight: '100vh',
-          bgcolor: '#FFFFFF',
-        }}
-      >
-        <Skeleton
-          height={isMobile ? 30 : 40}
-          width={isMobile ? '80%' : '50%'}
-          baseColor="#77B0AA"
-          highlightColor="#E3FEF7"
-        />
+      <Box sx={{ p: isMobile ? 2 : 3 }}>
         <Grid container spacing={isMobile ? 2 : 3}>
-          {[...Array(4)].map((_, index) => (
-            <Grid item xs={12} md={3} key={index}>
-              <Skeleton
-                height={isMobile ? 120 : 150}
-                width="100%"
-                baseColor="#77B0AA"
-                highlightColor="#E3FEF7"
-              />
+          {[...Array(3)].map((_, idx) => (
+            <Grid item xs={12} sm={4} key={idx}>
+              <Skeleton height={120} />
             </Grid>
           ))}
+          <Grid item xs={12}>
+            <Skeleton height={300} />
+          </Grid>
         </Grid>
-        <Skeleton
-          height={isMobile ? 250 : 300}
-          width="100%"
-          baseColor="#77B0AA"
-          highlightColor="#E3FEF7"
-        />
       </Box>
     );
   }
-
-  const userComplaints = complaints.filter((c) => c.tipePengaduan.toUpperCase() === 'USER');
-  const publicComplaints = complaints.filter((c) => c.tipePengaduan.toUpperCase() === 'MASYARAKAT');
-  const barChartData: ChartData<'bar'> = {
-    labels: ['Unit', 'Kategori', 'Pengguna', 'Pengaduan Layanan', 'Pelaporan Masyarakat'],
-    datasets: [
-      {
-        label: 'Jumlah',
-        data: [
-          units.length,
-          categories.length,
-          users.length,
-          userComplaints.length,
-          publicComplaints.length,
-        ],
-        backgroundColor: ['#77B0AA', '#135D66', '#003C43', '#1A3C34', '#2E8B57'],
-        borderColor: ['#77B0AA', '#135D66', '#003C43', '#1A3C34', '#2E8B57'],
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const barChartOptions: ChartOptions<'bar'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: {
-          font: {
-            size: isMobile ? 12 : 14,
-          },
-          color: '#003C43',
-        },
-      },
-      title: {
-        display: true,
-        text: 'Perbandingan Jumlah Unit, Kategori, Pengguna, dan Pelaporan',
-        color: '#003C43',
-        font: {
-          size: isMobile ? 14 : 16,
-          weight: 'bold',
-        },
-      },
-      tooltip: {
-        backgroundColor: '#003C43',
-        titleColor: '#E3FEF7',
-        bodyColor: '#E3FEF7',
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: '#003C43',
-          font: {
-            size: isMobile ? 10 : 12,
-          },
-        },
-        grid: {
-          color: '#77B0AA',
-        },
-      },
-      x: {
-        ticks: {
-          color: '#003C43',
-          font: {
-            size: isMobile ? 10 : 12,
-          },
-        },
-        grid: {
-          display: false,
-        },
-      },
-    },
-  };
-
-  const processComplaintsByDate = (complaints: Complaint[]) => {
-    return complaints.reduce((acc, complaint) => {
-      if (!complaint.createdAt) {
-        console.warn('Missing createdAt for complaint:', complaint);
-        return acc;
-      }
-      try {
-        const date = new Date(complaint.createdAt);
-        if (isNaN(date.getTime())) {
-          console.warn('Invalid date for complaint:', complaint);
-          return acc;
-        }
-        const day = date.toISOString().split('T')[0]; 
-        acc[day] = (acc[day] || 0) + 1;
-        return acc;
-      } catch (error) {
-        console.warn('Error parsing date for complaint:', complaint, error);
-        return acc;
-      }
-    }, {} as Record<string, number>);
-  };
-
-  const dailyUserComplaints = processComplaintsByDate(userComplaints);
-  const dailyPublicComplaints = processComplaintsByDate(publicComplaints);
-  console.log('User Complaints Count:', userComplaints.length, dailyUserComplaints);
-  console.log('Public Complaints Count:', publicComplaints.length, dailyPublicComplaints);
-
-
-  const getDateRange = (complaintDates: string[]) => {
-    if (!complaintDates.length) return [];
-    const dates = complaintDates.map((d) => new Date(d));
-    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-    const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-
-    const dateArray = [];
-    let currentDate = new Date(minDate);
-    while (currentDate <= maxDate) {
-      dateArray.push(new Date(currentDate).toISOString().split('T')[0]);
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    return dateArray;
-  };
-
-  const allDates = Array.from(
-    new Set([
-      ...Object.keys(dailyUserComplaints),
-      ...Object.keys(dailyPublicComplaints),
-    ])
-  ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-  const dateLabels = getDateRange(allDates).length > 0 ? getDateRange(allDates) : ['No Data'];
-
-  const lineChartData: ChartData<'line'> = {
-    labels: dateLabels,
-    datasets: [
-      {
-        label: 'Pengaduan Layanan',
-        data: dateLabels.map((day) => dailyUserComplaints[day] || 0),
-        borderColor: '#003C43',
-        backgroundColor: '#003C43',
-        fill: false,
-        tension: 0.4,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-      {
-        label: 'Pelaporan Masyarakat',
-        data: dateLabels.map((day) => dailyPublicComplaints[day] || 0),
-        borderColor: '#2E8B57',
-        backgroundColor: '#2E8B57',
-        fill: false,
-        tension: 0.4,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-    ],
-  };
-
-  const lineChartOptions: ChartOptions<'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: {
-          font: {
-            size: isMobile ? 12 : 14,
-          },
-          color: '#003C43',
-        },
-      },
-      title: {
-        display: true,
-        text: 'Tren Jumlah Pelaporan per Hari',
-        color: '#003C43',
-        font: {
-          size: isMobile ? 14 : 16,
-          weight: 'bold',
-        },
-      },
-      tooltip: {
-        backgroundColor: '#003C43',
-        titleColor: '#E3FEF7',
-        bodyColor: '#E3FEF7',
-        callbacks: {
-          title: (tooltipItems) => {
-            const date = new Date(tooltipItems[0].label);
-            return date.toLocaleDateString('id-ID', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-            });
-          },
-        },
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: '#003C43',
-          font: {
-            size: isMobile ? 10 : 12,
-          },
-          stepSize: 1,
-        },
-        grid: {
-          color: '#77B0AA',
-        },
-      },
-      x: {
-        ticks: {
-          color: '#003C43',
-          font: {
-            size: isMobile ? 10 : 12,
-          },
-          maxTicksLimit: isMobile ? 5 : 10,
-          callback: (value, index, values) => {
-            const date = new Date(dateLabels[index]);
-            return date.toLocaleDateString('id-ID', {
-              day: '2-digit',
-              month: '2-digit',
-            });
-          },
-        },
-        grid: {
-          display: false,
-        },
-      },
-    },
-  };
-  const userRoleDistribution = users.reduce((acc, user) => {
-    acc[user.role] = (acc[user.role] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  const recentUsers = users
-    .filter((user) => user.createdAt)
-    .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
-    .slice(0, 5);
 
   return (
     <Box
@@ -422,134 +189,32 @@ const AdminDashboardVisualization: React.FC = memo(() => {
           },
         }}
       >
-        Dashboard Admin - Selamat Datang, {userName}!
+        Dashboard Admin - Visualisasi Data Unit & Pelaporan
       </Typography>
       <Grid container spacing={isMobile ? 2 : 3}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            elevation={3}
-            sx={{
-              bgcolor: '#77B0AA',
-              color: '#E3FEF7',
-              minHeight: isMobile ? 120 : 150,
-              transition: 'transform 0.3s',
-              '&:hover': {
-                transform: 'translateY(-5px)',
-              },
-            }}
-          >
+        <Grid item xs={12} sm={4}>
+          <Card elevation={3} sx={{ bgcolor: '#77B0AA', color: '#E3FEF7', minHeight: 120 }}>
             <CardContent>
-              <Typography
-                variant={isMobile ? 'h6' : 'h5'}
-                align="center"
-                gutterBottom
-                sx={{ '@media (max-width: 600px)': { fontSize: '1rem' } }}
-              >
-                Total Unit
-              </Typography>
-              <Typography
-                variant={isMobile ? 'h4' : 'h3'}
-                align="center"
-                sx={{ '@media (max-width: 600px)': { fontSize: '1.5rem' } }}
-              >
-                {units.length}
+              <Typography variant="h6" align="center" gutterBottom>Total Unit</Typography>
+              <Typography variant="h3" align="center">{totalUnits}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card elevation={3} sx={{ bgcolor: '#135D66', color: '#E3FEF7', minHeight: 120 }}>
+            <CardContent>
+              <Typography variant="h6" align="center" gutterBottom>Total Pelaporan Internal</Typography>
+              <Typography variant="h3" align="center">
+                {totalPelaporan - totalPelaporanMasyarakat}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            elevation={3}
-            sx={{
-              bgcolor: '#135D66',
-              color: '#E3FEF7',
-              minHeight: isMobile ? 120 : 150,
-              transition: 'transform 0.3s',
-              '&:hover': {
-                transform: 'translateY(-5px)',
-              },
-            }}
-          >
+        <Grid item xs={12} sm={4}>
+          <Card elevation={3} sx={{ bgcolor: '#003C43', color: '#E3FEF7', minHeight: 120 }}>
             <CardContent>
-              <Typography
-                variant={isMobile ? 'h6' : 'h5'}
-                align="center"
-                gutterBottom
-                sx={{ '@media (max-width: 600px)': { fontSize: '1rem' } }}
-              >
-                Total Kategori
-              </Typography>
-              <Typography
-                variant={isMobile ? 'h4' : 'h3'}
-                align="center"
-                sx={{ '@media (max-width: 600px)': { fontSize: '1.5rem' } }}
-              >
-                {categories.length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            elevation={3}
-            sx={{
-              bgcolor: '#003C43',
-              color: '#E3FEF7',
-              minHeight: isMobile ? 120 : 150,
-              transition: 'transform 0.3s',
-              '&:hover': {
-                transform: 'translateY(-5px)',
-              },
-            }}
-          >
-            <CardContent>
-              <Typography
-                variant={isMobile ? 'h6' : 'h5'}
-                align="center"
-                gutterBottom
-                sx={{ '@media (max-width: 600px)': { fontSize: '1rem' } }}
-              >
-                Total Pengguna
-              </Typography>
-              <Typography
-                variant={isMobile ? 'h4' : 'h3'}
-                align="center"
-                sx={{ '@media (max-width: 600px)': { fontSize: '1.5rem' } }}
-              >
-                {users.length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            elevation={3}
-            sx={{
-              bgcolor: '#1A3C34',
-              color: '#E3FEF7',
-              minHeight: isMobile ? 120 : 150,
-              transition: 'transform 0.3s',
-              '&:hover': {
-                transform: 'translateY(-5px)',
-              },
-            }}
-          >
-            <CardContent>
-              <Typography
-                variant={isMobile ? 'h6' : 'h5'}
-                align="center"
-                gutterBottom
-                sx={{ '@media (max-width: 600px)': { fontSize: '1rem' } }}
-              >
-                Total Pelaporan
-              </Typography>
-              <Typography
-                variant={isMobile ? 'h4' : 'h3'}
-                align="center"
-                sx={{ '@media (max-width: 600px)': { fontSize: '1.5rem' } }}
-              >
-                {complaints.length}
-              </Typography>
+              <Typography variant="h6" align="center" gutterBottom>Total Pelaporan Masyarakat</Typography>
+              <Typography variant="h3" align="center">{totalPelaporanMasyarakat}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -565,141 +230,179 @@ const AdminDashboardVisualization: React.FC = memo(() => {
             }}
           >
             <CardContent>
-              <Typography
-                variant={isMobile ? 'h6' : 'h5'}
-                align="center"
-                gutterBottom
-                sx={{
-                  color: '#003C43',
-                  fontWeight: 'bold',
-                  '@media (max-width: 600px)': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                Grafik Perbandingan Data
-              </Typography>
-              <Box sx={{ height: isMobile ? 200 : 250 }}>
-                <Bar data={barChartData} options={barChartOptions} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12}>
-          <Card
-            elevation={3}
-            sx={{
-              bgcolor: '#FFFFFF',
-              minHeight: isMobile ? 250 : 300,
-              '@media (max-width: 600px)': {
-                minHeight: 200,
-              },
-            }}
-          >
-            <CardContent>
-              <Typography
-                variant={isMobile ? 'h6' : 'h5'}
-                align="center"
-                gutterBottom
-                sx={{
-                  color: '#003C43',
-                  fontWeight: 'bold',
-                  '@media (max-width: 600px)': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                Tren Jumlah Pelaporan per Hari
-              </Typography>
-              {dateLabels.length === 1 && dateLabels[0] === 'No Data' ? (
-                <Typography align="center" sx={{ color: '#135D66', mt: 2 }}>
-                  Tidak ada data pelaporan untuk ditampilkan.
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ color: '#003C43', fontWeight: 'bold' }}>
+                  Tren Jumlah Laporan {groupBy === 'bulan' ? 'per Bulan' : 'per Hari'}
                 </Typography>
-              ) : (
-                <Box sx={{ height: isMobile ? 200 : 250 }}>
-                  <Line data={lineChartData} options={lineChartOptions} />
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12}>
-          <Card
-            elevation={3}
-            sx={{
-              bgcolor: '#FFFFFF',
-              minHeight: isMobile ? 200 : 250,
-              '@media (max-width: 600px)': {
-                minHeight: 180,
-              },
-            }}
-          >
-            <CardContent>
-              <Typography
-                variant={isMobile ? 'h6' : 'h5'}
-                align="center"
-                gutterBottom
-                sx={{
-                  color: '#003C43',
-                  fontWeight: 'bold',
-                  '@media (max-width: 600px)': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                Aktivitas Terbaru
-              </Typography>
-              <Box
-                sx={{
-                  mt: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1,
-                }}
-              >
-                {recentUsers.length > 0 ? (
-                  recentUsers.map((user) => (
-                    <Box
-                      key={user.id}
-                      sx={{
-                        bgcolor: '#E3FEF7',
-                        color: '#000000',
-                        p: isMobile ? 1 : 1.5,
-                        borderRadius: 1,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Typography
-                        variant={isMobile ? 'body2' : 'body1'}
-                        sx={{ '@media (max-width: 600px)': { fontSize: '0.75rem' } }}
-                      >
-                        {user.name} ({user.role})
-                      </Typography>
-                      <Typography
-                        variant={isMobile ? 'body2' : 'body1'}
-                        sx={{ '@media (max-width: 600px)': { fontSize: '0.75rem' } }}
-                      >
-                        {user.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString('id-ID')
-                          : 'N/A'}
-                      </Typography>
-                    </Box>
-                  ))
-                ) : (
-                  <Typography
-                    variant={isMobile ? 'body2' : 'body1'}
-                    align="center"
-                    sx={{ color: '#135D66' }}
+                <ButtonGroup size="small">
+                  <Button 
+                    variant={groupBy === 'bulan' ? 'contained' : 'outlined'}
+                    onClick={() => setGroupBy('bulan')}
                   >
-                    Tidak ada aktivitas terbaru.
-                  </Typography>
+                    Bulan
+                  </Button>
+                  <Button
+                    variant={groupBy === 'hari' ? 'contained' : 'outlined'}
+                    onClick={() => setGroupBy('hari')}
+                  >
+                    Hari
+                  </Button>
+                </ButtonGroup>
+              </Box>
+              <Box sx={{ height: isMobile ? 200 : 250 }}>
+                {groupBy === 'bulan' ? (
+                  <Bar
+                    data={{
+                      labels: trendLabels,
+                      datasets: [
+                        {
+                          label: 'Pelaporan Internal',
+                          data: internalData,
+                          backgroundColor: '#135D66',
+                          borderColor: '#135D66',
+                          borderWidth: 1,
+                        },
+                        {
+                          label: 'Pengaduan Masyarakat',
+                          data: masyarakatData,
+                          backgroundColor: '#77B0AA',
+                          borderColor: '#77B0AA',
+                          borderWidth: 1,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { 
+                          display: true,
+                          position: 'top',
+                        }
+                      },
+                      scales: {
+                        x: {
+                          title: { 
+                            display: true,
+                            text: 'Bulan'
+                          },
+                          ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                          }
+                        },
+                        y: {
+                          beginAtZero: true,
+                          title: { display: true, text: 'Jumlah' }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <Line
+                    data={{
+                      labels: trendLabels,
+                      datasets: [
+                        {
+                          label: 'Pelaporan Internal',
+                          data: internalData,
+                          borderColor: '#135D66',
+                          backgroundColor: '#135D66',
+                          tension: 0.3,
+                          pointRadius: 3,
+                        },
+                        {
+                          label: 'Pengaduan Masyarakat',
+                          data: masyarakatData,
+                          borderColor: '#77B0AA',
+                          backgroundColor: '#77B0AA',
+                          tension: 0.3,
+                          pointRadius: 3,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { 
+                          display: true,
+                          position: 'top',
+                        }
+                      },
+                      scales: {
+                        x: {
+                          title: { 
+                            display: true,
+                            text: 'Tanggal'
+                          },
+                          ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                          }
+                        },
+                        y: {
+                          beginAtZero: true,
+                          title: { display: true, text: 'Jumlah' }
+                        }
+                      }
+                    }}
+                  />
                 )}
               </Box>
             </CardContent>
           </Card>
         </Grid>
+        {recentUnits.length > 0 && (
+          <Grid item xs={12}>
+            <Card
+              elevation={3}
+              sx={{
+                bgcolor: '#FFFFFF',
+                minHeight: isMobile ? 100 : 120,
+                p: 2
+              }}
+            >
+              <Typography
+                variant={isMobile ? 'subtitle1' : 'h6'}
+                sx={{ color: '#003C43', fontWeight: 'bold', mb: 2 }}
+              >
+                Unit Baru
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {recentUnits.map((unit) => (
+                  <Box
+                    key={unit.id}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      bgcolor: '#E3FEF7',
+                      p: 1.5,
+                      borderRadius: 1
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                        {unit.nama_unit}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {unit.jenis_unit} - {unit.kepalaUnit?.name || 'Belum ada kepala unit'}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="textSecondary">
+                      {unit.createdAt && new Date(unit.createdAt).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Card>
+          </Grid>
+        )}
       </Grid>
     </Box>
   );
