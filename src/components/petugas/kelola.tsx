@@ -191,8 +191,9 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
   const [selectedStatus, setSelectedStatus] = useState<string>('PENDING');
   const formRef = useRef<HTMLFormElement>(null);
   const responseFormRef = useRef<HTMLFormElement>(null);
+  const [hasIdentity, setHasIdentity] = useState(false);
 
-  const statusOptions = ['PENDING', 'PROCESS', 'REJECTED', 'COMPLETED'];
+  const statusOptions = ['PROCESS', 'REJECTED', 'COMPLETED'];
 
   useEffect(() => {
     const checkUserRole = () => {

@@ -35,6 +35,7 @@ import {
 import api from '@/lib/api/api';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
+import { Tab } from '@mui/base';
 dayjs.locale('id');
 
 interface Pengaduan {
@@ -491,6 +492,7 @@ export function TabelPetugasMasyarakat() {
                   <TableCell>No. Telepon</TableCell>
                   <TableCell>Unit</TableCell>
                   <TableCell>Kategori</TableCell>
+                  <TableCell>Tanggal Pengaduan</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Aksi</TableCell>
                 </TableRow>
@@ -509,6 +511,7 @@ export function TabelPetugasMasyarakat() {
                     <TableCell>No. Telepon</TableCell>
                     <TableCell>Unit</TableCell>
                     <TableCell>Kategori</TableCell>
+                    <TableCell>Tanggal Pengaduan</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell align="right">Aksi</TableCell>
                   </TableRow>
@@ -541,6 +544,11 @@ export function TabelPetugasMasyarakat() {
                         </TableCell>
                         <TableCell>{complaint.unit?.nama_unit || '-'}</TableCell>
                         <TableCell>{complaint.kategori?.nama || 'Tidak ada kategori'}</TableCell>
+                        <TableCell>
+                          {complaint.createdAt
+                            ? dayjs(complaint.createdAt).format('dddd, DD MMMM YYYY')
+                            : '-'}
+                        </TableCell>
                         <TableCell>
                           <Chip
                             label={complaint.status}

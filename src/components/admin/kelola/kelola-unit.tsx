@@ -28,12 +28,17 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import BlockIcon from '@mui/icons-material/Block';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import api from '@/lib/api/api';
+
+const JENIS_UNIT = ['FAKULTAS', 'UPT', 'DIREKTORAT', 'LEMBAGA'] as const;
 
 interface Unit {
   id: string;
   nama_unit: string;
-  jenis_unit: string;
+  jenis_unit: typeof JENIS_UNIT[number];
+  isActive: boolean;
   kepalaUnit?: {
     id: string;
     name: string;
@@ -54,6 +59,13 @@ interface DeleteConfirmationProps {
   unitName: string;
 }
 
+interface DisableConfirmationProps {
+  open: boolean;
+  unitId: string;
+  unitName: string;
+  currentStatus: boolean;
+}
+
 export function KelolaUnit() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -62,6 +74,7 @@ export function KelolaUnit() {
   const [pagination, setPagination] = useState({ page: 0, rowsPerPage: 10, totalData: 0 });
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const JENIS_UNIT = ['FAKULTAS', 'UPT', 'DIREKTORAT', 'LEMBAGA'] as const;
 
   interface DialogState {
     open: boolean;
@@ -69,18 +82,17 @@ export function KelolaUnit() {
     currentUnit: Unit | null;
     unitName: string;
     kepalaUnitId: string;
-    pimpinanUnitId: string; // Add this
-    selectedJenisUnit: string;
+    pimpinanUnitId: string;
+    selectedJenisUnit: typeof JENIS_UNIT[number] | '';
   }
 
-  // Update the initial state in your component
   const [dialogState, setDialogState] = useState<DialogState>({
     open: false,
     isEditing: false,
     currentUnit: null,
     unitName: '',
     kepalaUnitId: '',
-    pimpinanUnitId: '', // Add this
+    pimpinanUnitId: '',
     selectedJenisUnit: '',
   });
 
@@ -97,48 +109,55 @@ export function KelolaUnit() {
     unitName: '',
   });
 
-const fetchUnits = useCallback(async () => {
-  try {
-    setLoading(true);
-    const { page, rowsPerPage } = pagination;
-    let url = `${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`;
+  const [disableConfirmation, setDisableConfirmation] = useState<DisableConfirmationProps>({
+    open: false,
+    unitId: '',
+    unitName: '',
+    currentStatus: true,
+  });
 
-    // Add search filter if query exists
-    if (searchQuery.trim()) {
-      url += `&searchFilters=${JSON.stringify({ nama_unit: searchQuery.trim() })}`;
+  const fetchUnits = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { page, rowsPerPage } = pagination;
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/units?page=${page + 1}&rows=${rowsPerPage}&orderKey=nama_unit&orderRule=asc`;
+
+      // Add search filter if query exists
+      if (searchQuery.trim()) {
+        url += `&searchFilters=${JSON.stringify({ nama_unit: searchQuery.trim() })}`;
+      }
+
+      const response = await api.get(url);
+
+      if (response.data.content?.entries) {
+        setUnits(response.data.content.entries);
+        setPagination((prev) => ({
+          ...prev,
+          totalData: response.data.content.totalData,
+        }));
+      } else {
+        setUnits([]);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch units:', error.response?.data);
+      setFeedbackModal({
+        open: true,
+        title: 'Error',
+        message: error.response?.data?.message || 'Failed to fetch units',
+        isError: true,
+      });
+    } finally {
+      setLoading(false);
     }
+  }, [pagination.page, pagination.rowsPerPage, searchQuery]);
 
-    const response = await api.get(url);
-
-    if (response.data.content?.entries) {
-      setUnits(response.data.content.entries);
-      setPagination((prev) => ({
-        ...prev,
-        totalData: response.data.content.totalData,
-      }));
-    } else {
-      setUnits([]);
-    }
-  } catch (error: any) {
-    console.error('Failed to fetch units:', error.response?.data);
-    setFeedbackModal({
-      open: true,
-      title: 'Error',
-      message: error.response?.data?.message || 'Failed to fetch units',
-      isError: true,
-    });
-  } finally {
-    setLoading(false);
-  }
-}, [pagination.page, pagination.rowsPerPage, searchQuery]);
-
-// Add debounced search
-const debouncedSearch = useCallback(
-  debounce((value: string) => {
-    setSearchQuery(value);
-  }, 500),
-  []
-);
+  // Add debounced search
+  const debouncedSearch = useCallback(
+    debounce((value: string) => {
+      setSearchQuery(value);
+    }, 500),
+    []
+  );
 
   useEffect(() => {
     fetchUnits();
@@ -195,6 +214,51 @@ const debouncedSearch = useCallback(
       setDeleteConfirmation({ open: false, unitId: '', unitName: '' });
     }
   };
+
+  const handleToggleStatus = (unit: Unit) => {
+    setDisableConfirmation({
+      open: true,
+      unitId: unit.id,
+      unitName: unit.nama_unit,
+      currentStatus: unit.isActive,
+    });
+  };
+
+const handleConfirmToggleStatus = async () => {
+  try {
+    const response = await api.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${disableConfirmation.unitId}`, {
+      isActive: !disableConfirmation.currentStatus
+    });
+
+    // Update feedback based on API response
+    if (response.data?.content) {
+      setFeedbackModal({
+        open: true,
+        title: 'Success',
+        message: response.data.message || `Unit "${disableConfirmation.unitName}" telah ${
+          disableConfirmation.currentStatus ? 'dinonaktifkan' : 'diaktifkan'
+        }.`,
+        isError: false,
+      });
+      fetchUnits(); // Refresh the units list
+    }
+  } catch (error: any) {
+    setFeedbackModal({
+      open: true,
+      title: 'Error',
+      message: error.response?.data?.message || 'Gagal mengubah status unit',
+      isError: true,
+    });
+  } finally {
+    setDisableConfirmation({
+      open: false,
+      unitId: '',
+      unitName: '',
+      currentStatus: true,
+    });
+  }
+};
+
 const handleSubmit = async () => {
   const {
     unitName,
@@ -220,9 +284,13 @@ const handleSubmit = async () => {
 
   try {
     if (isEditing && currentUnit) {
-      await api.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${currentUnit.id}`, {
+      // Update the PUT request body to match API format
+      const updateBody = {
         nama_unit: unitName.trim(),
-      });
+        kepalaUnitId: kepalaUnitId.trim() || currentUnit.kepalaUnit?.no_identitas
+      };
+
+      await api.put(`${process.env.NEXT_PUBLIC_API_URL}/units/${currentUnit.id}`, updateBody);
       setFeedbackModal({
         open: true,
         title: 'Success',
@@ -232,7 +300,7 @@ const handleSubmit = async () => {
     } else {
       const requestBody = {
         nama_unit: unitName.trim(),
-        jenis_unit: selectedJenisUnit.trim(),
+        jenis_unit: selectedJenisUnit,
         kepalaUnit: kepalaUnitId.trim(),
         pimpinanUnitId: pimpinanUnitId.trim()
       };
@@ -296,6 +364,7 @@ const handleSubmit = async () => {
               <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Nama Unit</TableCell>
               <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Jenis Unit</TableCell>
               <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Kepala Unit</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: '#003C43' }}>Status</TableCell>
               <TableCell align="right" sx={{ fontWeight: 'bold', color: '#003C43' }}>
                 Aksi
               </TableCell>
@@ -305,17 +374,42 @@ const handleSubmit = async () => {
             {loading ? (
               Array.from({ length: pagination.rowsPerPage }).map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell colSpan={4}>
+                  <TableCell colSpan={5}>
                     <Skeleton variant="text" width="100%" height={30} />
                   </TableCell>
                 </TableRow>
               ))
             ) : units.length > 0 ? (
               units.map((unit) => (
-                <TableRow key={unit.id}>
+                <TableRow
+                  key={unit.id}
+                  sx={{ opacity: unit.isActive ? 1 : 0.6 }}
+                >
                   <TableCell>{unit.nama_unit}</TableCell>
                   <TableCell>{unit.jenis_unit}</TableCell>
                   <TableCell>{unit.kepalaUnit?.name || '-'}</TableCell>
+                  <TableCell>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        color: unit.isActive ? '#135D66' : '#D32F2F',
+                      }}
+                    >
+                      {unit.isActive ? (
+                        <>
+                          <CheckCircleIcon fontSize="small" />
+                          <Typography>Aktif</Typography>
+                        </>
+                      ) : (
+                        <>
+                          <BlockIcon fontSize="small" />
+                          <Typography>Nonaktif</Typography>
+                        </>
+                      )}
+                    </Box>
+                  </TableCell>
                   <TableCell align="right">
                     <IconButton onClick={() => handleOpenDialog(unit)}>
                       <EditIcon sx={{ color: '#135D66' }} />
@@ -323,12 +417,22 @@ const handleSubmit = async () => {
                     <IconButton onClick={() => handleDelete(unit.id, unit.nama_unit)}>
                       <DeleteIcon sx={{ color: '#135D66' }} />
                     </IconButton>
+                    <IconButton
+                      onClick={() => handleToggleStatus(unit)}
+                      sx={{
+                        '& svg': {
+                          color: unit.isActive ? '#D32F2F' : '#135D66'
+                        }
+                      }}
+                    >
+                      {unit.isActive ? <BlockIcon /> : <CheckCircleIcon />}
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   No units found.
                 </TableCell>
               </TableRow>
@@ -368,6 +472,22 @@ const handleSubmit = async () => {
           />
           {!dialogState.isEditing && (
             <>
+              <TextField
+                select
+                label="Jenis Unit"
+                fullWidth
+                value={dialogState.selectedJenisUnit}
+                onChange={(e) =>
+                  setDialogState((prev) => ({ ...prev, selectedJenisUnit: e.target.value as typeof JENIS_UNIT[number] }))
+                }
+                sx={{ mb: 2 }}
+              >
+                {JENIS_UNIT.map((jenis) => (
+                  <MenuItem key={jenis} value={jenis}>
+                    {jenis}
+                  </MenuItem>
+                ))}
+              </TextField>
               <TextField
                 label="ID Kepala Unit"
                 fullWidth
@@ -445,6 +565,44 @@ const handleSubmit = async () => {
             sx={{ color: '#003C43' }}
           >
             OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Disable Confirmation Dialog */}
+      <Dialog
+        open={disableConfirmation.open}
+        onClose={() => setDisableConfirmation(prev => ({ ...prev, open: false }))}
+      >
+        <DialogTitle sx={{ color: '#003C43' }}>
+          {disableConfirmation.currentStatus ? 'Nonaktifkan Unit' : 'Aktifkan Unit'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {disableConfirmation.currentStatus
+              ? `Apakah Anda yakin untuk menonaktifkan unit "${disableConfirmation.unitName}"?`
+              : `Apakah Anda yakin untuk mengaktifkan kembali unit "${disableConfirmation.unitName}"?`
+            }
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDisableConfirmation(prev => ({ ...prev, open: false }))}
+            sx={{ color: '#003C43' }}
+          >
+            Batal
+          </Button>
+          <Button
+            onClick={handleConfirmToggleStatus}
+            variant="contained"
+            sx={{
+              backgroundColor: disableConfirmation.currentStatus ? '#D32F2F' : '#135D66',
+              '&:hover': {
+                backgroundColor: disableConfirmation.currentStatus ? '#b71c1c' : '#003C43'
+              }
+            }}
+          >
+            {disableConfirmation.currentStatus ? 'Nonaktifkan' : 'Aktifkan'}
           </Button>
         </DialogActions>
       </Dialog>

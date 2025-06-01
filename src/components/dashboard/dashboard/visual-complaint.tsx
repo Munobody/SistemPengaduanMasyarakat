@@ -578,20 +578,13 @@ const handleUnitChange = async (event: SelectChangeEvent) => {
             {isPimpinanUniversitas && (
             <>
             <Grid item xs={12} sm={6} md={4} lg={3}>
-              <FormControl fullWidth sx={{ display: 'flex', justifyContent: 'center' }}>
-              <InputLabel sx={{ transform: 'translate(14px, 8px) scale(1)' }}>Jenis Unit</InputLabel>
+              <FormControl fullWidth size="small" variant="outlined">
+              <InputLabel id="jenis-unit-label">Jenis Unit</InputLabel>
               <Select
+                labelId="jenis-unit-label"
                 value={selectedJenisUnit}
                 onChange={handleJenisUnitChange}
                 label="Jenis Unit"
-                size="small"
-                sx={{
-                '& .MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  paddingY: '8px'
-                }
-                }}
               >
                 <MenuItem value="">
                 <em>Semua Unit</em>
@@ -605,21 +598,14 @@ const handleUnitChange = async (event: SelectChangeEvent) => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={4} lg={3}>
-              <FormControl fullWidth sx={{ display: 'flex', justifyContent: 'center' }}>
-              <InputLabel sx={{ transform: 'translate(14px, 8px) scale(1)' }}>Nama Unit</InputLabel>
+              <FormControl fullWidth size="small" variant="outlined">
+              <InputLabel id="nama-unit-label">Nama Unit</InputLabel>
               <Select
+                labelId="nama-unit-label"
                 value={selectedUnitId}
                 onChange={handleUnitChange}
                 label="Nama Unit"
                 disabled={!selectedJenisUnit}
-                size="small"
-                sx={{
-                '& .MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  paddingY: '8px'
-                }
-                }}
               >
                 <MenuItem value="">
                 <em>Pilih Unit</em>

@@ -399,6 +399,7 @@ export function TabelPetugas() {
                     <TableCell>Pelapor</TableCell>
                     <TableCell>Unit</TableCell>
                     <TableCell>Kategori</TableCell>
+                    <TableCell>Tanggal Pengaduan</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell align="right">Aksi</TableCell>
                   </TableRow>
@@ -422,6 +423,9 @@ export function TabelPetugas() {
                         </TableCell>
                         <TableCell>{complaint.unit.nama_unit}</TableCell>
                         <TableCell>{complaint.kategori.nama}</TableCell>
+                        <TableCell>
+                          {dayjs(complaint.createdAt).format('dddd, DD MMMM YYYY')}
+                        </TableCell>
                         <TableCell>
                           <Chip
                             label={complaint.status}

@@ -89,17 +89,17 @@ const SignInForm = React.memo((): React.JSX.Element => {
 
         if (error) {
           setError('root', { type: 'server', message: 'Login gagal. Silakan coba lagi.' });
-          setModalTitle('Gagal');
-          setModalMessage('Login gagal. Silakan periksa kembali NPM/NIP dan password Anda.');
-          setModalOpen(true);
+          // setModalTitle('Gagal');
+          // setModalMessage('Login gagal. Silakan periksa kembali NPM/NIP dan password Anda.');
+          // setModalOpen(true);
           return;
         }
 
         if (user) {
           await checkSession?.();
           setModalTitle('Berhasil');
-          setModalMessage('Anda berhasil login. Selamat datang di Sistem Pengaduan & Layanan USK.');
-          setModalOpen(true);
+          // setModalMessage('Anda berhasil login. Selamat datang di Sistem Pengaduan & Layanan USK.');
+          // setModalOpen(true);
         } else {
           setError('root', { type: 'server', message: 'Login gagal. Silakan coba lagi.' });
           setModalTitle('Gagal');
@@ -149,13 +149,13 @@ const SignInForm = React.memo((): React.JSX.Element => {
                 required: 'NPM/NIP wajib diisi',
                 validate: (value) => value.trim() !== '' || 'NPM/NIP tidak boleh kosong',
               }}
-              render={({ field: { onChange, value, ...field } }) => (
+              render={({ field, formState: {errors} }) => (
                 <FormControl error={Boolean(errors.no_identitas)}>
                   <InputLabel sx={labelStyles}>NPM/NIP</InputLabel>
                   <OutlinedInput
                     {...field}
-                    value={value ?? ''}
-                    onChange={onChange}
+                    value={field.value ?? ''}
+                    onChange={e => field.onChange(e.target.value)}
                     label="NPM/NIP"
                     type="text"
                     sx={inputStyles}

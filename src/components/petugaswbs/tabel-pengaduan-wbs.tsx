@@ -261,6 +261,7 @@ export function TabelPetugasWbs() {
                   <TableCell>Pihak Terlibat</TableCell>
                   <TableCell>Unit</TableCell>
                   <TableCell>Kategori</TableCell>
+                  <TableCell>Tanggal Pengaduan</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Aksi</TableCell>
                 </TableRow>
@@ -287,6 +288,7 @@ export function TabelPetugasWbs() {
                     <TableCell>Pihak Terlibat</TableCell>
                     <TableCell>Unit</TableCell>
                     <TableCell>Kategori</TableCell>
+                    <TableCell>Tanggal Pengaduan</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell align="right">Aksi</TableCell>
                   </TableRow>
@@ -312,6 +314,11 @@ export function TabelPetugasWbs() {
                         </TableCell>
                         <TableCell>{complaint.unit}</TableCell>
                         <TableCell>{complaint.kategori.nama}</TableCell>
+                        <TableCell>
+                          {complaint.createdAt
+                            ? dayjs(complaint.createdAt).format('dddd, DD MMMM YYYY')
+                            : '-'}
+                        </TableCell>         
                         <TableCell>
                           <Chip label={complaint.status} color={getStatusColor(complaint.status)} size="small" />
                         </TableCell>
