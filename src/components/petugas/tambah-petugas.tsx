@@ -25,7 +25,6 @@ interface FeedbackModal {
   isError: boolean;
 }
 
-// Add unit ID prop to component
 interface AddPetugasPageProps {
   unitId: string;
 }
@@ -75,7 +74,6 @@ export default function AddPetugasPage({ unitId }: AddPetugasPageProps) {
         isError: false,
       });
 
-      // Reset form
       setPetugasId('');
     } catch (error: any) {
       console.error('❌ Gagal menambahkan petugas:', error.response?.data);
@@ -95,7 +93,7 @@ export default function AddPetugasPage({ unitId }: AddPetugasPageProps) {
   const handleCloseFeedbackModal = () => {
     setFeedbackModal((prev) => ({ ...prev, open: false }));
     if (!feedbackModal.isError) {
-      router.push('/petugas/add'); // Redirect to petugas list after successful addition
+      router.push('/petugas/add');
     }
   };
 

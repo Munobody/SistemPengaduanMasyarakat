@@ -36,6 +36,7 @@ import api from '@/lib/api/api';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import { Tab } from '@mui/base';
+import { usePermission } from '@/hooks/use-permission';
 dayjs.locale('id');
 
 interface Pengaduan {
@@ -98,6 +99,7 @@ export function TabelPetugasMasyarakat() {
     open: false,
     complaint: null,
   });
+
   const [isPimpinanUniversitas, setIsPimpinanUniversitas] = useState(false);
   const [isSuperOfficer, setIsSuperOfficer] = useState(false);
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
@@ -108,6 +110,8 @@ export function TabelPetugasMasyarakat() {
     message: '',
     severity: 'success',
   });
+  const { hasPermission } = usePermission();
+  const canViewIdentity = hasPermission('PENGADUAN_MASYARAKAT', 'viewIdentitas');
 
   const checkUserRoleFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -507,7 +511,9 @@ export function TabelPetugasMasyarakat() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Judul</TableCell>
+                    {canViewIdentity && (
                     <TableCell>Nama</TableCell>
+                    )}
                     <TableCell>No. Telepon</TableCell>
                     <TableCell>Unit</TableCell>
                     <TableCell>Kategori</TableCell>
@@ -527,7 +533,9 @@ export function TabelPetugasMasyarakat() {
                     filteredComplaints.map((complaint) => (
                       <TableRow key={complaint.id} hover>
                         <TableCell>{complaint.judul || '-'}</TableCell>
+                        {canViewIdentity && (
                         <TableCell>{complaint.nama || '-'}</TableCell>
+                        )}
                         <TableCell>
                           {complaint.no_telphone ? (
                             <a
@@ -587,13 +595,14 @@ export function TabelPetugasMasyarakat() {
         <DialogContent dividers>
           {viewDialog.complaint ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {canViewIdentity && (
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
                   NIK
                 </Typography>
                 <Typography>{viewDialog.complaint.NIK || '-'}</Typography>
               </Box>
-
+                    )}
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
                   Judul Laporan

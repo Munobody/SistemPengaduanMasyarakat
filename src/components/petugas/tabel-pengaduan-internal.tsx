@@ -35,6 +35,7 @@ import {
 import api from '@/lib/api/api';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
+import { usePermission } from '@/hooks/use-permission';
 dayjs.locale('id');
 
 interface Pengaduan {
@@ -104,6 +105,10 @@ export function TabelPetugas() {
     message: '',
     severity: 'success',
   });
+  const { hasPermission } = usePermission();
+  const canViewIdentity = hasPermission('PENGADUAN', 'viewIdentitas');
+  const canManageUsers = hasPermission('USER', 'manage');
+
 
   const checkUserRoleFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -396,7 +401,9 @@ export function TabelPetugas() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Judul</TableCell>
+                    {canViewIdentity && (
                     <TableCell>Pelapor</TableCell>
+                    )}
                     <TableCell>Unit</TableCell>
                     <TableCell>Kategori</TableCell>
                     <TableCell>Tanggal Pengaduan</TableCell>
@@ -415,12 +422,14 @@ export function TabelPetugas() {
                     filteredComplaints.map((complaint) => (
                       <TableRow key={complaint.id} hover>
                         <TableCell>{complaint.judul}</TableCell>
+                        {canViewIdentity && (
                         <TableCell>
                           <div>{complaint.pelapor.name}</div>
                           <div style={{ fontSize: '0.875rem', color: 'gray' }}>
                             {complaint.pelapor.program_studi}
                           </div>
                         </TableCell>
+                        )}
                         <TableCell>{complaint.unit.nama_unit}</TableCell>
                         <TableCell>{complaint.kategori.nama}</TableCell>
                         <TableCell>
@@ -510,13 +519,22 @@ export function TabelPetugas() {
         <DialogContent dividers>
           {viewDialog.complaint && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {canViewIdentity && (
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
                   ID Pelapor
                 </Typography>
                 <Typography>{viewDialog.complaint.pelaporId}</Typography>
               </Box>
-
+              )}
+              {canViewIdentity && (
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Nama Pelapor
+                </Typography>
+                <Typography>{viewDialog.complaint.pelapor.name}</Typography>
+              </Box>
+              )}
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
                   Judul Laporan

@@ -32,7 +32,6 @@ import api from '@/lib/api/api';
 import { EditComplaintModal } from './modal/EditComplaintModal';
 import { ViewComplaintModal } from './modal/ViewComplaintModal';
 
-// Define the Complaint interface
 export interface Complaint {
   kategoriId: string;
   id: string;
