@@ -112,6 +112,7 @@ export function TabelPetugasMasyarakat() {
   });
   const { hasPermission } = usePermission();
   const canViewIdentity = hasPermission('PENGADUAN_MASYARAKAT', 'viewIdentitas');
+  const [isPimpinanUnit, setIsPimpinanUnit] = useState(false);
 
   const checkUserRoleFromLocalStorage = () => {
     if (typeof window !== 'undefined') {
@@ -121,6 +122,7 @@ export function TabelPetugasMasyarakat() {
           const parsedUser = JSON.parse(userData);
           setIsSuperOfficer(parsedUser.userLevel?.name === 'PETUGAS_SUPER');
           setIsPimpinanUniversitas(parsedUser.userLevel?.name === 'PIMPINAN_UNIVERSITAS');
+          setIsPimpinanUnit(parsedUser.userLevel?.name === 'PIMPINAN_UNIT'); 
         } catch (error) {
           console.error('Error parsing user data:', error);
         }
@@ -388,7 +390,7 @@ export function TabelPetugasMasyarakat() {
         )}
 
         {/* Edit and Delete buttons - hide from PIMPINAN_UNIVERSITAS */}
-        {!isPimpinanUniversitas && (
+        {(!isPimpinanUniversitas && !isPimpinanUnit) && (
           <>
             <Tooltip title="Kelola pengaduan">
               <IconButton

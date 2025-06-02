@@ -108,6 +108,7 @@ export function TabelPetugas() {
   const { hasPermission } = usePermission();
   const canViewIdentity = hasPermission('PENGADUAN', 'viewIdentitas');
   const canManageUsers = hasPermission('USER', 'manage');
+  const [isPimpinanUnit, setIsPimpinanUnit] = useState(false);
 
 
   const checkUserRoleFromLocalStorage = () => {
@@ -118,6 +119,7 @@ export function TabelPetugas() {
           const parsedUser = JSON.parse(userData);
           setIsSuperOfficer(parsedUser.userLevel?.name === 'PETUGAS_SUPER');
           setIsPimpinanUniversitas(parsedUser.userLevel?.name === 'PIMPINAN_UNIVERSITAS');
+          setIsPimpinanUnit(parsedUser.userLevel?.name === 'PIMPINAN_UNIT'); 
         } catch (error) {
           console.error('Error parsing user data:', error);
         }
@@ -467,7 +469,7 @@ export function TabelPetugas() {
                         )}
 
                         
-                            {!isPimpinanUniversitas && (
+                            {(!isPimpinanUniversitas && !isPimpinanUnit) && (
                             <>
                               {complaint.status !== 'COMPLETED' ? (
                               <Tooltip title="Kelola pengaduan">

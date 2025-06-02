@@ -6,62 +6,66 @@ const InformasiSection = () => {
     <Box sx={{ maxWidth: 900, margin: "auto", p: 2 }}>
       {/* Judul */}
       <Typography variant="h4" align="center" gutterBottom>
-        Informasi
+        Informasi Pengaduan Layanan & Masyarakat USK
       </Typography>
 
-      {/* Survey Section */}
+      {/* Tentang Pengaduan */}
       <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
         <CardContent>
           <Typography variant="h6" sx={{ color: "#1976d2" }}>
-            Login
+            Apa itu Pengaduan Layanan & Masyarakat?
           </Typography>
           <Typography variant="body1">
-            1. Setiap Mahasiswa, Dosen, Dan Staff diharapkan melakukan Login terlebih dahulu{" "}
-            <Link href="#" color="blue" underline="hover">klik disini</Link>
+            Sistem Pengaduan Layanan & Masyarakat Universitas Syiah Kuala (USK) adalah sarana resmi bagi mahasiswa, dosen, staf, dan masyarakat umum untuk menyampaikan keluhan, saran, atau aspirasi terkait layanan akademik, fasilitas kampus, maupun pelayanan publik di lingkungan USK.
           </Typography>
+        </CardContent>
+      </Card>
 
+      {/* Cara Melapor */}
+      <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ color: "#1976d2" }}>
+            Cara Melapor Pengaduan
+          </Typography>
+          <Typography variant="body1">
+            1. Login menggunakan akun SIAKAD (untuk mahasiswa/dosen/staf) atau langsung mengisi formulir yang ada di halaman utama sebagai masyarakat umum.<br />
+            2. Pilih menu <strong>Buat Pengaduan</strong> dan lengkapi formulir pengaduan sesuai kategori layanan.<br />
+            3. Sertakan bukti pendukung jika diperlukan.<br />
+            4. Pantau status pengaduan Anda secara berkala melalui dashboard.
+          </Typography>
+        </CardContent>
+      </Card>
+
+      {/* Layanan yang Dapat Diadukan */}
+      <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ color: "#1976d2" }}>
+            Layanan yang Dapat Diadukan
+          </Typography>
+          <Typography variant="body1">
+            • Layanan Akademik (perkuliahan, KRS, KHS, dll.)<br />
+            • Fasilitas Kampus (gedung, laboratorium, internet, dll.)<br />
+            • Pelayanan Administrasi (kepegawaian, keuangan, kemahasiswaan)<br />
+            • Layanan Publik lainnya di lingkungan USK
+          </Typography>
+        </CardContent>
+      </Card>
+
+      {/* Kontak & Bantuan */}
+      <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ color: "#1976d2" }}>
+            Kontak & Bantuan
+          </Typography>
+          <Typography variant="body1">
+            Jika Anda membutuhkan bantuan terkait pengaduan, silakan hubungi:<br />
+            <strong>Email:</strong> <Link href="mailto:pengaduan@usk.ac.id" color="primary" underline="hover">pengaduan@usk.ac.id</Link><br />
+            <strong>WhatsApp:</strong> +62 811-6701-962<br />
+            <strong>Jam Layanan:</strong> Senin–Jumat, 08.30–16.30 WIB
+          </Typography>
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-            <Image src="/assets/logo-usk.png" alt="Survey" width={400} height={300} />
+            <Image src="/assets/logo-usk.png" alt="USK" width={200} height={100} />
           </Box>
-        </CardContent>
-      </Card>
-
-      {/* Layanan UPT TIK */}
-      <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ color: "#1976d2" }}>
-            Layanan UPT TIK
-          </Typography>
-          <Typography variant="body1">
-            Hari Senin hingga Jumat, kami siap membantu Anda dalam mengatasi segala masalah terkait layanan teknologi informasi. Layanan kami tersedia pada:
-          </Typography>
-          <Typography variant="body1">
-            • Pukul 08.30 - 12.00 WIB <br />
-            • Pukul 14.00 - 16.30 WIB
-          </Typography>
-          <Typography variant="body1">
-            <strong>Hubungi:</strong>
-          </Typography>
-          <Typography variant="body2">
-            • No. Telp: +628116701962 <br />
-            • No. WhatsApp: +628516303969 <br />
-            • Email: <Link href="mailto:helpdesk.ict@usk.ac.id" color="primary" underline="hover">helpdesk.ict@usk.ac.id</Link>
-          </Typography>
-        </CardContent>
-      </Card>
-
-      {/* UP3AI Section */}
-      <Card sx={{ mb: 3, backgroundColor: "#D1F8EF" }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ color: "#1976d2" }}>
-            UP3AI (Unit Pengembangan Program Pendamping Mata Kuliah Agama Islam)
-          </Typography>
-          <Typography variant="body1">
-            Mahasiswa Baru USK diwajibkan mengikuti UP3AI (Unit Pengembangan Program Pendamping Mata Kuliah Agama Islam). Untuk Jadwal Test Penjajakan Baca Alquran dapat dilihat melalui{" "}
-            <Link href="https://up3ai.usk.ac.id" target="_blank" color="primary" underline="hover">
-              up3ai.usk.ac.id
-            </Link> atau Fan Page FB: UP3AI Universitas Syiah Kuala.
-          </Typography>
         </CardContent>
       </Card>
     </Box>

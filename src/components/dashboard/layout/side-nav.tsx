@@ -65,11 +65,11 @@ export function SideNav(): React.JSX.Element {
       }}
     >
       <Stack spacing={2} sx={{ p: 3, alignItems: 'left' }}>
-        <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
+        <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 70 }}>
           <Logo 
             src={isDayTime ? '/assets/logo-usk.png' : '/assets/logo-usk-putih.png'} 
-            height={70} 
-            width={150} 
+            height={90} 
+            width={150}
           />
         </Box>
       </Stack>

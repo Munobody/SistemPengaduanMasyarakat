@@ -10,14 +10,18 @@ import PeopleIcon from '@mui/icons-material/People';
 import SecurityIcon from '@mui/icons-material/Security';
 import { Box, Grid, Typography } from '@mui/material';
 import Skeleton from 'react-loading-skeleton';
+
 import 'react-loading-skeleton/dist/skeleton.css';
+
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from '@mui/material';
-import { format } from 'date-fns';
-import api from '@/lib/api/api';
-import StatsCard from './VisualDashboard/stats-card';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { format } from 'date-fns';
+
+import api from '@/lib/api/api';
+
+import StatsCard from './VisualDashboard/stats-card';
 
 const ComplaintInfo = lazy(() => import('./complaint-info'));
 const PieChart = lazy(() => import('./VisualDashboard/chart'));
@@ -277,50 +281,49 @@ const ComplaintsVisual: React.FC = () => {
     fetchUnits();
   }, [isPimpinanUniversitas]);
 
+  const handleUnitChange = async (event: SelectChangeEvent) => {
+    const unitId = event.target.value;
+    setSelectedUnitId(unitId);
 
-const handleUnitChange = async (event: SelectChangeEvent) => {
-  const unitId = event.target.value;
-  setSelectedUnitId(unitId);
+    setLoading(true);
+    try {
+      const dateFilter = startDate && endDate ? getDateRangeFilter(startDate, endDate) : '';
+      const unitFilter = unitId ? `filters={"unitId":"${unitId}"}` : '';
+      const separator = unitFilter && dateFilter ? '&' : '';
+      const query = unitFilter + (separator + dateFilter);
 
-  setLoading(true);
-  try {
-    const dateFilter = startDate && endDate ? getDateRangeFilter(startDate, endDate) : '';
-    const unitFilter = unitId ? `filters={"unitId":"${unitId}"}` : '';
-    const separator = unitFilter && dateFilter ? '&' : '';
-    const query = unitFilter + (separator + dateFilter);
+      const regularRes = await api.get<ApiResponse>(`/pelaporan?${query}`);
 
-    const regularRes = await api.get<ApiResponse>(`/pelaporan?${query}`);
-    
-    let publicEntries: PengaduanEntry[] = [];
-    if (hasPublicAccess) {
-      try {
-        const publicRes = await api.get<ApiResponse>(`/pengaduan?${query}`);
-        publicEntries = (publicRes.data.content.entries || []).map((entry) => ({
-          ...entry,
-          isPublic: true,
-        }));
-      } catch (publicError) {
-        console.error('Error fetching public complaints:', publicError);
+      let publicEntries: PengaduanEntry[] = [];
+      if (hasPublicAccess) {
+        try {
+          const publicRes = await api.get<ApiResponse>(`/pengaduan?${query}`);
+          publicEntries = (publicRes.data.content.entries || []).map((entry) => ({
+            ...entry,
+            isPublic: true,
+          }));
+        } catch (publicError) {
+          console.error('Error fetching public complaints:', publicError);
+        }
       }
+
+      const allEntries = [...regularRes.data.content.entries, ...publicEntries];
+
+      setData({
+        ...regularRes.data,
+        content: {
+          ...regularRes.data.content,
+          entries: allEntries,
+          totalData: allEntries.length,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to fetch data');
+    } finally {
+      setLoading(false);
     }
-
-    const allEntries = [...regularRes.data.content.entries, ...publicEntries];
-
-    setData({
-      ...regularRes.data,
-      content: {
-        ...regularRes.data.content,
-        entries: allEntries,
-        totalData: allEntries.length,
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    setError('Failed to fetch data');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleJenisUnitChange = async (event: SelectChangeEvent) => {
     const jenisUnit = event.target.value;
@@ -378,46 +381,46 @@ const handleUnitChange = async (event: SelectChangeEvent) => {
     const filtered = units.filter((unit) => unit.jenis_unit === jenisUnit);
     setFilteredUnits(filtered);
   };
-    const handleDateChange = async () => {
-      if (!startDate || !endDate) return;
+  const handleDateChange = async () => {
+    if (!startDate || !endDate) return;
 
-      setLoading(true);
-      try {
-        const dateRangeFilter = getDateRangeFilter(startDate, endDate);
+    setLoading(true);
+    try {
+      const dateRangeFilter = getDateRangeFilter(startDate, endDate);
 
-        // Fetch both internal and public complaints in parallel
-        const promises = [api.get<ApiResponse>(`/pelaporan?${dateRangeFilter}`)];
-        
-        if (hasPublicAccess) {
-          promises.push(api.get<ApiResponse>(`/pengaduan?${dateRangeFilter}`));
-        }
+      // Fetch both internal and public complaints in parallel
+      const promises = [api.get<ApiResponse>(`/pelaporan?${dateRangeFilter}`)];
 
-        const [regularRes, publicRes] = await Promise.all(promises);
-        
-        let allEntries = [...regularRes.data.content.entries];
-        
-        if (hasPublicAccess && publicRes) {
-          const publicEntries = publicRes.data.content.entries.map(entry => ({
-            ...entry,
-            isPublic: true
-          }));
-          allEntries = [...allEntries, ...publicEntries];
-        }
-
-        setData({
-          ...regularRes.data,
-          content: {
-            ...regularRes.data.content,
-            entries: allEntries,
-            totalData: allEntries.length,
-          },
-        });
-      } catch (error) {
-        setError('Failed to fetch data');
-      } finally {
-        setLoading(false);
+      if (hasPublicAccess) {
+        promises.push(api.get<ApiResponse>(`/pengaduan?${dateRangeFilter}`));
       }
-    };
+
+      const [regularRes, publicRes] = await Promise.all(promises);
+
+      let allEntries = [...regularRes.data.content.entries];
+
+      if (hasPublicAccess && publicRes) {
+        const publicEntries = publicRes.data.content.entries.map((entry) => ({
+          ...entry,
+          isPublic: true,
+        }));
+        allEntries = [...allEntries, ...publicEntries];
+      }
+
+      setData({
+        ...regularRes.data,
+        content: {
+          ...regularRes.data.content,
+          entries: allEntries,
+          totalData: allEntries.length,
+        },
+      });
+    } catch (error) {
+      setError('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const processedData = useMemo(() => {
     if (!data || !data.content?.entries) {
@@ -452,10 +455,10 @@ const handleUnitChange = async (event: SelectChangeEvent) => {
       if (!start || !end) return '';
       const startDate = new Date(start);
       startDate.setHours(0, 0, 0, 0);
-      
+
       const endDate = new Date(end);
       endDate.setHours(23, 59, 59, 999);
-      
+
       return `rangedFilters=[{"key": "createdAt", "start": "${format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")}","end": "${format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")}"}]`;
     }
 
@@ -496,132 +499,132 @@ const handleUnitChange = async (event: SelectChangeEvent) => {
 
   return (
     <Box sx={{ flexGrow: 1, p: 3, pt: 0 }}>
-        <Box sx={{ mb: 3, pt: 0 }}>
-          {loading ? <Skeleton width={300} height={40} /> : <WelcomeMessage userName={userName} />}
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            {(isPimpinanUniversitas || isPimpinanUnit) && (
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <DatePicker
-              value={startDate}
-              onChange={(newValue) => {
-                setStartDate(newValue);
-                setEndDate(null);
-              }}
-              slotProps={{
-                textField: {
-              size: 'small',
-              helperText: 'Pilih tanggal awal'
-                }
-              }}
-            />
-            <DatePicker
-              value={endDate}
-              onChange={(newValue) => {
-                if (startDate && newValue) {
-              setEndDate(newValue);
-              const fetchData = async () => {
-                setLoading(true);
-                try {
-                  const dateRangeFilter = getDateRangeFilter(startDate, newValue);
+      <Box sx={{ mb: 3, pt: 0 }}>
+        {loading ? <Skeleton width={300} height={40} /> : <WelcomeMessage userName={userName} />}
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          {(isPimpinanUniversitas || isPimpinanUnit) && (
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                  <DatePicker
+                    value={startDate}
+                    onChange={(newValue) => {
+                      setStartDate(newValue);
+                      setEndDate(null);
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        helperText: 'Pilih tanggal awal',
+                      },
+                    }}
+                  />
+                  <DatePicker
+                    value={endDate}
+                    onChange={(newValue) => {
+                      if (startDate && newValue) {
+                        setEndDate(newValue);
+                        const fetchData = async () => {
+                          setLoading(true);
+                          try {
+                            const dateRangeFilter = getDateRangeFilter(startDate, newValue);
 
-                  const regularRes = await api.get<ApiResponse>(`/pelaporan?${dateRangeFilter}`);
+                            const regularRes = await api.get<ApiResponse>(`/pelaporan?${dateRangeFilter}`);
 
-                  let allEntries = [...regularRes.data.content.entries];
-                  if (hasPublicAccess) {
-                try {
-                  const publicRes = await api.get<ApiResponse>(`/pengaduan?${dateRangeFilter}`);
-                  const publicEntries = publicRes.data.content.entries.map(entry => ({
-                    ...entry,
-                    isPublic: true
-                  }));
-                  allEntries = [...allEntries, ...publicEntries];
-                } catch (publicError) {
-                  console.error('Error fetching public complaints:', publicError);
-                }
-                  }
+                            let allEntries = [...regularRes.data.content.entries];
+                            if (hasPublicAccess) {
+                              try {
+                                const publicRes = await api.get<ApiResponse>(`/pengaduan?${dateRangeFilter}`);
+                                const publicEntries = publicRes.data.content.entries.map((entry) => ({
+                                  ...entry,
+                                  isPublic: true,
+                                }));
+                                allEntries = [...allEntries, ...publicEntries];
+                              } catch (publicError) {
+                                console.error('Error fetching public complaints:', publicError);
+                              }
+                            }
 
-                  setData({
-                ...regularRes.data,
-                content: {
-                  ...regularRes.data.content,
-                  entries: allEntries,
-                  totalData: allEntries.length,
-                },
-                  });
-                } catch (error) {
-                  console.error('Error fetching data:', error);
-                  setError('Failed to fetch data');
-                } finally {
-                  setLoading(false);
-                }
-              };
+                            setData({
+                              ...regularRes.data,
+                              content: {
+                                ...regularRes.data.content,
+                                entries: allEntries,
+                                totalData: allEntries.length,
+                              },
+                            });
+                          } catch (error) {
+                            console.error('Error fetching data:', error);
+                            setError('Failed to fetch data');
+                          } finally {
+                            setLoading(false);
+                          }
+                        };
 
-              fetchData();
-                }
-              }}
-              minDate={startDate || undefined}
-              disabled={!startDate}
-              slotProps={{
-                textField: {
-              size: 'small',
-              helperText: 'Pilih tanggal akhir'
-                }
-              }}
-            />
-              </Box>
-            </LocalizationProvider>
-          </Grid>
-            )}
+                        fetchData();
+                      }
+                    }}
+                    minDate={startDate || undefined}
+                    disabled={!startDate}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        helperText: 'Pilih tanggal akhir',
+                      },
+                    }}
+                  />
+                </Box>
+              </LocalizationProvider>
+            </Grid>
+          )}
 
-            {isPimpinanUniversitas && (
+          {isPimpinanUniversitas && (
             <>
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <FormControl fullWidth size="small" variant="outlined">
-              <InputLabel id="jenis-unit-label">Jenis Unit</InputLabel>
-              <Select
-                labelId="jenis-unit-label"
-                value={selectedJenisUnit}
-                onChange={handleJenisUnitChange}
-                label="Jenis Unit"
-              >
-                <MenuItem value="">
-                <em>Semua Unit</em>
-                </MenuItem>
-                {uniqueJenisUnit.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-                ))}
-              </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4} lg={3}>
-              <FormControl fullWidth size="small" variant="outlined">
-              <InputLabel id="nama-unit-label">Nama Unit</InputLabel>
-              <Select
-                labelId="nama-unit-label"
-                value={selectedUnitId}
-                onChange={handleUnitChange}
-                label="Nama Unit"
-                disabled={!selectedJenisUnit}
-              >
-                <MenuItem value="">
-                <em>Pilih Unit</em>
-                </MenuItem>
-                {filteredUnits.map((unit) => (
-                <MenuItem key={unit.id} value={unit.id}>
-                  {unit.nama_unit}
-                </MenuItem>
-                ))}
-              </Select>
-              </FormControl>
-            </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={3}>
+                <FormControl fullWidth size="small" variant="outlined">
+                  <InputLabel id="jenis-unit-label">Jenis Unit</InputLabel>
+                  <Select
+                    labelId="jenis-unit-label"
+                    value={selectedJenisUnit}
+                    onChange={handleJenisUnitChange}
+                    label="Jenis Unit"
+                  >
+                    <MenuItem value="">
+                      <em>Semua Unit</em>
+                    </MenuItem>
+                    {uniqueJenisUnit.map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={3}>
+                <FormControl fullWidth size="small" variant="outlined">
+                  <InputLabel id="nama-unit-label">Nama Unit</InputLabel>
+                  <Select
+                    labelId="nama-unit-label"
+                    value={selectedUnitId}
+                    onChange={handleUnitChange}
+                    label="Nama Unit"
+                    disabled={!selectedJenisUnit}
+                  >
+                    <MenuItem value="">
+                      <em>Pilih Unit</em>
+                    </MenuItem>
+                    {filteredUnits.map((unit) => (
+                      <MenuItem key={unit.id} value={unit.id}>
+                        {unit.nama_unit}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
             </>
-            )}
-          </Grid>
-        </Box>
+          )}
+        </Grid>
+      </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3} sx={{ minHeight: 150 }}>
@@ -774,7 +777,17 @@ const handleUnitChange = async (event: SelectChangeEvent) => {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Box sx={{ height: { xs: '400px', md: '600px' }, overflow: 'auto' }}>
+          <Box
+            sx={{
+              height: { xs: 340, md: 420 },
+              minHeight: { xs: 340, md: 420 },
+              maxHeight: { xs: 400, md: 600 },
+              overflow: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
             {loading ? (
               <PieChartSkeleton />
             ) : (
@@ -785,8 +798,18 @@ const handleUnitChange = async (event: SelectChangeEvent) => {
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={6} sx={{ mt: { xs: 2, md: 0 } }}>
-          <Box sx={{ height: { xs: 'auto', md: '600px' } }}>
+        <Grid item xs={12} md={6}>
+          <Box
+            sx={{
+              height: { xs: 340, md: 420 },
+              minHeight: { xs: 340, md: 420 },
+              maxHeight: { xs: 400, md: 600 },
+              overflow: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
             {loading ? (
               <ComplaintInfoSkeleton />
             ) : (

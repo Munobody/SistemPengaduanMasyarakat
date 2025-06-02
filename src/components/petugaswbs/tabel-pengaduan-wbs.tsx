@@ -81,6 +81,23 @@ export function TabelPetugasWbs() {
     open: false,
     complaint: null,
   });
+  const [isPimpinanUnit, setIsPimpinanUnit] = useState(false);
+  const [isPimpinanUniversitas, setIsPimpinanUniversitas] = useState(false);
+
+    useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          setIsPimpinanUnit(parsedUser.userLevel?.name === 'PIMPINAN_UNIT');
+          setIsPimpinanUniversitas(parsedUser.userLevel?.name === 'PIMPINAN_UNIVERSITAS');
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+    }
+  }, []);
 
   const fetchComplaints = async () => {
     setLoading(true);
@@ -331,22 +348,24 @@ export function TabelPetugasWbs() {
                           >
                             <RemoveRedEyeIcon />
                           </IconButton>
-                          {complaint.status !== 'COMPLETED' ? (
-                            <IconButton
-                              onClick={(e) => handleManageComplaint(complaint.id, e)}
-                              color="primary"
-                              title="Kelola pengaduan"
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              onClick={() => handleDeleteComplaint(complaint.id)}
-                              color="error"
-                              title="Hapus pengaduan"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
+                        {(!isPimpinanUniversitas && !isPimpinanUnit) && (
+                            complaint.status !== 'COMPLETED' ? (
+                              <IconButton
+                                onClick={(e) => handleManageComplaint(complaint.id, e)}
+                                color="primary"
+                                title="Kelola pengaduan"
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            ) : (
+                              <IconButton
+                                onClick={() => handleDeleteComplaint(complaint.id)}
+                                color="error"
+                                title="Hapus pengaduan"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            )
                           )}
                         </TableCell>
                       </TableRow>
