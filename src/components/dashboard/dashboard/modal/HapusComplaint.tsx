@@ -63,11 +63,9 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange 
         );
 
         setCategories(sortedCategories);
-        console.log('📋 Daftar kategori:', sortedCategories);
         setTotalData(response.data.content.totalData);
       } else {
         setCategories([]);
-        console.log('❕ Tidak ada kategori');
       }
       return response;
     } catch (error: any) {
@@ -90,7 +88,6 @@ export const EditComplaintModal = ({ open, onClose, complaint, onSave, onChange 
       if (response.data.content?.entries) {
         const unitList = response.data.content.entries.map((unit: Unit) => unit.nama_unit);
         setUnits(unitList);
-        console.log('📋 Daftar unit:', response.data.content.entries);
       }
       return response;
     } catch (error: any) {

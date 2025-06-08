@@ -229,7 +229,6 @@ export function TabelPetugasWbs() {
   const handleManageComplaint = (id: string, event: React.MouseEvent) => {
     event.stopPropagation();
     router.push(`/petugaswbs/kelola/${id}`);
-    console.log('🔧 Mengelola pengaduan:', id);
   };
 
   if (error) {

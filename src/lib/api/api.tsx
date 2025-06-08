@@ -16,15 +16,6 @@ api.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
-
-    // Debug logging
-    console.log('🚀 Request:', {
-      method: config.method?.toUpperCase(),
-      url: `${config.baseURL}${config.url}`,
-      headers: config.headers,
-      data: config.data
-    });
-
     return config;
   },
   (error) => {
@@ -36,12 +27,6 @@ api.interceptors.request.use(
 // Response interceptor: enhanced error handling and logging
 api.interceptors.response.use(
   (response) => {
-    // Log successful responses
-    console.log('✅ Response:', {
-      status: response.status,
-      url: response.config.url,
-      data: response.data
-    });
     return response;
   },
   (error) => {

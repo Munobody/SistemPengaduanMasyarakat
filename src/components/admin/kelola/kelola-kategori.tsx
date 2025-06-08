@@ -84,11 +84,9 @@ export function KelolaKategori() {
         );
 
         setCategories(sortedCategories);
-        console.log('📋 Daftar kategori:', sortedCategories);
         setTotalData(response.data.content.totalData);
       } else {
         setCategories([]);
-        console.log('❕ Tidak ada kategori');
       }
     } catch (error: any) {
       console.error('❌ Gagal memuat kategori:', error.response?.data);
@@ -107,7 +105,6 @@ export function KelolaKategori() {
 
   const handleSubmit = async () => {
     if (!categoryName.trim()) {
-      console.log('❌ Validasi: Nama kategori kosong');
       setFeedbackModal({
         open: true,
         title: 'Peringatan!',
@@ -123,12 +120,9 @@ export function KelolaKategori() {
         nama: categoryName.trim(),
       };
 
-      console.log('📝 Mencoba', editMode ? 'mengubah' : 'menambah', 'kategori:', payload);
-
       if (editMode && currentCategory) {
         const response = await api.put(`${process.env.NEXT_PUBLIC_API_URL}/kategori/${currentCategory.id}`, payload, {
         });
-        console.log('✅ Berhasil mengubah kategori:', response.data);
         setFeedbackModal({
           open: true,
           title: 'Berhasil!',
@@ -137,8 +131,6 @@ export function KelolaKategori() {
         });
       } else {
         const response = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/kategori`, payload,);
-
-        console.log('✅ Berhasil menambah kategori:', response.data);
         fetchCategories();
 
         if (response.data.content) {

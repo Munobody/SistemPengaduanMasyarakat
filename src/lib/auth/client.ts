@@ -29,15 +29,12 @@ class AuthClient {
         no_identitas,
         password,
       });
-
-      console.log('Respons login:', loginResponse.data);
       const { content, message } = loginResponse.data;
 
       let token = content?.token;
       let user = content?.user;
 
       if (!token) {
-        console.log('Token tidak ditemukan, mencoba mendapatkan dari /verify-token...');
         
         const verifyResponse = await api.get(`/verify-token`, {
           withCredentials: true, 
@@ -128,7 +125,6 @@ class AuthClient {
   async getAclByUserLevelId(userLevelId: string): Promise<any> {
     try {
       const response = await api.get(`/acl/${userLevelId}`);
-      console.log('ACL Response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching ACL:', error);

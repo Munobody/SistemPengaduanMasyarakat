@@ -254,8 +254,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
         setSelectedUnit(complaintData.nameUnit);
         setSelectedStatus(complaintData.status);
         setResponseText(complaintData.response || '');
-
-        console.log('✅ Detail pengaduan dengan kategori:', complaintData);
       } catch (error: any) {
         console.error('❌ Gagal memuat detail pengaduan:', error.response?.data);
         toast.error('Gagal memuat detail pengaduan');
@@ -349,7 +347,6 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
 
         if (uploadResponse.status === 200) {
           filePetugasUrl = uploadResponse.data.content.secure_url;
-          console.log('✅ File berhasil diupload:', filePetugasUrl);
         } else {
           throw new Error('Gagal mengunggah file.');
         }
@@ -361,12 +358,9 @@ export default function KelolaPengaduanPage({ id }: KelolaPengaduanPageProps) {
         filePetugas: filePetugasUrl || complaint.filePetugas || null,
       };
 
-      console.log('📝 Mengirim tanggapan:', payload);
-
       const response = await api.put(`/pelaporan/${complaint.id}`, payload);
 
       if (response.status === 200) {
-        console.log('✅ Tanggapan berhasil diperbarui:', response.data);
         toast.success('Tanggapan berhasil diperbarui!');
         setComplaint((prev) =>
           prev

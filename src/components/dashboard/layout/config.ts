@@ -139,7 +139,6 @@ function hasPermission(permissions: Permission[], category: string, userLevelNam
     return requiredSubjects.some((subject) => {
       const permission = permissions.find((p) => p.subject === subject);
       const hasAccess = permission && hasFullActions(permission);
-      console.log(`Checking KelolaWBS for subject ${subject}: ${hasAccess}`);
       return hasAccess;
     });
   }
@@ -147,7 +146,6 @@ function hasPermission(permissions: Permission[], category: string, userLevelNam
   return requiredSubjects.some((subject) => {
     const permission = permissions.find((p) => p.subject === subject);
     const hasAccess = permission && hasFullActions(permission);
-    console.log(`Checking ${category} for subject ${subject}: ${hasAccess}`);
     return hasAccess;
   });
 }
@@ -171,7 +169,6 @@ export async function getFilteredNavItems(userLevelId: string): Promise<NavItemC
 
     const otherItems = navItems.filter((item) => {
       const hasAccess = item.category === 'Akun' || hasPermission(permissions, item.category, userLevelName);
-      console.log(`Nav item ${item.title} (${item.category}): ${hasAccess}`);
       return hasAccess;
     });
 

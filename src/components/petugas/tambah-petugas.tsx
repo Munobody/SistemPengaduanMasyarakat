@@ -54,11 +54,6 @@ export default function AddPetugasPage({ unitId }: AddPetugasPageProps) {
 
     try {
       const endpoint = `/units/petugas`;
-
-      console.log('📝 Mencoba menambahkan petugas:', {
-        petugasIds: [petugasId.trim()],
-      });
-
       const response = await api.post(
         endpoint,
         {
@@ -66,7 +61,6 @@ export default function AddPetugasPage({ unitId }: AddPetugasPageProps) {
         },
       );
 
-      console.log('✅ Berhasil menambahkan petugas:', response.data);
       setFeedbackModal({
         open: true,
         title: 'Berhasil!',

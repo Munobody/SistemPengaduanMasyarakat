@@ -56,8 +56,6 @@ export default function PetugasTable({ unitId, currentUserId }: PetugasTableProp
           unitId,
         },
       });
-
-      console.log('✅ Data petugas:', response.data); // Log data untuk debugging
       setPetugasList(response.data.content || []);
     } catch (error: any) {
       console.error('❌ Gagal memuat data petugas:', error.response?.data || error.message);

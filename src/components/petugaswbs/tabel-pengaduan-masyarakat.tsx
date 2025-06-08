@@ -102,11 +102,9 @@ export function TabelPetugasMasyarakat() {
       if (response.data.content?.entries) {
         setComplaints(response.data.content.entries);
         setTotalData(response.data.content.totalData);
-        console.log('📋 Daftar pengaduan:', response.data.content.entries);
       } else {
         setComplaints([]);
         setTotalData(0);
-        console.log('❕ Tidak ada pengaduan');
       }
     } catch (error: any) {
       console.error('❌ Gagal memuat pengaduan:', error.response?.data);
@@ -156,7 +154,6 @@ export function TabelPetugasMasyarakat() {
   const handleManageComplaint = (id: string, event: React.MouseEvent) => {
     event.stopPropagation();
     router.push(`/petugas/kelola/${id}`);
-    console.log('🔧 Mengelola pengaduan:', id);
   };
 
   if (error) {

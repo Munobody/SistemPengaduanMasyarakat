@@ -128,7 +128,6 @@ export default function PengaduanPage() {
   
         if (uploadResponse.status === 200) {
           fileUrl = uploadResponse.data.content.secure_url;
-          console.log('✅ File berhasil diunggah:', fileUrl);
         } else {
           throw new Error('Gagal mengunggah file.');
         }
@@ -153,13 +152,10 @@ export default function PengaduanPage() {
       filePetugas: '',
     };
   
-    console.log('📝 Data yang akan dikirim:', values);
-  
     try {
       const response = await api.post('/pelaporan', values);
   
       if (response.status === 201) {
-        console.log('✅ Laporan berhasil dikirim:', response.data);
         toast.success('Laporan berhasil dikirim!');
   
         formRef.current!.reset();

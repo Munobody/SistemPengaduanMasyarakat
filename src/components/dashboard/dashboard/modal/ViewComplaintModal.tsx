@@ -50,10 +50,6 @@ interface ViewComplaintModalProps {
 
 export const ViewComplaintModal = ({ open, onClose, complaint }: ViewComplaintModalProps) => {
   if (!complaint) return null;
-
-  console.log("Data Complaint:", complaint);
-
-  // Warna berdasarkan status
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING':
