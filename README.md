@@ -23,74 +23,94 @@ Website resmi **Sistem Pengaduan & Pelaporan Masyarakat** yang dibangun mengguna
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/username/sistem-pengaduan-masyarakat.git
+git clone https://github.com/<username>/sistem-pengaduan-masyarakat.git
 cd sistem-pengaduan-masyarakat
-Gantilah username dengan nama pengguna GitHub Anda jika nanti dipublikasikan.
+```
 
-2. Install Dependencies
-Menggunakan npm:
+> Gantilah `<username>` dengan nama pengguna GitHub Anda.
 
-bash
-Salin
-Edit
+### 2. Install Dependencies
+
+Menggunakan **npm**:
+
+```bash
 npm install
-Atau menggunakan yarn:
+```
 
-bash
-Salin
-Edit
+Atau menggunakan **yarn**:
+
+```bash
 yarn install
-3. Jalankan Proyek di Localhost
-bash
-Salin
-Edit
+```
+
+### 3. Jalankan Proyek di Localhost
+
+Menggunakan **npm**:
+
+```bash
 npm run dev
-Atau:
+```
 
-bash
-Salin
-Edit
+Atau menggunakan **yarn**:
+
+```bash
 yarn dev
-Akses aplikasi di http://localhost:3000.
+```
 
-🧩 Fitur Utama
-📨 Form pengaduan masyarakat secara online
+Akses aplikasi Anda di: [http://localhost:3000](http://localhost:3000)
 
-📝 Pelaporan dengan deskripsi dan bukti
+---
 
-👤 Autentikasi pengguna
+## 🧩 Fitur Utama
 
-🗃️ Manajemen data aduan
+- 📨 Form pengaduan masyarakat secara online  
+- 📝 Pelaporan dengan deskripsi dan bukti  
+- 👤 Autentikasi pengguna  
+- 🗃️ Manajemen data aduan  
+- 📊 Dashboard dan tampilan data aduan untuk admin  
 
-📊 Dashboard dan tampilan data aduan untuk admin
+---
 
-🧠 Metodologi Scrum
-Proyek ini dikembangkan dengan pendekatan Scrum, yang terdiri dari:
+## 🧠 Metodologi Scrum
 
-Sprint Planning
+Proyek ini dikembangkan menggunakan metodologi **Scrum**, yang terdiri dari tahapan berikut:
 
-Daily Stand-Up Meeting
+- 🔹 *Sprint Planning*  
+- 🔹 *Daily Stand-Up Meeting*  
+- 🔹 *Sprint Review*  
+- 🔹 *Sprint Retrospective*
 
-Sprint Review
+Scrum memungkinkan kolaborasi tim yang lebih baik, perencanaan yang adaptif, dan peningkatan berkelanjutan dalam setiap iterasi.
 
-Sprint Retrospective
+---
 
-Scrum memungkinkan kolaborasi tim yang lebih baik, perencanaan yang fleksibel, dan peningkatan berkelanjutan dalam setiap iterasi.
+## 🤝 Kontribusi
 
-🤝 Kontribusi
-Kami terbuka untuk kontribusi! Jika Anda ingin berkontribusi:
+Kami sangat terbuka untuk kontribusi!  
+Jika Anda ingin berkontribusi:
 
-Fork repositori ini
+1. Fork repositori ini  
+2. Buat branch fitur:  
+   ```bash
+   git checkout -b fitur-baru
+   ```
+3. Commit perubahan Anda:  
+   ```bash
+   git commit -m "Menambahkan fitur baru"
+   ```
+4. Push ke branch:  
+   ```bash
+   git push origin fitur-baru
+   ```
+5. Buat **Pull Request**
 
-Buat branch fitur: git checkout -b fitur-baru
+---
 
-Commit perubahan Anda: git commit -m 'Menambahkan fitur baru'
+## 📄 Lisensi
 
-Push ke branch: git push origin fitur-baru
+Proyek ini dirilis di bawah lisensi **MIT**.  
+Silakan gunakan, modifikasi, dan distribusikan sesuai kebutuhan.
 
-Buat Pull Request
+---
 
-📄 Lisensi
-Proyek ini dirilis di bawah lisensi MIT. Silakan gunakan, modifikasi, dan distribusikan sesuai kebutuhan.
-
-Dibuat dengan ❤️ oleh Tim Sistem Pengaduan & Pelaporan Masyarakat
+> Dibuat dengan ❤️ oleh Tim Sistem Pengaduan & Pelaporan Masyarakat
