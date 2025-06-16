@@ -396,8 +396,6 @@ const ReportForm: React.FC = (): React.JSX.Element => {
                 Nomor harus diawali dengan kode negara (contoh: +62 81234567890)
               </Typography>
             </Box>
-
-          {/* Judul Laporan Field */}
           <Box mb={2}>
             <TextField
               id="judul-field"
