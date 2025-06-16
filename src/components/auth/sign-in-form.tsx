@@ -89,17 +89,12 @@ const SignInForm = React.memo((): React.JSX.Element => {
 
         if (error) {
           setError('root', { type: 'server', message: 'Login gagal. Silakan coba lagi.' });
-          // setModalTitle('Gagal');
-          // setModalMessage('Login gagal. Silakan periksa kembali NPM/NIP dan password Anda.');
-          // setModalOpen(true);
           return;
         }
 
         if (user) {
           await checkSession?.();
           setModalTitle('Berhasil');
-          // setModalMessage('Anda berhasil login. Selamat datang di Sistem Pengaduan & Layanan USK.');
-          // setModalOpen(true);
         } else {
           setError('root', { type: 'server', message: 'Login gagal. Silakan coba lagi.' });
           setModalTitle('Gagal');

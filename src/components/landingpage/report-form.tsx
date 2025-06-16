@@ -142,7 +142,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     validationSchema: Yup.object({
       NIK: Yup.string()
         .matches(/^\d{16}$/, 'NIK harus terdiri dari 16 digit')
-        .required('NIK wajib diisi'), // Perubahan: NIK menjadi wajib diisi
+        .required('NIK wajib diisi'),
       nama: Yup.string().required('Nama wajib diisi'),
       judul: Yup.string().required('Judul laporan wajib diisi'),
       deskripsi: Yup.string().required('Isi laporan wajib diisi'),
@@ -155,14 +155,14 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           'fileSize',
           'Ukuran file maksimum 1MB',
           (value) => {
-            if (!value) return true; // File opsional
+            if (!value) return true;
             if (value instanceof File) {
               return value.size <= 1024 * 1024;
             }
             return false;
           }
         ),
-      harapan_pelapor: Yup.string().nullable(), // Tidak wajib diisi
+      harapan_pelapor: Yup.string().nullable(),
     }),
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
@@ -222,7 +222,6 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     enableReinitialize: true,
   });
 
-  // Responsive text sizes
   const getResponsiveFontSize = () => {
     if (isMobile) return '0.875rem';
     if (isTablet) return '1rem';
@@ -437,9 +436,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               Masukkan judul singkat yang menggambarkan laporan
             </Typography>
           </Box>
-
-          {/* Deskripsi Field */}
-          <Box mb={2}>
+            <Box mb={2}>
             <TextField
               id="deskripsi-field"
               fullWidth
@@ -448,40 +445,42 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               variant="outlined"
               multiline
               rows={isMobile ? 3 : 4}
+              inputProps={{ maxLength: 150 }}
               sx={{
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                  borderColor: '#135D66' 
-                },
-                '& .MuiInputLabel-root.Mui-focused': { 
-                  color: '#135D66' 
-                },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#135D66' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#135D66' 
+              },
               }}
               InputLabelProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              style: { fontSize: responsiveFontSize } 
               }}
               InputProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              style: { fontSize: responsiveFontSize } 
               }}
               value={formik.values.deskripsi}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.deskripsi && Boolean(formik.errors.deskripsi)}
-              helperText={formik.touched.deskripsi && formik.errors.deskripsi}
+              helperText={
+              (formik.touched.deskripsi && formik.errors.deskripsi) ||
+              `${formik.values.deskripsi?.length || 0}/150 kata`
+              }
             />
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#003C43', 
-                mt: 0.5,
-                fontSize: '0.75rem',
+              color: '#003C43', 
+              mt: 0.5,
+              fontSize: '0.75rem',
               }}
             >
-              Jelaskan secara rinci isi laporan Anda
+              Jelaskan secara rinci isi laporan Anda (maksimal 150 kata)
             </Typography>
-          </Box>
-
-          {/* Harapan Pelapor Field */}
-          <Box mb={2}>
+            </Box>
+            <Box mb={2}>
             <TextField
               id="harapan-pelapor-field"
               fullWidth
@@ -490,39 +489,41 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               variant="outlined"
               multiline
               rows={isMobile ? 2 : 3}
+              inputProps={{ maxLength: 100 }}
               sx={{
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                  borderColor: '#135D66' 
-                },
-                '& .MuiInputLabel-root.Mui-focused': { 
-                  color: '#135D66' 
-                },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                borderColor: '#135D66' 
+              },
+              '& .MuiInputLabel-root.Mui-focused': { 
+                color: '#135D66' 
+              },
               }}
               InputLabelProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              style: { fontSize: responsiveFontSize } 
               }}
               InputProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              style: { fontSize: responsiveFontSize } 
               }}
               value={formik.values.harapan_pelapor}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.harapan_pelapor && Boolean(formik.errors.harapan_pelapor)}
-              helperText={formik.touched.harapan_pelapor && formik.errors.harapan_pelapor}
+              helperText={
+              (formik.touched.harapan_pelapor && formik.errors.harapan_pelapor) || 
+              `${formik.values.harapan_pelapor?.length || 0}/100 kata`
+              }
             />
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#003C43', 
-                mt: 0.5,
-                fontSize: '0.75rem',
+              color: '#003C43', 
+              mt: 0.5,
+              fontSize: '0.75rem',
               }}
             >
-              Tulis harapan atau solusi yang Anda inginkan (opsional)
+              Tulis harapan atau solusi yang Anda inginkan (maksimal 100 kata, opsional)
             </Typography>
-          </Box>
-
-          {/* Kategori Field */}
+            </Box>
           <Box mb={2}>
             <TextField
               id="kategori-field"

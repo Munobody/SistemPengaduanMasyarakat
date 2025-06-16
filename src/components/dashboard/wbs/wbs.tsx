@@ -53,7 +53,6 @@ const WBSReportForm = () => {
     tanggalKejadian: dayjs().format('YYYY-MM-DD'),
   });
 
-  // Fetch data for units and categories
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -70,7 +69,6 @@ const WBSReportForm = () => {
         setUnits(unitList);
         setCategories(categoryList.map((category: any) => ({ id: category.id, nama: category.nama })));
 
-        // Set default selections
         if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
         if (uniqueJenisUnit.length > 0) setSelectedJenisUnit(uniqueJenisUnit[0]);
       } catch (error: any) {
@@ -86,7 +84,7 @@ const WBSReportForm = () => {
     if (selectedJenisUnit) {
       const filtered = units.filter((unit) => unit.jenis_unit === selectedJenisUnit);
       setFilteredUnits(filtered);
-      setSelectedUnit(filtered.length > 0 ? filtered[0].nama_unit : ''); // Store nama_unit instead of id
+      setSelectedUnit(filtered.length > 0 ? filtered[0].nama_unit : '');
     } else {
       setFilteredUnits([]);
       setSelectedUnit('');
@@ -139,7 +137,7 @@ const WBSReportForm = () => {
       ...formData,
       kategoriId: selectedCategory,
       tanggalKejadian: date?.format('YYYY-MM-DD'),
-      unit: selectedUnit, // Send nama_unit instead of id
+      unit: selectedUnit, 
       filePendukung: fileUrl,
     };
 
