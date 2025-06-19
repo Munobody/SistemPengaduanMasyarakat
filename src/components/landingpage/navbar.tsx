@@ -50,7 +50,7 @@ export function Navbar() {
   const navItems = [
     { name: 'Beranda', id: 'beranda' },
     { name: 'Instansi', id: 'summary' },
-    { name: 'Panduan SIPL', id: 'informasi' },
+    { name: 'Panduan', id: 'informasi' },
     { name: 'Pengaduan', id: 'form' }
   ];
 
