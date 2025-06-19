@@ -273,9 +273,10 @@ const WBSReportForm = () => {
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={6}>
-                      <FormControl fullWidth required>
-                        <InputLabel>Jenis Unit</InputLabel>
+                      <FormControl fullWidth required variant="outlined">
+                        <InputLabel variant="outlined">Jenis Unit</InputLabel>
                         <Select
+                          label="Jenis Unit"
                           value={selectedJenisUnit}
                           onChange={(e) => setSelectedJenisUnit(e.target.value)}
                           sx={{
@@ -293,9 +294,10 @@ const WBSReportForm = () => {
                       </FormControl>
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <FormControl fullWidth required disabled={!selectedJenisUnit}>
-                        <InputLabel>Unit Yang Dilapor</InputLabel>
+                      <FormControl fullWidth required disabled={!selectedJenisUnit} variant="outlined">
+                        <InputLabel variant="outlined">Unit Yang Dilapor</InputLabel>
                         <Select
+                          label="Unit Yang Dilapor"
                           value={selectedUnit}
                           onChange={(e) => setSelectedUnit(e.target.value)}
                           sx={{
@@ -327,9 +329,10 @@ const WBSReportForm = () => {
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={6}>
-                      <FormControl fullWidth required>
-                        <InputLabel>Kategori Laporan</InputLabel>
+                      <FormControl fullWidth required variant="outlined">
+                        <InputLabel variant="outlined">Kategori Laporan</InputLabel>
                         <Select
+                          label="Kategori Laporan"
                           value={selectedCategory}
                           onChange={(e) => setSelectedCategory(e.target.value)}
                           sx={{
@@ -385,40 +388,57 @@ const WBSReportForm = () => {
                 {/* File Upload Section */}
                 <Grid item xs={12}>
                   <Typography variant="h6" sx={{ 
-                    color: '#135D66',
-                    mb: 2,
-                    borderBottom: '2px solid #E3FEF7',
-                    pb: 1
+                  color: '#135D66',
+                  mb: 2,
+                  borderBottom: '2px solid #E3FEF7',
+                  pb: 1
                   }}>
-                    Dokumen Pendukung
+                  Dokumen Pendukung
                   </Typography>
                   <Box sx={{ 
-                    border: '2px dashed #135D66',
-                    borderRadius: 2,
-                    p: 3,
-                    textAlign: 'center'
+                  border: '2px dashed #135D66',
+                  borderRadius: 2,
+                  p: 3,
+                  textAlign: 'center'
                   }}>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      startIcon={<CloudUploadIcon />}
-                      sx={{
-                        color: '#135D66',
-                        borderColor: '#135D66',
-                        '&:hover': {
-                          borderColor: '#003C43',
-                          bgcolor: 'rgba(19, 93, 102, 0.1)',
-                        },
-                      }}
-                    >
-                      Upload File
-                      <input type="file" hidden onChange={handleFileChange} />
-                    </Button>
-                    {file && (
-                      <Typography sx={{ mt: 2, color: '#135D66' }}>
-                        File terpilih: {file.name}
-                      </Typography>
-                    )}
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<CloudUploadIcon />}
+                    sx={{
+                    color: '#135D66',
+                    borderColor: '#135D66',
+                    '&:hover': {
+                      borderColor: '#003C43',
+                      bgcolor: 'rgba(19, 93, 102, 0.1)',
+                    },
+                    }}
+                  >
+                    Upload File
+                    <input
+                    type="file"
+                    hidden
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                      const selectedFile = e.target.files[0];
+                      if (selectedFile.size > 1024 * 1024) {
+                        toast.error('Ukuran file maksimal 1MB.');
+                        e.target.value = '';
+                        return;
+                      }
+                      setFile(selectedFile);
+                      }
+                    }}
+                    />
+                  </Button>
+                  <Typography sx={{ mt: 2, color: 'text.secondary', fontSize: 14 }}>
+                    Maksimal ukuran file 1MB.
+                  </Typography>
+                  {file && (
+                    <Typography sx={{ mt: 2, color: '#135D66' }}>
+                    File terpilih: {file.name}
+                    </Typography>
+                  )}
                   </Box>
                 </Grid>
               </Grid>
