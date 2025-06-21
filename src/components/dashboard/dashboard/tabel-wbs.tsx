@@ -97,7 +97,7 @@ export function TabelWbs() {
     try {
       await api.delete(`/PelaporanWbs?ids=["${row.id}"]`);
       toast.success('Pengaduan berhasil dihapus.');
-      fetchComplaints(); // Refresh the list after deletion
+      fetchComplaints();
     } catch (error: any) {
       console.error('Error deleting complaint:', error);
       toast.error(error.response?.data?.message || 'Gagal menghapus pengaduan.');

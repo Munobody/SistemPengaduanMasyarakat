@@ -232,8 +232,10 @@ export function TabelPetugasWbs() {
   };
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return ;
   }
+
+  // <Alert severity="error">{error}</Alert>
 
   return (
     <>

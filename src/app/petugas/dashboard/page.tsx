@@ -16,23 +16,23 @@ interface Feature {
 }
 
 export default function PetugasPage(): React.JSX.Element {
-  const [hasWbsAccess, setHasWbsAccess] = useState<boolean>(false);
+  const [hasWbsAccess, setHasWbsAccess] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkWbsAccess = async () => {
       try {
         const response = await api.get('/acl/features');
-        
         const wbsFeature = response.data.content.find(
           (feature: Feature) => feature.name === 'PENGADUAN_WBS'
         );
-        
         if (wbsFeature) {
           const requiredActions = ['read', 'update', 'delete'];
           const hasFullAccess = requiredActions.every(
-            action => wbsFeature.actions.some((a: { name: string; }) => a.name === action)
+            action => wbsFeature.actions.some((a: { name: string }) => a.name === action)
           );
           setHasWbsAccess(hasFullAccess);
+        } else {
+          setHasWbsAccess(false);
         }
       } catch (error) {
         setHasWbsAccess(false);
@@ -41,7 +41,7 @@ export default function PetugasPage(): React.JSX.Element {
 
     checkWbsAccess();
   }, []);
-  
+
   return (
     <Grid container spacing={3}>
       <Grid lg={12} md={12} xs={12}>
