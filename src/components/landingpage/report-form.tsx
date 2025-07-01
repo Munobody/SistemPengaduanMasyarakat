@@ -56,6 +56,25 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     fetchData();
   }, []);
 
+function showFirstFieldError(errors: Record<string, any>) {
+  if (!errors) return;
+  const fieldNames: Record<string, string> = {
+    NIK: 'NIK',
+    nama: 'Nama',
+    judul: 'Judul Laporan',
+    deskripsi: 'Isi Laporan',
+    kategoriId: 'Kategori Laporan',
+    jenisUnit: 'Jenis Unit',
+    unitId: 'Unit',
+    filePendukung: 'File Pendukung',
+    harapan_pelapor: 'Harapan Pelapor',
+    no_telphone: 'Nomor WhatsApp',
+  };
+  const firstErrorField = Object.keys(errors)[0];
+  const fieldLabel = fieldNames[firstErrorField] || firstErrorField;
+  toast.error(`Terjadi kesalahan pada field: ${fieldLabel}`);
+}
+
   const fetchCategories = async () => {
     try {
       const response = await api.get(
@@ -141,8 +160,30 @@ const ReportForm: React.FC = (): React.JSX.Element => {
     },
     validationSchema: Yup.object({
       NIK: Yup.string()
-        .matches(/^\d{16}$/, 'NIK harus terdiri dari 16 digit')
-        .required('NIK wajib diisi'),
+        .required('NIK wajib diisi')
+        .matches(/^\d{16}$/, 'NIK harus terdiri dari 16 digit angka')
+        .test(
+          'valid-nik',
+          'Format NIK tidak valid',
+          (value) => {
+            if (!value) return false;
+            if (!/^\d{16}$/.test(value)) return false;
+            const prov = value.substring(0, 2);
+            const kota = value.substring(2, 4);
+            const kec = value.substring(4, 6);
+            if (
+              prov === '00' ||
+              kota === '00' ||
+              kec === '00' ||
+              Number(prov) < 1 || Number(prov) > 99 ||
+              Number(kota) < 1 || Number(kota) > 99 ||
+              Number(kec) < 1 || Number(kec) > 99
+            ) {
+              return false;
+            }
+            return true;
+          }
+        ),
       nama: Yup.string().required('Nama wajib diisi'),
       judul: Yup.string().required('Judul laporan wajib diisi'),
       deskripsi: Yup.string().required('Isi laporan wajib diisi'),
@@ -164,27 +205,35 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         ),
       harapan_pelapor: Yup.string().nullable(),
     }),
-    onSubmit: async (values, { resetForm }) => {
+    onSubmit: async (values, { resetForm, validateForm }) => {
       setLoading(true);
+
+      const errors = await validateForm();
+      if (Object.keys(errors).length > 0) {
+        showFirstFieldError(errors);
+        setLoading(false);
+        return;
+      }
+
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/pengaduan`;
-  
+
       try {
         let fileUrl = '';
         if (values.filePendukung) {
           const formData = new FormData();
           formData.append('file', values.filePendukung);
-  
+
           const uploadResponse = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
-  
+
           if (uploadResponse.status === 200) {
             fileUrl = uploadResponse.data.content.secure_url;
           } else {
             throw new Error('Gagal mengunggah file.');
           }
         }
-  
+
         const dataToSend = {
           NIK: values.NIK.trim(),
           judul: values.judul.trim(),
@@ -199,11 +248,11 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           filePendukung: fileUrl,
           filePetugas: '',
         };
-  
+
         const response = await api.post(apiUrl, dataToSend, {
           headers: { 'Content-Type': 'application/json' },
         });
-  
+
         if (response.status === 200) {
           toast.success('Laporan berhasil dikirim!');
           resetForm();
@@ -212,12 +261,39 @@ const ReportForm: React.FC = (): React.JSX.Element => {
         } else {
           toast.error('Gagal mengirim laporan.');
         }
-      } catch (error: any) {
-        console.error('Error submitting form:', error.response?.data || error.message);
-        toast.error(`Terjadi kesalahan: ${error.response?.data?.message || 'Coba lagi nanti.'}`);
-      } finally {
-        setLoading(false);
-      }
+      } 
+      catch (error: any) {
+
+  if (
+    error.response?.status === 400 &&
+    error.response.data?.errors &&
+    Array.isArray(error.response.data.errors)
+  ) {
+    const apiFieldErrors: Record<string, string> = {};
+    error.response.data.errors.forEach((err: { field: string; message: string }) => {
+      apiFieldErrors[err.field] = err.message;
+    });
+    formik.setErrors(apiFieldErrors);
+    const firstField = error.response.data.errors[0]?.field;
+    const fieldNames: Record<string, string> = {
+      NIK: 'NIK',
+      nama: 'Nama',
+      judul: 'Judul Laporan',
+      deskripsi: 'Isi Laporan',
+      kategoriId: 'Kategori Laporan',
+      jenisUnit: 'Jenis Unit',
+      unitId: 'Unit',
+      filePendukung: 'File Pendukung',
+      harapan_pelapor: 'Harapan Pelapor',
+      no_telphone: 'Nomor WhatsApp',
+    };
+    const fieldLabel = fieldNames[firstField] || firstField;
+    toast.error(`Terjadi kesalahan pada field: ${fieldLabel}`);
+  } else {
+    toast.error(`Terjadi kesalahan: ${error.response?.data?.message || 'Coba lagi nanti.'}`);
+  }
+}
+      setLoading(false);
     },
     enableReinitialize: true,
   });
@@ -264,8 +340,7 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           Sampaikan Laporan Anda
         </Typography>
 
-        <form onSubmit={formik.handleSubmit}>
-          {/* NIK  Field */}
+        <form onSubmit={formik.handleSubmit} noValidate>
           <Box mb={2}>
             <TextField
               id="nik-field"
@@ -274,38 +349,48 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               name="NIK"
               variant="outlined"
               sx={{
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                  borderColor: '#135D66' 
-                },
-                '& .MuiInputLabel-root.Mui-focused': { 
-                  color: '#135D66' 
-                },
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+            borderColor: '#135D66' 
+          },
+          '& .MuiInputLabel-root.Mui-focused': { 
+            color: '#135D66' 
+          },
               }}
-              InputLabelProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              inputProps={{ 
+          inputMode: 'numeric', 
+          pattern: '[0-9]*', 
+          maxLength: 16,
+          minLength: 16,
+          autoComplete: 'off'
               }}
-              InputProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              InputLabelProps={{
+                  sx: {
+                    '& .MuiInputLabel-asterisk': {
+                      color: 'red', fontSize: responsiveFontSize,
+                    },
+                  },
               }}
+              InputProps={{ style: { fontSize: responsiveFontSize } }}
               value={formik.values.NIK}
-              onChange={formik.handleChange}
+              onChange={(e) => {
+          const onlyDigits = e.target.value.replace(/\D/g, '');
+          formik.setFieldValue('NIK', onlyDigits.slice(0, 16));
+              }}
               onBlur={formik.handleBlur}
               error={formik.touched.NIK && Boolean(formik.errors.NIK)}
-              helperText={formik.touched.NIK && formik.errors.NIK}
+              required
             />
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#003C43', 
-                mt: 0.5,
-                fontSize: '0.75rem',
+          color: '#003C43', 
+          mt: 0.5,
+          fontSize: '0.75rem',
               }}
             >
               Masukkan NIK Anda
             </Typography>
           </Box>
-
-          {/* Nama Field */}
           <Box mb={2}>
             <TextField
               id="nama-field"
@@ -314,6 +399,58 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               name="nama"
               variant="outlined"
               sx={{
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+            borderColor: '#135D66' 
+          },
+          '& .MuiInputLabel-root.Mui-focused': { 
+            color: '#135D66' 
+          },
+              }}
+              inputProps={{
+          maxLength: 100,
+          autoComplete: 'off',
+          pattern: "^[a-zA-Z\\s.'-]+$"
+              }}
+              InputLabelProps={{
+                  sx: {
+                    '& .MuiInputLabel-asterisk': {
+                      color: 'red', fontSize: responsiveFontSize,
+                    },
+                  },
+              }}
+              InputProps={{ 
+          style: { fontSize: responsiveFontSize } 
+              }}
+              value={formik.values.nama}
+              onChange={(e) => {
+          const value = e.target.value.replace(/[^a-zA-Z\s.'-]/g, '');
+          formik.setFieldValue('nama', value);
+              }}
+              onBlur={formik.handleBlur}
+              error={formik.touched.nama && Boolean(formik.errors.nama)}
+              required
+            />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+          color: '#003C43', 
+          mt: 0.5,
+          fontSize: '0.75rem',
+              }}
+            >
+              Masukkan Nama lengkap Anda
+            </Typography>
+          </Box>
+
+
+          <Box mb={2}>
+            <TextField
+              id="no-telp-field"
+              fullWidth
+              label="Nomor WhatsApp"
+              name="no_telphone"
+              variant="outlined"
+              sx={{
                 '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
                   borderColor: '#135D66' 
                 },
@@ -321,81 +458,37 @@ const ReportForm: React.FC = (): React.JSX.Element => {
                   color: '#135D66' 
                 },
               }}
-              InputLabelProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              InputLabelProps={{
+                  sx: {
+                    '& .MuiInputLabel-asterisk': {
+                      color: 'red', fontSize: responsiveFontSize,
+                    },
+                  },
               }}
-              InputProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              InputProps={{
+                style: { fontSize: responsiveFontSize },
+                startAdornment: (
+                  <span style={{ marginRight: 4, color: '#135D66', fontWeight: 500 }}>+62</span>
+                ),
               }}
-              value={formik.values.nama}
-              onChange={formik.handleChange}
+              value={
+                formik.values.no_telphone.replace(/^(\+62|62|0)/, '')
+              }
+              onChange={(e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.slice(0, 13);
+                formik.setFieldValue('no_telphone', '+62' + value);
+              }}
               onBlur={formik.handleBlur}
-              error={formik.touched.nama && Boolean(formik.errors.nama)}
-              helperText={formik.touched.nama && formik.errors.nama}
+              error={formik.touched.no_telphone && Boolean(formik.errors.no_telphone)}
+              required
+              helperText={
+                formik.touched.no_telphone && formik.errors.no_telphone
+                  ? formik.errors.no_telphone
+                  : '(contoh: +62 81234567890)'
+              }
             />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: '#003C43', 
-                mt: 0.5,
-                fontSize: '0.75rem',
-              }}
-            >
-              Masukkan nama lengkap Anda
-            </Typography>
           </Box>
-
-          {/* Nomor WhatsApp Field */}
-            <Box mb={2}>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#003C43',
-                  mb: 1,
-                  fontSize: responsiveFontSize,
-                  fontWeight: 'bold',
-                }}
-              >
-                Nomor WhatsApp
-              </Typography>
-              <PhoneInput
-                international
-                defaultCountry="ID"
-                value={formik.values.no_telphone}
-                onChange={(value) => formik.setFieldValue('no_telphone', value || '')}
-                inputComponent="input"
-                style={{
-                  width: '100%',
-                  fontSize: responsiveFontSize,
-                  borderColor: formik.touched.no_telphone && formik.errors.no_telphone ? 'red' : '#135D66',
-                  borderRadius: '4px',
-                  padding: '10px',
-                  border: '1px solid',
-                }}
-              />
-              {formik.touched.no_telphone && formik.errors.no_telphone && (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'red',
-                    mt: 1,
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  {formik.errors.no_telphone}
-                </Typography>
-              )}
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#003C43',
-                  mt: 1,
-                  fontSize: '0.75rem',
-                }}
-              >
-                Nomor harus diawali dengan kode negara (contoh: +62 81234567890)
-              </Typography>
-            </Box>
           <Box mb={2}>
             <TextField
               id="judul-field"
@@ -404,37 +497,48 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               name="judul"
               variant="outlined"
               sx={{
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                  borderColor: '#135D66' 
-                },
-                '& .MuiInputLabel-root.Mui-focused': { 
-                  color: '#135D66' 
-                },
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+            borderColor: '#135D66' 
+          },
+          '& .MuiInputLabel-root.Mui-focused': { 
+            color: '#135D66' 
+          },
               }}
-              InputLabelProps={{ 
-                style: { fontSize: responsiveFontSize } 
+              inputProps={{ 
+          maxLength: 50,
+          autoComplete: 'off'
+              }}
+              InputLabelProps={{
+                  sx: {
+                    '& .MuiInputLabel-asterisk': {
+                      color: 'red', fontSize: responsiveFontSize,
+                    },
+                  },
               }}
               InputProps={{ 
-                style: { fontSize: responsiveFontSize } 
+          style: { fontSize: responsiveFontSize } 
               }}
               value={formik.values.judul}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.judul && Boolean(formik.errors.judul)}
-              helperText={formik.touched.judul && formik.errors.judul}
+              helperText={
+          (formik.touched.judul && formik.errors.judul) ||
+          `${formik.values.judul?.length || 0}/50 karakter`
+              }
+              required
             />
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#003C43', 
-                mt: 0.5,
-                fontSize: '0.75rem',
+          color: '#003C43', 
+          mt: 0.5,
+          fontSize: '0.75rem',
               }}
             >
-              Masukkan judul singkat yang menggambarkan laporan
             </Typography>
           </Box>
-            <Box mb={2}>
+          <Box mb={2}>
             <TextField
               id="deskripsi-field"
               fullWidth
@@ -443,42 +547,47 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               variant="outlined"
               multiline
               rows={isMobile ? 3 : 4}
-              inputProps={{ maxLength: 150 }}
+              inputProps={{ maxLength: 150, minLength: 10, autoComplete: 'off' }}
               sx={{
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#135D66' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#135D66' 
-              },
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+            borderColor: '#135D66' 
+          },
+          '& .MuiInputLabel-root.Mui-focused': { 
+            color: '#135D66' 
+          },
               }}
-              InputLabelProps={{ 
-              style: { fontSize: responsiveFontSize } 
+              InputLabelProps={{
+                  sx: {
+                    '& .MuiInputLabel-asterisk': {
+                      color: 'red', fontSize: responsiveFontSize,
+                    },
+                  },
               }}
               InputProps={{ 
-              style: { fontSize: responsiveFontSize } 
+          style: { fontSize: responsiveFontSize } 
               }}
               value={formik.values.deskripsi}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.deskripsi && Boolean(formik.errors.deskripsi)}
               helperText={
-              (formik.touched.deskripsi && formik.errors.deskripsi) ||
-              `${formik.values.deskripsi?.length || 0}/150 kata`
+          (formik.touched.deskripsi && formik.errors.deskripsi) ||
+          `${formik.values.deskripsi?.length || 0}/150 karakter`
               }
+              required
             />
             <Typography 
               variant="body2" 
               sx={{ 
-              color: '#003C43', 
-              mt: 0.5,
-              fontSize: '0.75rem',
+          color: '#003C43', 
+          mt: 0.5,
+          fontSize: '0.75rem',
               }}
             >
-              Jelaskan secara rinci isi laporan Anda (maksimal 150 kata)
+              {/* Jelaskan secara rinci isi laporan Anda (10-150 karakter) */}
             </Typography>
-            </Box>
-            <Box mb={2}>
+          </Box>
+          <Box mb={2}>
             <TextField
               id="harapan-pelapor-field"
               fullWidth
@@ -487,41 +596,40 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               variant="outlined"
               multiline
               rows={isMobile ? 2 : 3}
-              inputProps={{ maxLength: 100 }}
+              inputProps={{ maxLength: 100, autoComplete: 'off' }}
               sx={{
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                borderColor: '#135D66' 
-              },
-              '& .MuiInputLabel-root.Mui-focused': { 
-                color: '#135D66' 
-              },
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+            borderColor: '#135D66' 
+          },
+          '& .MuiInputLabel-root.Mui-focused': { 
+            color: '#135D66' 
+          },
               }}
               InputLabelProps={{ 
-              style: { fontSize: responsiveFontSize } 
+          style: { fontSize: responsiveFontSize } 
               }}
               InputProps={{ 
-              style: { fontSize: responsiveFontSize } 
+          style: { fontSize: responsiveFontSize } 
               }}
               value={formik.values.harapan_pelapor}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.harapan_pelapor && Boolean(formik.errors.harapan_pelapor)}
               helperText={
-              (formik.touched.harapan_pelapor && formik.errors.harapan_pelapor) || 
-              `${formik.values.harapan_pelapor?.length || 0}/100 kata`
+          (formik.touched.harapan_pelapor && formik.errors.harapan_pelapor) || 
+          `${formik.values.harapan_pelapor?.length || 0}/100 karakter`
               }
             />
             <Typography 
               variant="body2" 
               sx={{ 
-              color: '#003C43', 
-              mt: 0.5,
-              fontSize: '0.75rem',
+          color: '#003C43', 
+          mt: 0.5,
+          fontSize: '0.75rem',
               }}
             >
-              Tulis harapan atau solusi yang Anda inginkan (maksimal 100 kata, opsional)
             </Typography>
-            </Box>
+          </Box>
           <Box mb={2}>
             <TextField
               id="kategori-field"
@@ -533,50 +641,53 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               onChange={(event) => formik.setFieldValue('kategoriId', event.target.value)}
               onBlur={formik.handleBlur}
               error={formik.touched.kategoriId && Boolean(formik.errors.kategoriId)}
-              helperText={formik.touched.kategoriId && formik.errors.kategoriId}
               sx={{
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                  borderColor: '#135D66' 
-                },
-                '& .MuiInputLabel-root.Mui-focused': { 
-                  color: '#135D66' 
-                },
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+            borderColor: '#135D66' 
+          },
+          '& .MuiInputLabel-root.Mui-focused': { 
+            color: '#135D66' 
+          },
               }}
-              InputLabelProps={{ 
-                style: { fontSize: responsiveFontSize } 
-              }}
-              SelectProps={{
-                MenuProps: {
-                  PaperProps: {
-                    style: {
-                      maxHeight: isMobile ? 200 : 300,
+              InputLabelProps={{
+                  sx: {
+                    '& .MuiInputLabel-asterisk': {
+                      color: 'red', fontSize: responsiveFontSize,
                     },
                   },
-                },
+              }}
+              SelectProps={{
+          MenuProps: {
+            PaperProps: {
+              style: {
+                maxHeight: isMobile ? 200 : 300,
+              },
+            },
+          },
               }}
               InputProps={{ 
-                style: { fontSize: responsiveFontSize } 
+          style: { fontSize: responsiveFontSize } 
               }}
+              required
             >
               {categories.map((category) => (
-                <MenuItem 
-                  key={category.id} 
-                  value={category.id}
-                  sx={{ fontSize: responsiveFontSize }}
-                >
-                  {category.nama}
-                </MenuItem>
+          <MenuItem 
+            key={category.id} 
+            value={category.id}
+            sx={{ fontSize: responsiveFontSize }}
+          >
+            {category.nama}
+          </MenuItem>
               ))}
             </TextField>
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#003C43', 
-                mt: 0.5,
-                fontSize: '0.75rem',
+          color: '#003C43', 
+          mt: 0.5,
+          fontSize: '0.75rem',
               }}
             >
-              Pilih kategori yang sesuai dengan laporan Anda
             </Typography>
           </Box>
 
@@ -592,50 +703,54 @@ const ReportForm: React.FC = (): React.JSX.Element => {
               onChange={handleUnitTypeChange}
               onBlur={formik.handleBlur}
               error={formik.touched.jenisUnit && Boolean(formik.errors.jenisUnit)}
-              helperText={formik.touched.jenisUnit && formik.errors.jenisUnit}
               sx={{
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                  borderColor: '#135D66' 
-                },
-                '& .MuiInputLabel-root.Mui-focused': { 
-                  color: '#135D66' 
-                },
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+            borderColor: '#135D66' 
+          },
+          '& .MuiInputLabel-root.Mui-focused': { 
+            color: '#135D66' 
+          },
               }}
-              InputLabelProps={{ 
-                style: { fontSize: responsiveFontSize } 
-              }}
-              SelectProps={{
-                MenuProps: {
-                  PaperProps: {
-                    style: {
-                      maxHeight: isMobile ? 200 : 300,
+              InputLabelProps={{
+                  sx: {
+                    '& .MuiInputLabel-asterisk': {
+                      color: 'red', fontSize: responsiveFontSize,
                     },
                   },
-                },
+              }}
+              SelectProps={{
+          MenuProps: {
+            PaperProps: {
+              style: {
+                maxHeight: isMobile ? 200 : 300,
+              },
+            },
+          },
               }}
               InputProps={{ 
-                style: { fontSize: responsiveFontSize } 
+          style: { fontSize: responsiveFontSize } 
               }}
+              required
             >
               <MenuItem value="" sx={{ fontSize: responsiveFontSize }}>
-                <em>Pilih Jenis Unit</em>
+          <em>Pilih Jenis Unit</em>
               </MenuItem>
               {unitTypes.map((type) => (
-                <MenuItem 
-                  key={type.type} 
-                  value={type.type}
-                  sx={{ fontSize: responsiveFontSize }}
-                >
-                  {type.label}
-                </MenuItem>
+          <MenuItem 
+            key={type.type} 
+            value={type.type}
+            sx={{ fontSize: responsiveFontSize }}
+          >
+            {type.label}
+          </MenuItem>
               ))}
             </TextField>
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#003C43', 
-                mt: 0.5,
-                fontSize: '0.75rem',
+          color: '#003C43', 
+          mt: 0.5,
+          fontSize: '0.75rem',
               }}
             >
               Pilih jenis unit terkait laporan
@@ -646,207 +761,245 @@ const ReportForm: React.FC = (): React.JSX.Element => {
           {formik.values.jenisUnit && (
             <Box mb={2}>
               <TextField
-                id="unit-field"
-                fullWidth
-                label="Pilih Unit"
-                name="unitId"
-                select
-                value={formik.values.unitId || ''}
-                onChange={(event) => formik.setFieldValue('unitId', event.target.value)}
-                onBlur={formik.handleBlur}
-                error={formik.touched.unitId && Boolean(formik.errors.unitId)}
-                helperText={formik.touched.unitId && formik.errors.unitId}
-                sx={{
-                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                    borderColor: '#135D66' 
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': { 
-                    color: '#135D66' 
-                  },
-                }}
-                InputLabelProps={{ 
-                  style: { fontSize: responsiveFontSize } 
-                }}
-                SelectProps={{
-                  MenuProps: {
-                    PaperProps: {
-                      style: {
-                        maxHeight: isMobile ? 200 : 300,
-                      },
+          id="unit-field"
+          fullWidth
+          label="Pilih Unit"
+          name="unitId"
+          select
+          value={formik.values.unitId || ''}
+          onChange={(event) => formik.setFieldValue('unitId', event.target.value)}
+          onBlur={formik.handleBlur}
+          error={formik.touched.unitId && Boolean(formik.errors.unitId)}
+          sx={{
+            '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+              borderColor: '#135D66' 
+            },
+            '& .MuiInputLabel-root.Mui-focused': { 
+              color: '#135D66' 
+            },
+          }}
+              InputLabelProps={{
+                  sx: {
+                    '& .MuiInputLabel-asterisk': {
+                      color: 'red', fontSize: responsiveFontSize,
                     },
                   },
-                }}
-                InputProps={{ 
-                  style: { fontSize: responsiveFontSize } 
-                }}
+              }}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                style: {
+            maxHeight: isMobile ? 200 : 300,
+                },
+              },
+            },
+          }}
+          InputProps={{ 
+            style: { fontSize: responsiveFontSize } 
+          }}
+          required
               >
-                <MenuItem value="" sx={{ fontSize: responsiveFontSize }}>
-                  <em>Pilih Unit</em>
-                </MenuItem>
-                {filteredUnits.map((unit) => (
-                  <MenuItem 
-                    key={unit.id} 
-                    value={unit.id}
-                    sx={{ fontSize: responsiveFontSize }}
-                  >
-                    {unit.nama_unit}
-                  </MenuItem>
-                ))}
+          <MenuItem value="" sx={{ fontSize: responsiveFontSize }}>
+            <em>Pilih Unit</em>
+          </MenuItem>
+          {filteredUnits.map((unit) => (
+            <MenuItem 
+              key={unit.id} 
+              value={unit.id}
+              sx={{ fontSize: responsiveFontSize }}
+            >
+              {unit.nama_unit}
+            </MenuItem>
+          ))}
               </TextField>
               <Typography 
-                variant="body2" 
-                sx={{ 
-                  color: '#003C43', 
-                  mt: 0.5,
-                  fontSize: '0.75rem',
-                }}
+          variant="body2" 
+          sx={{ 
+            color: '#003C43', 
+            mt: 0.5,
+            fontSize: '0.75rem',
+          }}
               >
-                Pilih unit spesifik terkait laporan
+          Pilih unit spesifik terkait laporan
               </Typography>
             </Box>
           )}
-          {/* File Upload Section */}
-          {/* File Upload Section */}
-<Box sx={{ mt: 3, mb: 4 }}>
-  <Typography
-    variant="body2"
-    sx={{
-      color: '#003C43',
-      mb: 1,
-      fontSize: responsiveFontSize,
-      fontWeight: 'bold',
-    }}
-  >
-    Upload File Pendukung (Opsional)
-  </Typography>
-  <Box
-    sx={{
-      border: '2px dashed #135D66',
-      borderRadius: 2,
-      p: 3,
-      textAlign: 'center',
-      bgcolor: '#E3FEF7',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
-    {fileName ? (
-      <>
-        <AttachFile sx={{ color: '#FBBF24', fontSize: 40, mb: 1 }} />
-        <Typography
-          variant="body2"
-          sx={{
-            color: '#003C43',
-            fontSize: responsiveFontSize,
-            mb: 1,
-          }}
-        >
-          {fileName}
-        </Typography>
-        <Button
-          variant="outlined"
-          color="error"
-          size="small"
-          onClick={() => {
-            formik.setFieldValue('filePendukung', null);
-            setFileName('');
-          }}
-          sx={{
-            textTransform: 'none',
-            fontSize: responsiveFontSize,
-          }}
-        >
-          Hapus File
-        </Button>
-      </>
-    ) : (
-      <>
-        <CloudUploadIcon sx={{ color: '#135D66', fontSize: 50, mb: 2 }} />
-        <Typography
-          variant="body2"
-          sx={{
-            color: '#003C43',
-            fontSize: responsiveFontSize,
-            mb: 2,
-          }}
-        >
-          Seret dan lepaskan file di sini, atau klik tombol di bawah untuk memilih file.
-        </Typography>
-        <Button
-          variant="contained"
-          component="label"
-          sx={{
-            backgroundColor: '#003C43',
-            color: '#E3FEF7',
-            fontWeight: 'bold',
-            '&:hover': { backgroundColor: '#135D66' },
-            px: { xs: 2, sm: 4 },
-            py: 1,
-            textTransform: 'none',
-            fontSize: responsiveFontSize,
-          }}
-        >
-          Pilih File
-          <input
-            id="file-input"
-            type="file"
-            hidden
-            onChange={(event) => {
-              if (event.target.files && event.target.files[0]) {
-                formik.setFieldValue('filePendukung', event.target.files[0]);
-                setFileName(event.target.files[0].name);
+          <Box sx={{ mt: 3, mb: 4 }}>
+            <Typography
+              variant="body2"
+              sx={{
+          color: '#003C43',
+          mb: 1,
+          fontSize: responsiveFontSize,
+          fontWeight: 'bold',
+              }}
+            >
+              Upload File Pendukung (Opsional)
+            </Typography>
+            <Box
+              sx={{
+          border: '2px dashed #135D66',
+          borderRadius: 2,
+          p: 3,
+          textAlign: 'center',
+          bgcolor: '#E3FEF7',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+              }}
+            >
+              {fileName ? (
+          <>
+            <AttachFile sx={{ color: '#FBBF24', fontSize: 40, mb: 1 }} />
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#003C43',
+                fontSize: responsiveFontSize,
+                mb: 1,
+              }}
+            >
+              {fileName}
+            </Typography>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => {
+                formik.setFieldValue('filePendukung', null);
+                setFileName('');
+                formik.setFieldError('filePendukung', undefined);
+              }}
+              sx={{
+                textTransform: 'none',
+                fontSize: responsiveFontSize,
+              }}
+            >
+              Hapus File
+            </Button>
+          </>
+              ) : (
+          <>
+            <CloudUploadIcon sx={{ color: '#135D66', fontSize: 50, mb: 2 }} />
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#003C43',
+                fontSize: responsiveFontSize,
+                mb: 2,
+              }}
+            >
+              Seret dan lepaskan file di sini, atau klik tombol di bawah untuk memilih file.
+            </Typography>
+            <Button
+              variant="contained"
+              component="label"
+              sx={{
+                backgroundColor: '#003C43',
+                color: '#E3FEF7',
+                fontWeight: 'bold',
+                '&:hover': { backgroundColor: '#135D66' },
+                px: { xs: 2, sm: 4 },
+                py: 1,
+                textTransform: 'none',
+                fontSize: responsiveFontSize,
+              }}
+            >
+              Pilih File
+              <input
+                id="file-input"
+                type="file"
+                hidden
+                accept="image/jpeg,image/png,image/jpg"
+                onChange={(event) => {
+            if (event.target.files && event.target.files[0]) {
+              const file = event.target.files[0];
+              const allowedTypes = [
+                'image/jpeg',
+                'image/png',
+                'image/jpg',
+              ];
+              if (!allowedTypes.includes(file.type)) {
+                formik.setFieldError('filePendukung', 'Tipe file tidak didukung. Hanya JPG, JPEG, PNG.');
+                setFileName('');
+                return;
               }
+              if (file.size > 1024 * 1024) {
+                formik.setFieldError('filePendukung', 'Ukuran file maksimum 1MB.');
+                setFileName('');
+                return;
+              }
+              formik.setFieldValue('filePendukung', file);
+              setFileName(file.name);
+              formik.setFieldError('filePendukung', undefined);
+            }
+                }}
+                aria-hidden="true"
+              />
+            </Button>
+          </>
+              )}
+              {formik.errors.filePendukung && (
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'red',
+              mt: 2,
+              fontSize: '0.85rem',
+              animation: 'shake 0.2s 2',
+              '@keyframes shake': {
+                '0%': { transform: 'translateX(0)' },
+                '25%': { transform: 'translateX(-5px)' },
+                '50%': { transform: 'translateX(5px)' },
+                '75%': { transform: 'translateX(-5px)' },
+                '100%': { transform: 'translateX(0)' },
+              },
             }}
-            aria-hidden="true"
-          />
-        </Button>
-      </>
-    )}
-  </Box>
-  <Typography
-    variant="body2"
-    sx={{
-      color: '#003C43',
-      mt: 1,
-      fontSize: '0.75rem',
-    }}
-  >
-    Maksimum ukuran file 1MB (opsional)
-  </Typography>
-</Box>
+          >
+            {formik.errors.filePendukung}
+          </Typography>
+              )}
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+          color: '#003C43',
+          mt: 1,
+          fontSize: '0.75rem',
+              }}
+            >
+              Maksimum ukuran file 1MB. Format yang didukung: JPG, JPEG, dan PNG
+            </Typography>
+          </Box>
 
-          {/* Submit Button */}
-          {formik.isValid && (
-  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-    <Button
-      type="submit"
-      variant="contained"
-      disabled={loading}
-      sx={{
-        backgroundColor: '#003C43',
-        color: '#E3FEF7',
-        fontWeight: 'bold',
-        px: { xs: 3, sm: 4 },
-        py: 1,
-        textTransform: 'none',
-        '&:hover': { backgroundColor: '#135D66' },
-        fontSize: responsiveFontSize,
-        width: { xs: '100%', sm: 'auto' },
-      }}
-    >
-      {loading ? (
-        <CircularProgress 
-          size={20} 
-          color="inherit" 
-          sx={{ mr: { xs: 1, sm: 2 } }} 
-        />
-      ) : null}
-      {loading ? (isMobile ? 'Mengirim...' : 'Sedang Mengirim...') : 'LAPOR!'}
-    </Button>
-  </Box>
-)}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              sx={{
+          backgroundColor: '#003C43',
+          color: '#E3FEF7',
+          fontWeight: 'bold',
+          px: { xs: 3, sm: 4 },
+          py: 1,
+          textTransform: 'none',
+          '&:hover': { backgroundColor: '#135D66' },
+          fontSize: responsiveFontSize,
+          width: { xs: '100%', sm: 'auto' },
+              }}
+            >
+              {loading ? (
+          <CircularProgress 
+            size={20} 
+            color="inherit" 
+            sx={{ mr: { xs: 1, sm: 2 } }} 
+          />
+              ) : null}
+              {loading ? (isMobile ? 'Mengirim...' : 'Sedang Mengirim...') : 'LAPOR!'}
+            </Button>
+          </Box>
         </form>
       </Paper>
     </Box>

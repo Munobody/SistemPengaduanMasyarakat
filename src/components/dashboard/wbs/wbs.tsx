@@ -33,6 +33,9 @@ interface Category {
   nama: string;
 }
 
+// Fungsi hitung kata
+const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
+
 const WBSReportForm = () => {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -42,7 +45,7 @@ const WBSReportForm = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedUnit, setSelectedUnit] = useState<string>(''); // Now stores nama_unit
+  const [selectedUnit, setSelectedUnit] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [formData, setFormData] = useState({
     judul: '',
@@ -68,9 +71,6 @@ const WBSReportForm = () => {
         setJenisUnitOptions(uniqueJenisUnit);
         setUnits(unitList);
         setCategories(categoryList.map((category: any) => ({ id: category.id, nama: category.nama })));
-
-        if (categoryList.length > 0) setSelectedCategory(categoryList[0].id);
-        if (uniqueJenisUnit.length > 0) setSelectedJenisUnit(uniqueJenisUnit[0]);
       } catch (error: any) {
         console.error('Error fetching data:', error.response?.data || error.message);
         toast.error('Gagal memuat data.');
@@ -84,7 +84,6 @@ const WBSReportForm = () => {
     if (selectedJenisUnit) {
       const filtered = units.filter((unit) => unit.jenis_unit === selectedJenisUnit);
       setFilteredUnits(filtered);
-      setSelectedUnit(filtered.length > 0 ? filtered[0].nama_unit : '');
     } else {
       setFilteredUnits([]);
       setSelectedUnit('');
@@ -93,12 +92,22 @@ const WBSReportForm = () => {
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      setFile(event.target.files[0]);
+      const selectedFile = event.target.files[0];
+      if (selectedFile.size > 1024 * 1024) {
+        toast.error('Ukuran file maksimal 1MB.');
+        event.target.value = '';
+        return;
+      }
+      setFile(selectedFile);
     }
   };
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>) => {
+  const handleChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>
+  ) => {
     const { name, value } = event.target;
+    if (name === 'judul' && countWords(value as string) > 50) return;
+    if (name === 'deskripsi' && countWords(value as string) > 150) return;
     setFormData((prevData) => ({
       ...prevData,
       [name as string]: value,
@@ -108,6 +117,18 @@ const WBSReportForm = () => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
+
+    // Validasi kata
+    if (countWords(formData.judul) > 50) {
+      toast.error('Judul maksimal 50 kata!');
+      setLoading(false);
+      return;
+    }
+    if (countWords(formData.deskripsi) > 150) {
+      toast.error('Isi laporan maksimal 150 kata!');
+      setLoading(false);
+      return;
+    }
 
     let fileUrl = '';
 
@@ -137,7 +158,7 @@ const WBSReportForm = () => {
       ...formData,
       kategoriId: selectedCategory,
       tanggalKejadian: date?.format('YYYY-MM-DD'),
-      unit: selectedUnit, 
+      unit: selectedUnit,
       filePendukung: fileUrl,
     };
 
@@ -155,6 +176,7 @@ const WBSReportForm = () => {
           tanggalKejadian: dayjs().format('YYYY-MM-DD'),
         });
         setSelectedCategory('');
+        setSelectedJenisUnit('');
         setSelectedUnit('');
         setDate(dayjs());
         setFile(null);
@@ -237,6 +259,7 @@ const WBSReportForm = () => {
                             },
                           },
                         }}
+                        helperText={`${countWords(formData.judul)} / 50 kata`}
                       />
                     </Grid>
                     <Grid item xs={12}>
@@ -256,6 +279,7 @@ const WBSReportForm = () => {
                             },
                           },
                         }}
+                        helperText={`${countWords(formData.deskripsi)} / 150 kata`}
                       />
                     </Grid>
                   </Grid>
@@ -278,13 +302,17 @@ const WBSReportForm = () => {
                         <Select
                           label="Jenis Unit"
                           value={selectedJenisUnit}
-                          onChange={(e) => setSelectedJenisUnit(e.target.value)}
+                          onChange={(e) => {
+                            setSelectedJenisUnit(e.target.value);
+                            setSelectedUnit('');
+                          }}
                           sx={{
                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                               borderColor: '#135D66',
                             },
                           }}
                         >
+                          <MenuItem value="">Pilih Jenis Unit</MenuItem>
                           {jenisUnitOptions.map((jenis) => (
                             <MenuItem key={jenis} value={jenis}>
                               {jenis}
@@ -294,25 +322,28 @@ const WBSReportForm = () => {
                       </FormControl>
                     </Grid>
                     <Grid item xs={12} md={6}>
-                      <FormControl fullWidth required disabled={!selectedJenisUnit} variant="outlined">
-                        <InputLabel variant="outlined">Unit Yang Dilapor</InputLabel>
-                        <Select
-                          label="Unit Yang Dilapor"
-                          value={selectedUnit}
-                          onChange={(e) => setSelectedUnit(e.target.value)}
-                          sx={{
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#135D66',
-                            },
-                          }}
-                        >
-                          {filteredUnits.map((unit) => (
-                            <MenuItem key={unit.id} value={unit.nama_unit}>
-                              {unit.nama_unit}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      {selectedJenisUnit && (
+                        <FormControl fullWidth required variant="outlined">
+                          <InputLabel variant="outlined">Unit Yang Dilapor</InputLabel>
+                          <Select
+                            label="Unit Yang Dilapor"
+                            value={selectedUnit}
+                            onChange={(e) => setSelectedUnit(e.target.value)}
+                            sx={{
+                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#135D66',
+                              },
+                            }}
+                          >
+                            <MenuItem value="">Pilih Unit</MenuItem>
+                            {filteredUnits.map((unit) => (
+                              <MenuItem key={unit.id} value={unit.nama_unit}>
+                                {unit.nama_unit}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )}
                     </Grid>
                   </Grid>
                 </Grid>
@@ -341,6 +372,7 @@ const WBSReportForm = () => {
                             },
                           }}
                         >
+                          <MenuItem value="">Pilih Kategori</MenuItem>
                           {categories.map((category) => (
                             <MenuItem key={category.id} value={category.id}>
                               {category.nama}
@@ -418,17 +450,7 @@ const WBSReportForm = () => {
                     <input
                     type="file"
                     hidden
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                      const selectedFile = e.target.files[0];
-                      if (selectedFile.size > 1024 * 1024) {
-                        toast.error('Ukuran file maksimal 1MB.');
-                        e.target.value = '';
-                        return;
-                      }
-                      setFile(selectedFile);
-                      }
-                    }}
+                    onChange={handleFileChange}
                     />
                   </Button>
                   <Typography sx={{ mt: 2, color: 'text.secondary', fontSize: 14 }}>
