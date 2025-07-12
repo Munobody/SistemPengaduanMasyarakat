@@ -105,11 +105,86 @@ Jika Anda ingin berkontribusi:
 5. Buat **Pull Request**
 
 ---
+---
 
-## 📄 Lisensi
+## 📚 Catatan Teknis & Panduan Developer
 
-Proyek ini dirilis di bawah lisensi **MIT**.  
-Silakan gunakan, modifikasi, dan distribusikan sesuai kebutuhan.
+### 📂 Struktur Proyek
+
+- **`/src/components/dashboard/pengaduan/`**  
+  Komponen form pengaduan masyarakat.
+- **`/src/components/dashboard/wbs/`**  
+  Komponen form pelaporan Whistle Blowing System (WBS).
+- **`/src/lib/api/api.ts`**  
+  Konfigurasi utama request API (axios).
+
+---
+
+### 📝 Aturan Validasi & UX Form
+
+#### Pengaduan & WBS
+
+- **Judul Laporan:**  
+  - Maksimal **50 karakter**.  
+  - Jumlah karakter tampil di bawah input.
+- **Isi Laporan:**  
+  - Maksimal **150 karakter**.  
+  - Jumlah karakter tampil di bawah input.
+- **Kategori, Jenis Unit, dan Unit:**  
+  - Default kosong, user wajib memilih.
+  - **Unit** hanya muncul setelah **Jenis Unit** dipilih.
+- **Upload File:**  
+  - Hanya menerima file gambar (jpg, jpeg, png) maksimal 1MB.
+  - File diupload ke endpoint `/upload` sebelum submit data utama.
+- **Reset Otomatis:**  
+  - Setelah submit berhasil, semua field otomatis dikosongkan.
+
+#### UX Lainnya
+
+- **Helper text** pada form menampilkan jumlah karakter yang sudah diisi.
+- **Toast** dari `react-toastify` digunakan untuk feedback error/sukses.
+
+---
+
+### 🛠️ Pengembangan & Penambahan Fitur
+
+- Untuk menambah field baru, tambahkan pada state, validasi, dan tampilan form.
+- Untuk endpoint baru, gunakan `/src/lib/api/api.ts` sebagai referensi.
+- Gunakan komponen MUI (`@mui/material`) untuk konsistensi UI.
+- Validasi tambahan? Gunakan toast untuk feedback user.
+
+---
+
+### 🧑‍💻 Tips Debugging & Maintenance
+
+- Cek error API di console dan tampilkan pesan error yang jelas ke user.
+- Jika ada perubahan pada struktur data backend, sesuaikan mapping data di frontend.
+- Jangan lupa: **jangan set otomatis value select** pada kategori/jenis unit—biarkan user memilih sendiri.
+
+---
+
+### 🧪 Testing & QA
+
+- Pastikan setiap perubahan pada form tetap menjaga validasi dan UX.
+- Lakukan pengujian pada berbagai ukuran layar (mobile, tablet, desktop).
+- Cek kembali reset form setelah submit sukses.
+
+---
+
+### 🚦 Alur Submit Data
+
+1. **User mengisi form** (judul, isi, kategori, jenis unit, unit, dll).
+2. **Validasi karakter** pada judul (50) & isi laporan (150).
+3. **Upload file** (jika ada) ke `/upload`, dapatkan URL.
+4. **Submit data utama** ke endpoint pengaduan/WBS.
+5. **Tampilkan toast** sukses/gagal.
+6. **Reset form** jika sukses.
+
+---
+
+### 💡 Catatan Lain
+
+- Untuk perubahan besar, buat
 
 ---
 
